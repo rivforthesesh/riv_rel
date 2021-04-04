@@ -1,4 +1,4 @@
-### REPLACE THE BELOW WITH OUTPUT FROM MC4
+# REPLACE THE BELOW WITH OUTPUT FROM MC4
 
 from functools import wraps
 import sims4.resources
@@ -6,21 +6,28 @@ from sims4.tuning.instance_manager import InstanceManager
 from sims4.resources import Types
 import services
 
+
 def inject(target_function, new_function):
     @wraps(target_function)
     def _inject(*args, **kwargs):
         return new_function(target_function, *args, **kwargs)
+
     return _inject
+
 
 def inject_to(target_object, target_function_name):
     def _inject_to(new_function):
         target_function = getattr(target_object, target_function_name)
         setattr(target_object, target_function_name, inject(target_function, new_function))
         return new_function
+
     return _inject_to
 
+
 riv_reltraits_24508_SnippetId = 24508
-riv_reltraits_24508_MixerId = (13278191281562275542,13754158052055453736,)
+riv_reltraits_24508_MixerId = (13278191281562275542, 13754158052055453736,)
+
+
 @inject_to(InstanceManager, 'load_data_into_class_instances')
 def riv_reltraits_AddMixer_24508(original, self):
     original(self)
@@ -37,9 +44,13 @@ def riv_reltraits_AddMixer_24508(original, self):
                 return
             if mixer_tuning in snippet_tuning.value:
                 return
-            snippet_tuning.value = snippet_tuning.value + (mixer_tuning, )
+            snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
+
+
 riv_reltraits_163702_SnippetId = 163702
-riv_reltraits_163702_MixerId = (13278191281562275542,13754158052055453736,)
+riv_reltraits_163702_MixerId = (13278191281562275542, 13754158052055453736,)
+
+
 @inject_to(InstanceManager, 'load_data_into_class_instances')
 def riv_reltraits_AddMixer_163702(original, self):
     original(self)
@@ -56,9 +67,13 @@ def riv_reltraits_AddMixer_163702(original, self):
                 return
             if mixer_tuning in snippet_tuning.value:
                 return
-            snippet_tuning.value = snippet_tuning.value + (mixer_tuning, )
+            snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
+
+
 riv_reltraits_24511_SnippetId = 24511
 riv_reltraits_24511_MixerId = (10727265781376968145,)
+
+
 @inject_to(InstanceManager, 'load_data_into_class_instances')
 def riv_reltraits_AddMixer_24511(original, self):
     original(self)
@@ -75,9 +90,13 @@ def riv_reltraits_AddMixer_24511(original, self):
                 return
             if mixer_tuning in snippet_tuning.value:
                 return
-            snippet_tuning.value = snippet_tuning.value + (mixer_tuning, )
+            snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
+
+
 riv_reltraits_163706_SnippetId = 163706
 riv_reltraits_163706_MixerId = (10727265781376968145,)
+
+
 @inject_to(InstanceManager, 'load_data_into_class_instances')
 def riv_reltraits_AddMixer_163706(original, self):
     original(self)
@@ -94,9 +113,10 @@ def riv_reltraits_AddMixer_163706(original, self):
                 return
             if mixer_tuning in snippet_tuning.value:
                 return
-            snippet_tuning.value = snippet_tuning.value + (mixer_tuning, )
+            snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
 
-### IT ENDS HERE
+
+# IT ENDS HERE
 
 from server_commands.argument_helpers import SimInfoParam
 from relationships.relationship_bit import RelationshipBit
@@ -110,11 +130,13 @@ from pathlib import Path
 # recognise riv_rel
 # Mods/riv_rel/riv_rel.ts4script/riv_rel.pyc
 import sys
+
 sys.path.append('../')
 # https://stackoverflow.com/questions/4383571/importing-files-from-different-folder
 try:
     import riv_rel
     from riv_rel import get_parents_ingame, get_children_ingame
+
     riv_rel.riv_log('riv_rel_addon_traits successfully imported riv_rel')
 except Exception as e:
     riv_rel.riv_log('error - riv_rel_addon_traits failed to import riv_rel because ' + str(e))
@@ -137,7 +159,9 @@ inc_ids = {'A': 0x92c573ef, 'B': 0x92c573ec, 'C': 0x92c573ed, 'D': 0x92c573ea,
 heir_ids = {'A': 0xE9C0BADB, 'B': 0xE9C0BAD8, 'C': 0xE9C0BAD9, 'D': 0xE9C0BADE,
             'E': 0xE9C0BADF, 'F': 0xE9C0BADC, 'G': 0xE9C0BADD, 'H': 0xE9C0BAD2}
 
-# default settings for who to auto include
+# search_if_updating_settings
+
+# auto inclusions
 # parent of fam
 riv_auto_inc_parent = False
 # parent of heir
@@ -148,6 +172,8 @@ riv_auto_inc_spouse = False
 riv_auto_inc_heir_spouse = True
 # child of fam
 riv_auto_fam_child = True
+# same fam => incestuous?
+both_in_famX_incest = True
 
 try:
     # config stuff
@@ -164,12 +190,14 @@ try:
 
     # default settings if needed
     if not (os.path.isfile(file_path) and 'addon_traits' in config.sections()):
+        # search_if_updating_settings
         config['addon_traits'] = {}
         config['addon_traits']['riv_auto_inc_parent'] = str(riv_auto_inc_parent)
         config['addon_traits']['riv_auto_inc_heir_parent'] = str(riv_auto_inc_heir_parent)
         config['addon_traits']['riv_auto_inc_spouse'] = str(riv_auto_inc_spouse)
         config['addon_traits']['riv_auto_inc_heir_spouse'] = str(riv_auto_inc_heir_spouse)
         config['addon_traits']['riv_auto_fam_child'] = str(riv_auto_fam_child)
+        config['addon_traits']['both_sims_in_famX_is_incestuous'] = str(both_in_famX_incest)
         with open(file_path, 'w') as cfg_file:
             config.write(cfg_file)
             riv_log('added cfg settings')
@@ -183,6 +211,16 @@ try:
         riv_auto_inc_spouse = config.getboolean('addon_traits', 'riv_auto_inc_spouse')
         riv_auto_inc_heir_spouse = config.getboolean('addon_traits', 'riv_auto_inc_heir_spouse')
         riv_auto_fam_child = config.getboolean('addon_traits', 'riv_auto_fam_child')
+
+        try:
+            both_in_famX_incest = config.getboolean('addon_traits', 'both_sims_in_famX_is_incestuous')
+            riv_log(f'grabbed addon_traits both_sims_in_famX_is_incestuous as {both_in_famX_incest}')
+        except Exception as e0:
+            config['addon_traits']['both_sims_in_famX_is_incestuous'] = str(both_in_famX_incest)
+            with open(file_path, 'w') as cfg_file:
+                config.write(cfg_file)
+            riv_log(f'set up addon_traits both_sims_in_famX_is_incestuous as {both_in_famX_incest}')
+
         riv_log('loaded in cfg settings')
     except Exception as e:
         riv_log('error - failed to load in cfg settings because ' + str(e))
@@ -202,7 +240,7 @@ if riv_auto_fam_child:
     riv_log('children of famX are given famX')
 
 
-### TRAITS: SETTING FOUNDERS AND GROWING FAMILIES
+# TRAITS: SETTING FOUNDERS AND GROWING FAMILIES
 # https://modthesims.info/t/603511
 
 def trait_exc(X: str):
@@ -388,7 +426,7 @@ def exclude_from_A(x_id: int):
 
 
 # makes sim heir of family X
-def make_heir(X: str, sim_x: SimInfoParam,output=None):
+def make_heir(X: str, sim_x: SimInfoParam, output=None):
     if (sim_x.has_trait(trait_fam(X)) or sim_x.has_trait(trait_inc(X))):  # if they're in famX / incX
         if not sim_x.has_trait(trait_heir(X)):  # and if they aren't already an heir
             sim_x.add_trait(trait_heir(X))  # then make them the heir
@@ -639,7 +677,7 @@ def console_propagate_heir_A(sim_x: SimInfoParam, _connection=None):
         make_heir('A', sim_y)
 
 
-### injections
+# injections
 @inject_to(SimInfoManager, 'on_sim_info_created')
 def auto_json_fam_osic(original, self):
     result = original(self)
@@ -649,7 +687,7 @@ def auto_json_fam_osic(original, self):
             if sim.is_baby:
                 # riv_log('tmp!! - auto_inc_parent, baby ' + sim.first_name + ' ' + sim.last_name)
                 # got to here on birth
-                ####
+                #
                 parents = get_parents_ingame(sim)
                 for parent in parents:
                     # add bab to family
@@ -682,11 +720,11 @@ def auto_inc(sim, X):
         raise Exception('(riv) error in auto_inc: ' + str(e))
 
 
-### AUTOMATIC ADD TO FAM, INC PARENT IN FAM
+# AUTOMATIC ADD TO FAM, INC PARENT IN FAM
 # run on age up to toddler
 # !!! inject to age up
 
-### AUTOMATIC INC SPOUSE IN FAM
+# AUTOMATIC INC SPOUSE IN FAM
 # run on add spouse
 @inject_to(RelationshipBit, 'on_add_to_relationship')
 def auto_inc_spouse_oatr(original, self, sim, target_sim_info, relationship, from_load):
@@ -709,4 +747,17 @@ def auto_inc_spouse_oatr(original, self, sim, target_sim_info, relationship, fro
     except Exception as e:
         riv_log('error in auto_inc_spouse in on_add_to_relationship: ' + str(e))
         raise Exception('(riv) error in auto_inc_spouse in on_add_to_relationship: ' + str(e))
+    return result
+
+
+# hook into new eligible couple check
+@inject_to(riv_rel, 'is_eligible_couple')
+def is_eligible_couple(original, sim_x, sim_y):
+    result = original(sim_x, sim_y)
+    if both_in_famX_incest:
+        # check if in same fam
+        for X in founder_ids.keys():
+            if sim_x.has_trait(trait_fam(X)) and sim_y.has_trait(trait_fam(X)):
+                return False, f'these two sims are not an eligible couple: both sims are in fam {X.upper}'
+        # if not in same fam, just do the consang/direct descendants check
     return result
