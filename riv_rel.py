@@ -16,15 +16,117 @@ import random
 from distributor.shared_messages import IconInfoData
 from sims4.collections import make_immutable_slots_class
 from sims4.localization import LocalizationHelperTuning, _create_localized_string
+from sims.sim_info_manager import SimInfoManager
+
+# for notifications
 from ui.ui_dialog import UiDialogResponse, ButtonType, CommandArgType
 from ui.ui_dialog_notification import UiDialogNotification
+
+# for finding file location
+# https://discordapp.com/channels/605863047654801428/624442188335415320/760257300002504756
 import json
 import date_and_time
-
-# replacing the code stolen from sim info with frankk's input
-# https://discordapp.com/channels/605863047654801428/624442188335415320/760257300002504756
 import os
 from pathlib import Path
+
+# for trait picker
+from traits.trait_tracker import TraitPickerSuperInteraction
+from sims4.tuning.tunable import Tunable, TunableList, TunablePackSafeReference
+
+# for getting save IDs
+from services import persistence_service
+
+# for config file (used for auto_json settings)
+import configparser
+
+# for new update to get_parents and get_parents_ingame
+from sims.genealogy_tracker import FamilyRelationshipIndex
+
+# for running on save
+from services.persistence_service import PersistenceService
+
+# gets slot, e.g. if your save is Slot_0000000e then you get '0000000e'
+def get_slot():
+    # get save slot ID
+    per = services.get_persistence_service()
+    int_slot_id = int(per._save_game_data_proto.save_slot.slot_id)
+    hex_slot_id_tmp = hex(int_slot_id)[2:]
+    # int_slot_id = 14
+    # => hex(...) = 0xe
+    # => ...[2:] = e
+    hex_slot_id = ('0' * (8 - len(hex_slot_id_tmp))) + hex_slot_id_tmp
+    # hex_slot_id_tmp = e
+    # => add 8-len(e) = 8-1 = 7 zeros
+    # => hex_slot_id = 00000000e
+    return hex_slot_id
+
+# GLOBALS
+# autosave
+riv_auto_enabled = False # this can be set by the user for each save. KEEP this as default false!!!
+file_name_extra = '' # check later if this causes issues with global v local vars
+hex_slot_id = '00000000' # updated on game load
+# interactions
+riv_rel_int_24508_SnippetId = 24508
+riv_rel_int_24508_MixerId = (17552881007513514036,)
+riv_rel_int_163702_SnippetId = 163702
+riv_rel_int_163702_MixerId = (17552881007513514036,)
+# trait IDs
+exc_ids = {'A': 0xc7823d01, 'B': 0xc7823d02, 'C': 0xc7823d03, 'D': 0xc7823d04,
+           'E': 0xc7823d05, 'F': 0xc7823d06, 'G': 0xc7823d07, 'H': 0xc7823d08}
+fam_ids = {'A': 0x8ffadecb, 'B': 0x8ffadec8, 'C': 0x8ffadec9, 'D': 0x8ffadece,
+           'E': 0x8ffadecf, 'F': 0x8ffadecc, 'G': 0x8ffadecd, 'H': 0x8ffadec2}
+founder_ids = {'A': 0xa2e336f4, 'B': 0xa2e336f7, 'C': 0xa2e336f6, 'D': 0xa2e336f1,
+               'E': 0xa2e336f0, 'F': 0xa2e336f3, 'G': 0xa2e336f2, 'H': 0xa2e336fd}
+inc_ids = {'A': 0x92c573ef, 'B': 0x92c573ec, 'C': 0x92c573ed, 'D': 0x92c573ea,
+           'E': 0x92c573eb, 'F': 0x92c573e8, 'G': 0x92c573e9, 'H': 0x92c573e6}
+# checks if we auto include parents, spouses
+riv_auto_inc_parent = False ## gen4
+riv_auto_inc_spouse = False ## gen4
+riv_auto_fam = False ## gen4
+# for giving a heads up
+jsyk_ownfolder = False
+
+# logging stuff for testing (only for me !!! set to false)
+riv_auto_log = False
+def riv_log(string):
+    if riv_auto_log:
+        file_dir = Path(__file__).resolve().parent.parent
+        file_name = 'riv_rel.log'
+        file_path = os.path.join(file_dir, file_name)
+        with open(file_path, 'a') as file:
+            try:
+                file.write(string + '\n')
+            except Exception as e:
+                try:
+                    riv_log(str(e))
+                except:
+                    riv_log('something went REALLY wrong')
+    else:
+        pass
+
+### trait picker start
+class riv_reltraits_TraitPickerSuperInteraction(TraitPickerSuperInteraction):
+    INSTANCE_TUNABLES = {
+        'traits': TunableList(tunable=TunablePackSafeReference(manager=services.trait_manager()), allow_none=True),
+        'only_one_allowed': Tunable(tunable_type=bool, default=False)
+    }
+    @classmethod
+    def _trait_selection_gen(cls, target):
+        trait_tracker = target.sim_info.trait_tracker
+        if cls.is_add:
+            for trait in cls.traits:
+                if trait_tracker.can_add_trait(trait):
+                    yield trait
+        else:
+            for trait in trait_tracker.equipped_traits:
+                yield trait
+    def on_choice_selected(self, choice_tag, **kwargs):
+        if self.only_one_allowed:
+            for trait in self.traits:
+                self.target.sim_info.remove_trait(trait)
+        super().on_choice_selected(choice_tag, **kwargs)
+### trait picker over
+# UNUSED UNTIL NEW .PACKAGE FILE ADDED
 
 # services, sims4.commands:
 #   @sims4.commands.Command
@@ -84,6 +186,12 @@ class RivSim:
     # for marking a sim as culled; do this if the sim cannot be found
     def cull(self):
         self.is_culled = True
+        riv_log('marked ' + self.first_name + ' ' + self.last_name + ' as culled')
+
+    # for marking a sim as unculled; for cleaning
+    def uncull(self):
+        self.is_culled = False
+        riv_log('marked ' + self.first_name + ' ' + self.last_name + ' as unculled')
 
     # for updating a sim in the file if that sim exists with different details
     def update_info(self, new_first_name, new_last_name, new_gender, new_time):
@@ -91,34 +199,31 @@ class RivSim:
         self.last_name = new_last_name
         self.is_female = new_gender
         self.time = new_time
+        riv_log('updated info for ' + self.first_name + ' ' + self.last_name)
 
 class RivSimList:
     sims = []
 
     # loads in list of sims from .json
     def load_sims(self, file_name_extra: str):
-        # clears sims if they exist
-        if self.sims:
-            self.sims = []
-
-# from os import sep as os_separator         # at top of file
-# file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
-# scriptFullPath = normpath(__file__)
-# fileparts = scriptFullPath.split(os_separator)
-# if 1 < len(fileparts):
-#   outputFullPath = '{}'.format(os_separator).join(fileparts[:len(fileparts) - 2]) + '{}{}'.format(os_separator, file_name)
-# with open(outputFullPath, 'r') as json_file:
-#   temp_sims = json.load(json_file)
-
         file_dir = Path(__file__).resolve().parent.parent
         file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+        file_name2 = 'riv_currentsession_tmp_' + file_name_extra + '.json'  # e.g. riv_currentsession_tmp_pine.json
         file_path = os.path.join(file_dir, file_name)
+        file_path2 = os.path.join(file_dir, file_name2)
 
         # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
-        with open(file_path, 'r') as json_file:
-            temp_sims = json.load(json_file)
-        for sim in temp_sims:
-            self.sims.append(RivSim(sim))
+        if os.path.isfile(file_path2): # if tmp file is already being used
+            with open(file_path2, 'r') as json_file: # read from this
+                temp_sims = json.load(json_file)
+            self.sims = [RivSim(sim) for sim in temp_sims]
+        else: # tmp file hasn't been created yet
+            riv_log('creating temporary file in .load_sims for ' + file_name_extra)
+            with open(file_path, 'r') as json_file: # read from perm file
+                temp_sims = json.load(json_file)
+            with open(file_path2, 'w') as json_file2: # create tmp file
+                json.dump(temp_sims, json_file2)
+            self.sims = [RivSim(sim) for sim in temp_sims]
         return self.sims
 
     def update_sims(self, file_name_extra: str):
@@ -132,17 +237,22 @@ class RivRelDict:
 
     # loads in dict of rels from .json
     def load_rels(self, file_name_extra: str):
-        # clears rels if they exist
-        if self.rels:
-            self.rels = []
-
         file_dir = Path(__file__).resolve().parent.parent
-        file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+        file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_relparents_pine.json
+        file_name2 = 'riv_currentsession_tmpparents_' + file_name_extra + '.json'  # e.g. riv_currentsession_tmpparents_pine.json
         file_path = os.path.join(file_dir, file_name)
+        file_path2 = os.path.join(file_dir, file_name2)
 
         # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
-        with open(file_path, 'r') as json_file:
-            self.rels = json.load(json_file)
+        if os.path.isfile(file_path2): # if tmp file is already being used
+            with open(file_path2, 'r') as json_file:
+                self.rels = json.load(json_file)
+        else: # tmp file hasn't been created yet
+            riv_log('creating temporary file in .load_rels for ' + file_name_extra)
+            with open(file_path, 'r') as json_file:
+                self.rels = json.load(json_file)
+            with open(file_path2, 'w') as json_file2:
+                json.dump(self.rels, json_file2)
         return self.rels
 
     def update_rels(self, file_name_extra: str):
@@ -167,6 +277,19 @@ class RivRelDict:
 riv_sim_list = RivSimList()
 riv_rel_dict = RivRelDict()
 
+# get list of pairs in lists
+def get_pairs_yield(a: List, b: List):
+    for x in a:
+        for y in b:
+            yield x, y
+
+def get_pairs_return(a: List, b: List):
+    ab = []
+    for x in a:
+        for y in b:
+            ab.append((x,y))
+    return ab
+
 ## input: two sims. output: list of relbits
 @sims4.commands.Command('riv_show_relbits', command_type=sims4.commands.CommandType.Live)
 def console_show_relbits(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
@@ -182,6 +305,8 @@ def get_rivsim_from_id(sim_id):
         for rivsim in riv_sim_list.sims: # for all rivsims
             if rivsim.sim_id == sim_id: # if it has the same ID
                 return rivsim # then this is the rivsim we want
+        # has not found that sim
+        return None
 
 ## input: a sim as SimInfoParam or RivSim. output: the corresponding RivSim in mem
 def get_rivsim_from_sim(sim_z):
@@ -189,6 +314,13 @@ def get_rivsim_from_sim(sim_z):
         return sim_z # then just return the rivsim
     else: # this will be a SimInfoParam
         return get_rivsim_from_id(str(sim_z.sim_id)) # so we get rivsim from the id
+
+## input: a rivsim or sim. output: the corresponding sim info if it exists, else None
+def get_sim_from_rivsim(rivsim_z):
+    try:
+        return services.sim_info_manager().get(int(rivsim_z.sim_id)).sim_info
+    except:
+        return None
 
 ## input: a sim. output: list of their parents
 def get_parents(sim_x):
@@ -209,6 +341,30 @@ def get_parents(sim_x):
             if sim_x.relationship_tracker.has_bit(sim_y.sim_id, parent_relbit):
                 sim_parents.append(sim_y)
 
+    # creds to frankkulak!
+    if (not riv_sim_list.sims) or (not get_rivsim_from_sim(sim_x).is_culled):
+        # case for handling babs, hopefully
+        # note if not riv_sim_list.sims then it returns True before trying to check sim_x.is_culled
+        sim_x = get_sim_from_rivsim(sim_x)
+        father_id = sim_x.get_relation(FamilyRelationshipIndex.FATHER)
+        if not father_id in [None, ''] + [int(sim.sim_id) for sim in sim_parents]:
+            try:
+                father = services.sim_info_manager().get(father_id).sim_info
+                if isinstance(father, SimInfo):
+                    #riv_log('father = ' + str(father))
+                    sim_parents.append(father)
+            except:
+                pass
+        mother_id = sim_x.get_relation(FamilyRelationshipIndex.MOTHER)
+        if not mother_id in [None, ''] + [int(sim.sim_id) for sim in sim_parents]:
+            try:
+                mother = services.sim_info_manager().get(mother_id).sim_info
+                if isinstance(mother, SimInfo):
+                    #riv_log('mother = ' + str(mother))
+                    sim_parents.append(mother)
+            except:
+                pass
+
     return sim_parents
 
 ## the above as a console command
@@ -216,12 +372,106 @@ def get_parents(sim_x):
 def console_get_parents(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     sim_parents = get_parents(sim_x)
-    output('DEBUG: ' + str(sim_parents))
     if not sim_parents:
         output('{}\'s parents not found'.format(sim_x.first_name))
     else:
         for sim_y in sim_parents:
             output('{} {} is {}\'s parent'.format(sim_y.first_name, sim_y.last_name, sim_x.first_name))
+
+## gets parents, but only the sim infos in the game
+def get_parents_ingame(sim_x):
+    try:
+        sim_parents = get_parents(sim_x)
+    except:
+        #riv_log('failed to get ingame parents on input ' + str(sim_x))
+        return []
+
+    # convert to ingame if possible
+    if riv_sim_list.sims:
+        sim_parents_tmp = []
+        for rparent in sim_parents:
+            parent = get_sim_from_rivsim(rparent)
+            if not parent is None:
+                sim_parents_tmp.append(parent)
+        sim_parents = sim_parents_tmp
+
+    # try the genealogy ones too
+    # creds to frankkulak!
+    if (not riv_sim_list.sims) or (not get_rivsim_from_sim(sim_x).is_culled):
+        # case for handling babs, hopefully
+        # note if not riv_sim_list.sims then it returns True before trying to check sim_x.is_culled
+        father_id = sim_x.get_relation(FamilyRelationshipIndex.FATHER)
+        if not father_id in [None, ''] + [sim.sim_id for sim in sim_parents]:
+            try:
+                father = services.sim_info_manager().get(father_id).sim_info
+                if isinstance(father, SimInfo):
+                    #riv_log('father = ' + str(father))
+                    sim_parents.append(father)
+            except:
+                pass
+        mother_id = sim_x.get_relation(FamilyRelationshipIndex.MOTHER)
+        if not mother_id in [None, ''] + [sim.sim_id for sim in sim_parents]:
+            try:
+                mother = services.sim_info_manager().get(mother_id).sim_info
+                if isinstance(mother, SimInfo):
+                    #riv_log('mother = ' + str(mother))
+                    sim_parents.append(mother)
+            except:
+                pass
+
+    # remove list elements that are NOT sim infos (bc apparently this happens???)
+    for parent in sim_parents:
+        if not isinstance(parent, SimInfo):
+            sim_parents.remove(parent)
+
+    return sim_parents
+
+def get_children(sim_x):
+    sim_children = []
+
+    if riv_sim_list.sims: # using list in mem
+        rivsim_x = get_rivsim_from_sim(sim_x) # rivsim_x is the entry for sim_x in riv_sim_list.sims
+        x_id = int(rivsim_x.sim_id) # and this is the ID as an int
+        for rivsim_y in riv_sim_list.sims: # for every other sim
+            y_id = rivsim_y.sim_id # get their ID as a string
+            y_parents = riv_rel_dict.rels.get(y_id) # and this is a list of parent simIDs as ints
+            # some errors come up with the above being None ^
+            if not y_parents is None:
+                for z_id in y_parents: # for each z_id
+                    if z_id == x_id: # if these are the same id
+                        sim_children.append(rivsim_y)
+
+    else: # using sims in game
+        manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+        parent_relbit = manager.get(0x2269)
+        for sim_y in services.sim_info_manager().get_all():
+            if sim_y.relationship_tracker.has_bit(sim_x.sim_id, parent_relbit):
+                sim_children.append(sim_y)
+
+    return sim_children
+
+## the above as a console command
+@sims4.commands.Command('riv_get_children', command_type=sims4.commands.CommandType.Live)
+def console_get_children(sim_x: SimInfoParam, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    sim_children = get_children(sim_x)
+    if not sim_children:
+        output('{}\'s children not found'.format(sim_x.first_name))
+    else:
+        for sim_y in sim_children:
+            output('{} {} is {}\'s child'.format(sim_y.first_name, sim_y.last_name, sim_x.first_name))
+            
+## gets children, but only the sim infos in the game
+def get_children_ingame(sim_x):
+    sim_children = get_children(sim_x)
+    if riv_sim_list.sims:
+        sim_children_tmp = []
+        for rchild in sim_children:
+            child = get_sim_from_rivsim(rchild)
+            if not child is None:
+                sim_children_tmp.append(child)
+        sim_children = sim_children_tmp
+    return sim_children
 
 # input: a sim. output: dictionary of their ancestors sim_z with values (gens back, via child of sim_z)
 # note the values are lists!!
@@ -267,7 +517,51 @@ def console_get_ancestors(sim_x: SimInfoParam, _connection=None):
             for sim_z in x_ancestors[sim_y]:
                 output('{} {} is {} {}\'s ancestor, {} generations back'.format(sim_y.first_name, sim_y.last_name, sim_x.first_name, sim_x.last_name, sim_z[0]))
 
-# input: two sims and ancestors. output: None if there is no direct relation, generational difference if there is
+# input: a sim. output: dictionary of their descendants sim_z with values (gens back, via child of sim_z)
+# note the values are lists!!
+# look into defaultdict later to rework adding items to the list
+def get_descendants(sim_x):
+    descendants = {} # stores descendants as {sim_z: [(n, sim_zx), (n, sim_zx)]} where
+        # sim_z is n generations back from sim_x
+        # sim_zx child of sim_z and descendant of sim_x
+    queue = [] # stores sims to check
+    templist = [] # because appending items to lists in dicts does not work well
+
+    if riv_sim_list.sims: # using list in mem
+        sim_x = get_rivsim_from_sim(sim_x) # rivsim_x is the entry for sim_x in riv_sim_list.sims
+
+    for sim_z in get_children(sim_x):
+        queue.append((sim_z,1,sim_x))
+    while queue:
+        tuple_znzx = queue[0] # gets first (sim_z, n, sim_zx)
+        sim_z = tuple_znzx[0]
+        n = tuple_znzx[1]
+        sim_zx = tuple_znzx[2]
+        queue.pop(0) # removes first item (tuple_znzx) from the queue
+        for child in get_children(sim_z):
+            queue.append((child, n+1, sim_z)) # adds children of sim_z to the queue
+        if sim_z in descendants.keys():
+            temp_list = descendants[sim_z]
+            temp_list.append((n,sim_zx))
+            descendants[sim_z] = temp_list
+            temp_list = []
+        else:
+            descendants[sim_z] = [(n, sim_zx)]  # adds sim_z: [(n, sim_zx)] to the dictionary
+    return descendants # dictionary of sim_z: (n, sim_zx) for sim_z descendant, n gens forward, via sim_zx
+
+# the above as a console command. redundant except for debugging
+@sims4.commands.Command('riv_get_descendants', command_type=sims4.commands.CommandType.Live)
+def console_get_descendants(sim_x: SimInfoParam, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    x_descendants = get_descendants(sim_x)
+    if not x_descendants:
+        output('{}\'s descendants not found'.format(sim_x.first_name))
+    else:
+        for sim_y in x_descendants.keys():
+            for sim_z in x_descendants[sim_y]:
+                output('{} {} is {} {}\'s descendant, {} generations forward'.format(sim_y.first_name, sim_y.last_name, sim_x.first_name, sim_x.last_name, sim_z[0]))
+
+# input: two sims and ancestors. output: [] if there is no direct relation, generational difference if there is
 def get_direct_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict, y_ancestors: Dict):
     xy_direct_rel = []
 
@@ -285,9 +579,9 @@ def get_direct_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict, 
             xy_direct_rel.append(-sim_z[0]) # gets each -n from {sim_x: [sim_z = (n, sim_xy), (n, sim_xy), ...]}
 
     return xy_direct_rel
-# ... -1 => sim_x parent of sim_y, 0 => sim_x is sim_y, 1 => sim_x child of sim_y, ...
+# ... -1 => sim_x child of sim_y, 0 => sim_x is sim_y, 1 => sim_x parent of sim_y, ...
 
-# input: two sims. output: None if there is no direct relation, generational difference if there is
+# input: two sims. output: [] if there is no direct relation, generational difference if there is
 def get_direct_relation(sim_x: SimInfoParam, sim_y: SimInfoParam):
     return get_direct_rel(sim_x, sim_y, get_ancestors(sim_x), get_ancestors(sim_y))
 
@@ -443,30 +737,53 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
         # sim_yy is an ancestor of only sim_y
         # sim_xx has no parent who is an ancestor of sim_x and sim_y
 
-    if not riv_sim_list.sims: # only bother with this if using only sims in game
-        xx = [] # list of sims who are x or ancestors of x and not y
-        yy = [] # list of sims who are y or ancestors of y and not x
-        x_ancestors[sim_x] = [(0, sim_x)] # here it helps to have the sim's self
-        y_ancestors[sim_y] = [(0, sim_y)] # trust me it'll be useful later
-        for sim_xx in x_ancestors.keys():
-            if not sim_xx in y_ancestors.keys():
-                xx.append(sim_xx)
-        for sim_yy in y_ancestors.keys():
-            if not sim_yy in x_ancestors.keys():
-                yy.append(sim_yy)
+    xx = [] # list of sims who are x or ancestors of x and not y
+    yy = [] # list of sims who are y or ancestors of y and not x
+    x_ancestors[sim_x] = [(0, sim_x)] # here it helps to have the sim's self
+    y_ancestors[sim_y] = [(0, sim_y)] # trust me it'll be useful later
+    for sim_xx in x_ancestors.keys():
+        if not sim_xx in y_ancestors.keys():
+            xx.append(sim_xx)
+    for sim_yy in y_ancestors.keys():
+        if not sim_yy in x_ancestors.keys():
+            yy.append(sim_yy)
 
-        # x (has an ancestor who) is a close indirect relative of y('s ancestor), but these share no ancestor who is an ancestor of x AND y
-        manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-        sibling_relbit = manager.get(0x2262)
-        cousin_relbit = manager.get(0x227A)
-        pibling_relbit = manager.get(0x227D)
-        nibling_relbit = manager.get(0x2705)
-        for sim_xx in xx:
-            for sim_yy in yy:
+    # now make sure we're only using sims in the game
+    if riv_sim_list.sims: # if we're using rivsims...
+        xx_tmp = [] # ancestors of only x
+        for rivsim_xx in xx:
+            sim_xx = get_sim_from_rivsim(rivsim_xx)
+            if not sim_xx is None:
+                xx_tmp.append(sim_xx)
+        xx = xx_tmp
 
+        yy_tmp = [] # ancestors of only y
+        for rivsim_yy in yy:
+            sim_yy = get_sim_from_rivsim(rivsim_yy)
+            if not sim_yy is None:
+                yy_tmp.append(sim_yy)
+        yy = yy_tmp
+
+        xy_ancestors_tmp = [] # ancestors of x and y
+        for rivsim_xy in xy_ancestors:
+            sim_xy = get_sim_from_rivsim(rivsim_xy)
+            if not sim_xy is None:
+                xy_ancestors_tmp.append(sim_xy)
+        xy_ancestors = xy_ancestors_tmp
+
+    # x (has an ancestor who) is a close indirect relative of y('s ancestor), but these share no ancestor who is an ancestor of x AND y
+    # changed from elifs bc some rels are gross af
+    manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+    sibling_relbit = manager.get(0x2262)
+    cousin_relbit = manager.get(0x227A)
+    pibling_relbit = manager.get(0x227D)
+    nibling_relbit = manager.get(0x2705)
+    for sim_xx in xx:
+        for sim_yy in yy:
+            try: # something goes wrong so like.. cba
                 # sim_xx and sim_yy siblings, with no parent who is an ancestor of x and y
                 if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, sibling_relbit):
-                    zz_parents = [value for value in get_parents(sim_xx) if value in get_parents(sim_yy)]  # parents shared by sim_xx and sim_yy
+                    zz_parents = [value for value in get_parents_ingame(sim_xx) if value in get_parents_ingame(sim_yy)]  # parents shared by sim_xx and sim_yy
                     if not [value for value in zz_parents if value in xy_ancestors]: # if sim_xx and sim_yy have no parents that are ancestors of sim_x and sim_y
                         for sim_xz in x_ancestors[sim_xx]:  # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim) where sim_xx is n gens back from sim_x via sim
                             for sim_yz in y_ancestors[sim_yy]: # y_ancestors[sim_yy] = [sim_yz,...], sim_yz = (n, sim) where sim_yy is n gens back from sim_x via sim
@@ -475,10 +792,13 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 to_add = (sim_xx, sim_yy, nx + 1, ny + 1, get_sib_strength(sim_xx, sim_yy)) # connections are sibs (sharing parents), so gen + 1
                                 if not to_add in xy_indirect_rels:
                                     xy_indirect_rels.append(to_add)
+            except:
+                riv_log('error with siblings ' + sim_xx.first_name + ' and ' + sim_yy.first_name)
 
+            try:
                 # sim_yy pibling of sim_xx, and there are no siblings to check
-                elif sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, pibling_relbit):
-                    for sim_xxx in get_parents(sim_xx):
+                if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, pibling_relbit):
+                    for sim_xxx in get_parents_ingame(sim_xx):
                         if sim_xxx.relationship_tracker.has_bit(sim_yy.sim_id, sibling_relbit):
                             # this case will already by covered by sib case, using yy's parent = xx's sib
                             break
@@ -490,10 +810,13 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 to_add = (sim_xx, sim_yy, nx + 2, ny + 1, 1)  # connections are nibling + pibling, so an extra 2, 1 to joining point. assume missing parent of xx is yy's full sib
                                 if not to_add in xy_indirect_rels:
                                     xy_indirect_rels.append(to_add)
+            except:
+                riv_log('error with pibling/nibling ' + sim_xx.first_name + ' and ' + sim_yy.first_name)
 
-                # sim_xx nibling of sim_yy, and there are no siblings to check
-                elif sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
-                    for sim_yyy in get_parents(sim_yy):
+            try:
+                # sim_yy nibling of sim_xx, and there are no siblings to check
+                if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
+                    for sim_yyy in get_parents_ingame(sim_yy):
                         if sim_yyy.relationship_tracker.has_bit(sim_xx.sim_id, sibling_relbit):
                             # this case will already by covered by sib case, using xx's parent = yy's sib
                             break
@@ -505,18 +828,30 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 to_add = (sim_xx, sim_yy, nx + 1, ny + 2, 1)  # connections are pibling + nibling, so an extra 1, 2 to joining point. assume missing parent of yy is xx's full sib
                                 if not to_add in xy_indirect_rels:
                                     xy_indirect_rels.append(to_add)
+            except:
+                riv_log('error with nibling/pibling ' + sim_xx.first_name + ' and ' + sim_yy.first_name)
 
+            try:
                 # sim_xx and sim_yy first cousins, and there are no siblings to check (between sim_xx+parents AND sim_yy+parents)
-                elif sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, cousin_relbit):
-                    for sim_xxx, sim_yyy in get_pairs_yield(get_parents(sim_xx) + [sim_xx], get_parents(sim_yy) + [sim_yy]):
+                # spaghet bc i don't fkn remember which way round the pnibling rel goes, two of these are unneeded
+                if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, cousin_relbit):
+                    xx_parents = get_parents_ingame(sim_xx)
+                    yy_parents = get_parents_ingame(sim_yy)
+                    for sim_xxx, sim_yyy in get_pairs_yield(xx_parents, yy_parents):
                         if sim_xxx.relationship_tracker.has_bit(sim_yyy.sim_id, sibling_relbit):
-                            # this case will already be covered by sib cases above
+                            # handled by sibling case
                             break
                         if sim_xxx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
-                            # handled by nibling case
+                            # handled by pnibling case
+                            break
+                        if sim_xx.relationship_tracker.has_bit(sim_yyy.sim_id, nibling_relbit):
+                            # handled by pnibling case
                             break
                         if sim_yyy.relationship_tracker.has_bit(sim_xx.sim_id, nibling_relbit):
-                            # handled by pibling case
+                            # handled by pnibling case
+                            break
+                        if sim_yy.relationship_tracker.has_bit(sim_xxx.sim_id, nibling_relbit):
+                            # handled by pnibling case
                             break
                     else:  # sim_xx and sim_yy are first cousins, but have no parents who are siblings
                         for sim_xz in x_ancestors[sim_xx]:  # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim) where sim_xx is n gens back from sim_x via sim
@@ -526,6 +861,8 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 to_add = (sim_xx, sim_yy, nx + 2, ny + 2, 1)  # connections are cousins (sharing grandparents), so gen + 2. assume missing parents would be full sibs
                                 if not to_add in xy_indirect_rels:
                                     xy_indirect_rels.append(to_add)
+            except:
+                riv_log('error with first cousins ' + sim_xx.first_name + ' and ' + sim_yy.first_name)
 
     return xy_indirect_rels # [(sim_z, sim_w, nx, ny, sib_strength)]
                                 # where sim_z and sim_w are parents/sibs/relations to link, sim_z = sim_w if half-
@@ -634,20 +971,20 @@ def get_inlaw_rel(sim_x, sim_y, x_ancestors, y_ancestors):
     spouse_relbit = manager.get(0x3DCE)
     # gets list of spouses for each of sim_x and sim_y
     try:
-        # SPAGHETTI
         if riv_sim_list.sims: # if using RivSims
-            if isinstance(sim_x, RivSim):
-                x_culled = sim_x.is_culled
-            else: # sim_x is a sim
+            # uses actual sim for spouse if needed and doable
+            ssim_x_tmp = get_sim_from_rivsim(sim_x)
+            ssim_y_tmp = get_sim_from_rivsim(sim_y)
+            if not ssim_x_tmp is None:
+                ssim_x = ssim_x_tmp
                 x_culled = False
-            if isinstance(sim_y, RivSim):
-                y_culled = sim_y.is_culled
-            else: # sim_y is a sim
+            else:
+                x_culled = True
+            if not ssim_y_tmp is None:
+                ssim_y = ssim_y_tmp
                 y_culled = False
-            if not x_culled: # uses actual sim for spouse if needed and doable
-                ssim_x = services.sim_info_manager().get(int(sim_x.sim_id)).sim_info
-            if not y_culled: # uses actual sim for spouse if needed and doable
-                ssim_y = services.sim_info_manager().get(int(sim_y.sim_id)).sim_info
+            else:
+                y_culled = True
         else: # these will defo be non-culled sims
             x_culled = False
             y_culled = False
@@ -760,18 +1097,6 @@ def format_inlaw_rel(xy_inlaw_rels: List, sim_x: SimInfoParam, sim_y: SimInfoPar
             inlaw_rels.append(('error in formatting inlaw rels', 1))
     return inlaw_rels # [(string, sim)] where sim is the spouse related to sim_x or sim_y, or is 0 if spouse
 
-def get_pairs_yield(a: List, b: List):
-    for x in a:
-        for y in b:
-            yield x, y
-
-def get_pairs_return(a: List, b: List):
-    ab = []
-    for x in a:
-        for y in b:
-            ab.append((x,y))
-    return ab
-
 ### riv_rel interactions below
 
 def inject(target_function, new_function):
@@ -787,8 +1112,6 @@ def inject_to(target_object, target_function_name):
         return new_function
     return _inject_to
 
-riv_rel_int_24508_SnippetId = 24508
-riv_rel_int_24508_MixerId = (17552881007513514036,)
 @inject_to(InstanceManager, 'load_data_into_class_instances')
 def riv_rel_int_AddMixer_24508(original, self):
     original(self)
@@ -807,8 +1130,6 @@ def riv_rel_int_AddMixer_24508(original, self):
                 return
             snippet_tuning.value = snippet_tuning.value + (mixer_tuning, )
 
-riv_rel_int_163702_SnippetId = 163702
-riv_rel_int_163702_MixerId = (17552881007513514036,)
 @inject_to(InstanceManager, 'load_data_into_class_instances')
 def riv_rel_int_AddMixer_163702(original, self):
     original(self)
@@ -863,6 +1184,32 @@ def scumbumbo_show_notification(sim_x: SimInfoParam, sim_y: SimInfoParam, text: 
     # blanks that normally would have been specified in a UiDialogNotification XML tuning.
     # had client.active_sim at the start??
     notification = UiDialogNotification.TunableFactory().default(client.active_sim, text=localized_text, title=localized_title, icon=primary_icon, secondary_icon=secondary_icon, urgency=urgency, information_level=information_level, visual_type=visual_type)
+    notification.show_dialog()
+
+# attempt for notification:
+def scumbumbo_show_notif_texttitle(text: str, title: str):
+    # We need the client to get the active sim for the icon
+    client = services.client_manager().get_first_client()
+    localized_title = lambda **_: LocalizationHelperTuning.get_raw_text(title)
+    #localized_text = lambda **_: _create_localized_string(0x054DDA26, text) this is {0.String}
+    localized_text = lambda **_: LocalizationHelperTuning.get_raw_text(text)
+
+    sprout_plant_icon_key = get_resource_key(0x9993999E26D6CB56, Types.PNG)
+    primary_icon = lambda _: IconInfoData(icon_resource=sprout_plant_icon_key)
+
+    #   Green for defaults (urgency=DEFAULT, information_level=PLAYER, visual_type=INFORMATION)
+    #   Orange for urgency = URGENT
+    #   Blue for information_level = SIM
+    #   Purple for visual_type = SPECIAL_MOMENT & information_level = SIM
+    #   Dark "chat bubble" from Sim's icon information_level = SPEECH
+    urgency = UiDialogNotification.UiDialogNotificationUrgency.DEFAULT
+    information_level = UiDialogNotification.UiDialogNotificationLevel.PLAYER
+    visual_type = UiDialogNotification.UiDialogNotificationVisualType.INFORMATION
+
+    # Prepare and show the notification.  The TunableFactory() is basically allowing us to fill in the
+    # blanks that normally would have been specified in a UiDialogNotification XML tuning.
+    # had client.active_sim at the start??
+    notification = UiDialogNotification.TunableFactory().default(client.active_sim, text=localized_text, title=localized_title, icon=primary_icon, urgency=urgency, information_level=information_level, visual_type=visual_type)
     notification.show_dialog()
 
 # input: two sims and their ancestors; output: a tuple of lists with bio rels first, non-bio rels second.
@@ -1114,12 +1461,21 @@ def riv_get_notif(x_id: int, y_id: int, _connection=None):
 def load_sims(file_name_extra: str):
     file_dir = Path(__file__).resolve().parent.parent
     file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_name2 = 'riv_currentsession_tmp_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
     file_path = os.path.join(file_dir, file_name)
+    file_path2 = os.path.join(file_dir, file_name2)
 
     # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
-    with open(file_path, 'r') as json_file:
-        sims = json.load(json_file)
-    return sims # is this a list??
+    if os.path.isfile(file_path2):  # if tmp file is already being used
+        with open(file_path2, 'r') as json_file:  # read from this
+            sims = json.load(json_file)
+    else:  # tmp file hasn't been created yet
+        riv_log('creating temporary file in load_sims for ' + file_name_extra)
+        with open(file_path, 'r') as json_file:  # read from perm file
+            sims = json.load(json_file)
+        with open(file_path2, 'w') as json_file2:  # create tmp file
+            json.dump(sims, json_file2)
+    return sims
 
 # sims_input is a list of sims as SimInfoParam, Dict, or RivSim (can be mixed in list)
 # file_name_extra is a str that fits in the * in riv_rel_*.json
@@ -1127,82 +1483,115 @@ def save_sims(sims_input: List, file_name_extra: str): #List<RivSim>
     sim_time = services.time_service().sim_now.absolute_ticks()
     file_dir = Path(__file__).resolve().parent.parent
     file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_name2 = 'riv_currentsession_tmp_' + file_name_extra + '.json'  # e.g. riv_currentsession_tmp_pine.json
     file_path = os.path.join(file_dir, file_name)
+    file_path2 = os.path.join(file_dir, file_name2)
     sims = [] # for output; each sim is a Dict here!
         # game_sims if file does not exist
         # UPDATED file_sims + new_sims (subset of game_sims) if file does exist
-    game_sims = [] # sims from the game as RivSims
-    for sim in sims_input:
-        if isinstance(sim, RivSim):
-            game_sims.append(sim)
-        else:
-            game_sims.append(RivSim(sim))
 
-    if os.path.isfile(file_path):  # update file
-        json_sims = load_sims(file_name_extra) #! should use list in mem
-        file_sims = [] # sims from the file as RivSims
-        for sim in json_sims:
-            file_sims.append(RivSim(sim))
-        new_sims = [] # sims from the game that are NOT in the file
-
+    if os.path.isfile(file_path2):  # update file
+        game_sims = []  # sims from the game as RivSims
+        for sim in sims_input:
+            if isinstance(sim, RivSim):
+                game_sims.append(sim)
+            else:
+                game_sims.append(RivSim(sim))
+        # game_sims is now a list of ingame sims as RivSims
+        riv_log('number of sims in game = ' + str(len(game_sims)))
+        # get sims in file as a list of rivsims
+        file_sims = [RivSim(sim) for sim in load_sims(file_name_extra)] # sims from the file as RivSims
         # add in game sims (append if sim not in file, update if in file AND needs updating)
-        for sim_g in game_sims:
-            sim_in_file = False  # initialise
-            for sim_f in file_sims:
-                if sim_g.sim_id == sim_f.sim_id: # if sim is in file and in game
-                    sim_in_file = True
-                    if sim_g.first_name == sim_f.first_name and sim_g.last_name == sim_f.last_name and sim_g.is_female == sim_f.is_female: # all details are the same
-                        pass # no updates needed
-                    elif sim_f.time < sim_time:
-                        sim_f.update_info(sim_g.first_name, sim_g.last_name, sim_g.is_female, sim_time) # updates sim in file
-            if not sim_in_file: # sim_g is in game and not in file
-                new_sims.append(sim_g)
 
-        # update to show if sims are culled (sim in file and not in game)
+        # put sims that are in game and not in file in new sims list
+        new_sims = []  # sims from the game that are NOT in the file
+        for sim_g in game_sims:
+            sim_fg = None
+            # try to find sim in file
+            for sim_f in file_sims:
+                if str(sim_g.sim_id) == str(sim_f.sim_id):
+                    sim_fg = sim_f
+                    break
+            if sim_fg is None: # sim_g is in game and not in file
+                new_sims.append(sim_g)
+                riv_log('new sim: ' + sim_g.first_name + ' ' + sim_g.last_name)
+
+        # put sims in file in new file, and update to show if sims are culled (sim in file and not in game)
         for sim_f in file_sims: # sim is in file
-            sim_in_game = False
-            for sim_g in game_sims:
-                if sim_f.sim_id == sim_g.sim_id: # if sim is in file and in game
-                    sim_in_game = True
-                    break # don't need to continue checking against sims in the file
-            if not sim_in_game: # if sim is in file and not in game
+            sim_g = get_sim_from_rivsim(sim_f)
+            if sim_g is None: # sim is in file and not in game
                 if not sim_f.is_culled: # and if sim isn't registered as culled
-                    sim_f.cull() # then register sim as culled
+                    if sim_f.time < sim_time: # and if the current time is LATER than when the sim was last updated
+                        sim_f.cull() # then register sim as culled
             sims.append(sim_f.to_dict()) # put each sim_f in the output WHETHER CULLED OR NOT
 
+        # add new sims to end of the list
         for sim_n in new_sims: # for sim that is in game and not in file
             sims.append(sim_n.to_dict()) # add to sims (list for file)
 
-    else: # new file
-        # makes a list of sims as dict
-        for sim_g in game_sims:
-            sims.append(sim_g.to_dict())
-        # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+        riv_log('number of new sims = ' + str(len(new_sims)))
+        riv_log('len(sims) = ' + str(len(sims)))
 
-    with open(file_path, 'w') as json_file:
-        json.dump(sims, json_file)
+    else: # haven't got a tmp file right now
+        if os.path.isfile(file_path): # we have a perm file
+            riv_log('creating temporary file in save_sims for ' + file_name_extra)
+            with open(file_path, 'r') as json_file:  # read from perm file
+                temp_sims = json.load(json_file)
+            with open(file_path2, 'w') as json_file2:  # create tmp file
+                json.dump(temp_sims, json_file2)
+            # call this again (return is to make sure it doesn't overwrite sims with []
+            return save_sims(sims_input, file_name_extra)
+        else: # new file
+            game_sims = []  # sims from the game as RivSims
+            for sim in sims_input:
+                if isinstance(sim, RivSim):
+                    game_sims.append(sim)
+                else:
+                    game_sims.append(RivSim(sim))
+            # game_sims is now a list of ingame sims as RivSims
+            riv_log('number of sims in game = ' + str(len(game_sims)))
+            # makes a list of sims as dict
+            sims = [sim_g.to_dict() for sim_g in game_sims]
 
+    # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+    with open(file_path2, 'w') as json_file2:
+        json.dump(sims, json_file2)
+
+    riv_log('saved json files to ' + file_name_extra)
+
+# we want to remove duplicate sim IDs by taking the MOST RECENT version
+# this cleans the tmp file, which will be committed to the main one on save!
 def clean_sims(file_name_extra: str):
-    # we want to remove duplicate sim IDs by taking the MOST RECENT version
     dict_sims = load_sims(file_name_extra)
 
-    # get list of RivSims
+    # get list of RivSims, removing exact duplicates
     sims = []
-    for sim in dict_sims:
-        sims.append(RivSim(sim))
+    for i in range(0, len(dict_sims)): # for i in the range
+        if dict_sims[i] not in dict_sims[i + 1:]: # if the i^th dict is not later in the list
+            sims.append(RivSim(dict_sims[i])) # then append it to the list
 
-    # get list of sims to be removed
+    # get list of sims to be removed (same sim, different times)
     to_remove = []
     for sim_x in sims:
         for sim_y in sims:
             if sim_x.sim_id == sim_y.sim_id: # same sim
-                if sim_x.time < sim_y.time: # sim_x is earlier
+                if sim_x.time < sim_y.time: # sim_x is earlier in time
                     if not sim_x in to_remove: # sim_x isn't already flagged to remove
                         to_remove.append(sim_x)
 
     # remove these sims
     for sim in to_remove:
         sims.remove(sim)
+
+    # un-cull
+    sim_time = services.time_service().sim_now.absolute_ticks()
+    for rivsim in sims:
+        sim = get_sim_from_rivsim(rivsim)
+        if not sim is None: # if sim is still in game
+            if rivsim.is_culled: # and sim is recorded as culled
+                if not sim_time < rivsim.time: # and we haven't gone back in time
+                    # then this sim should not be listed as culled
+                    rivsim.uncull()
 
     # make back into dicts for json
     output_sims = []
@@ -1211,24 +1600,37 @@ def clean_sims(file_name_extra: str):
 
     file_dir = Path(__file__).resolve().parent.parent
     file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_name2 = 'riv_currentsession_tmp_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
     file_path = os.path.join(file_dir, file_name)
+    file_path2 = os.path.join(file_dir, file_name2)
 
     # replace info in file with cleaned one
-    with open(file_path, 'w') as json_file:
-        json.dump(output_sims, json_file)
+    with open(file_path2, 'w') as json_file2:
+        json.dump(output_sims, json_file2)
 
     # do we also want to remove sims with no parents from riv_relparents?
+    #   NO - this can cause issues
+    # we might want to remove sim IDs from riv_relparents that aren't in riv_rel
 
 # loads in dict of rels
 def load_rels(file_name_extra: str):
     file_dir = Path(__file__).resolve().parent.parent
     file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_name2 = 'riv_currentsession_tmpparents_' + file_name_extra + '.json'  # e.g. riv_currentsession_tmp_pine.json
     file_path = os.path.join(file_dir, file_name)
+    file_path2 = os.path.join(file_dir, file_name2)
 
     # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
-    with open(file_path, 'r') as json_file:
-        rels = json.load(json_file) # use json.load if this doesn't work
-    return rels # should be a dict
+    if os.path.isfile(file_path2):  # if tmp file is already being used
+        with open(file_path2, 'r') as json_file:
+            rels = json.load(json_file)
+    else:  # tmp file hasn't been created yet
+        riv_log('creating temporary file in load_rels for ' + file_name_extra)
+        with open(file_path, 'r') as json_file:
+            rels = json.load(json_file)
+        with open(file_path2, 'w') as json_file2:
+            json.dump(rels, json_file2)
+    return rels
 
 # saves parent rels as a dict { sim_id : [parent1_id, parent2_id], ... }
     # does all new rels if new file
@@ -1236,19 +1638,17 @@ def load_rels(file_name_extra: str):
 def save_rels(game_sims: List, file_name_extra: str): #List<RivSim>
     file_dir = Path(__file__).resolve().parent.parent
     file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_relparents_pine.json
+    file_name2 = 'riv_currentsession_tmpparents_' + file_name_extra + '.json'  # e.g. riv_currentsession_tmpparents_pine.json
     file_path = os.path.join(file_dir, file_name)
+    file_path2 = os.path.join(file_dir, file_name2)
     rels = {} # for output
     new_rels = {} # contains rels from the game
 
     # makes a list of parent rels in the game
-    manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-    parent_relbit = manager.get(0x2269)
     for sim_x in game_sims:
         # get list of parents
-        parents = []
-        for sim_y in game_sims:
-            if sim_x.relationship_tracker.has_bit(int(sim_y.sim_id), parent_relbit):
-                parents.append(sim_y)
+        # riv_log('tmp!! - save_rels, sim ' + sim_x.first_name + ' ' + sim_x.last_name)
+        parents = get_parents_ingame(sim_x)
         # get list of parent IDs
         parents_id = []
         for parent in parents:
@@ -1256,17 +1656,26 @@ def save_rels(game_sims: List, file_name_extra: str): #List<RivSim>
         # add to dict
         new_rels[str(sim_x.sim_id)] = parents_id
 
-    if os.path.isfile(file_path): # update file
+    if os.path.isfile(file_path2): # update file
         json_rels = load_rels(file_name_extra) # dict where key is a sim ID, value is list of parent IDs
         for sim in list(set(new_rels.keys()) | set(json_rels.keys())):
-                # add union of parent lists to new file. either gets list if exists, or uses empty list
-                rels[sim] = list(set(json_rels.get(sim,[])) | set(new_rels.get(sim,[])))
-    else: # new file
-        rels = new_rels
+             # add union of parent lists to new file. either gets list if exists, or uses empty list
+            rels[sim] = list(set(json_rels.get(sim,[])) | set(new_rels.get(sim,[])))
+    else: # no tmp file
+        if os.path.isfile(file_path): # we have a perm file
+            riv_log('creating temporary file in save_rels for ' + file_name_extra)
+            with open(file_path, 'r') as json_file:  # read from perm file
+                temp_rels = json.load(json_file)
+            with open(file_path2, 'w') as json_file2:  # create tmp file
+                json.dump(temp_rels, json_file2)
+            # call this again
+            return save_rels(game_sims, file_name_extra)
+        else: # new file
+            rels = new_rels
 
     # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
-    with open(file_path, 'w') as json_file:
-        json.dump(rels, json_file)
+    with open(file_path2, 'w') as json_file2:
+        json.dump(rels, json_file2)
 
 # saves sims
 @sims4.commands.Command('riv_save', command_type=sims4.commands.CommandType.Live)
@@ -1334,11 +1743,15 @@ def console_clean_sims(file_name_extra: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     sims = load_sims(file_name_extra)
     old_n = len(sims)
-    output('this file contains ' + str(old_n) + ' sim mini-infos. cleaning...')
+    old_c = len([rsim for rsim in sims if rsim['is_culled']])  # ones that are culled
+    output('this file contains ' + str(old_n) + ' sim mini-infos, + ' + str(old_c) + ' of which are culled. cleaning...')
     clean_sims(file_name_extra)
     sims = load_sims(file_name_extra)
     new_n = len(sims)
+    new_c = len([rsim for rsim in sims if rsim['is_culled']])  # ones that are culled
     output('after removing duplicates, this file contains ' + str(new_n) + ' sim mini-infos.')
+    if old_c > new_c:
+        output('unculled ' + str(old_c - new_c) + ' sims (please let riv know if this isn\'t the first time you\'ve cleaned this file after the december update of this mod!)')
     if old_n < new_n:
         output('if you\'re currently using this file, please run riv_update ' + file_name_extra)
     output('[riv_clean: all done]')
@@ -1361,71 +1774,613 @@ def console_update_sims(file_name_extra: str, _connection=None):
     console_load_sims(file_name_extra, _connection)
     output('[riv_update: all done]')
 
-### SETTING FOUNDERS AND GROWING FAMILIES
-
-try:
-    founder_trait = services.get_instance_manager(Types.TRAIT).get(riv_reltraits_foundertrait.id)
-except:
-    founder_trait = None
-
-# 0xABE35E7B8FA16459 GIVES NONE ^^^
-# riv_reltraits_foundertrait.trait_id doesn't work either
-# name is riv_reltraits_foundertrait
-# change here if founder trait code changes; scope just makes sure this is in one place
-# also add famA ... famH traits
-
-# adds founder trait to sim named
+### TRAITS: SETTING FOUNDERS AND GROWING FAMILIES
 # https://modthesims.info/t/603511
-@sims4.commands.Command('riv_add_founder', command_type=sims4.commands.CommandType.Live)
-def riv_addfounder(sim_x: SimInfoParam, _connection=None):
-    output = sims4.commands.CheatOutput(_connection)
 
-    if not founder_trait == None:
-        # Check if our sim already has that trait
-        if sim_x.has_trait(founder_trait):
-            output(sim_x.first_name + ' is already the founder of a legacy.')
+def trait_exc(X: str):
+    return services.get_instance_manager(Types.TRAIT).get(exc_ids[X])
+def trait_fam(X: str):
+    return services.get_instance_manager(Types.TRAIT).get(fam_ids[X])
+def trait_founder(X: str):
+    return services.get_instance_manager(Types.TRAIT).get(founder_ids[X])
+def trait_inc(X: str):
+    return services.get_instance_manager(Types.TRAIT).get(inc_ids[X])
+
+# tells you if sim_x is any founder
+def is_founder(sim_x: SimInfoParam):
+    for X in founder_ids.keys():
+        if sim_x.has_trait(trait_founder(X)):
+            return True
+    return False
+
+# includes sim in family X
+def include_in_family(X: str, sim_x: SimInfoParam):
+    if not (sim_x.has_trait(trait_fam(X)) or sim_x.has_trait(trait_inc(X))): # if they're not already in famX / incX
+        if not sim_x.has_trait(trait_exc(X)): # and if they're not excluded from X
+            sim_x.add_trait(trait_inc(X)) # then include them
+            riv_log('included ' + sim_x.first_name + ' ' + sim_x.last_name + ' in family ' + X)
+            try: # for console output
+                output(sim_x.first_name + ' ' + sim_x.last_name + ' is now included in family ' + X)
+            except:
+                pass
+
+# above as a console command
+# e.g. riv_include_in_family Pihn Pine A
+@sims4.commands.Command('riv_include_in_family', command_type=sims4.commands.CommandType.Live)
+def console_add_inc(sim_x: SimInfoParam, X: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    X = X.upper()  # makes sure it's uppercase
+
+    if sim_x.has_trait(trait_inc(X)):
+        output(sim_x.first_name + ' is already included.')
+        return
+    elif sim_x.has_trait(trait_fam(X)):
+        output(sim_x.first_name + ' is already a member of this family (inc trait isn\'t needed).')
+        return
+    include_in_family(X, sim_x)
+    if sim_x.has_trait(trait_inc(X)):
+        output(sim_x.first_name + ' is now included in family ' + X)
+    elif sim_x.has_trait(trait_exc(X)):
+        output(sim_x.first_name + ' is excluded from family ' + X)
+        output('to remove the exc' + X + ' trait, use a mod such as MCCC or elektron\'s fam cheats')
+
+# gets spouses ingame
+def get_spouses(sim_x: SimInfoParam):
+    manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+    spouse_relbit = manager.get(0x3DCE)
+    sim_spouses = []
+    for sim_y in services.sim_info_manager().get_all():
+        if sim_x.relationship_tracker.has_bit(sim_y.sim_id, spouse_relbit):
+            sim_spouses.append(sim_y)
+    return sim_spouses
+
+# adds sim to family X, includes parents/spouses if relevant
+def add_to_family(X: str, sim_x: SimInfoParam):
+    if not sim_x.has_trait(trait_fam(X)): # if they're not already in family X
+        if not sim_x.has_trait(trait_exc(X)): # and if they're not excluded from X
+            sim_x.add_trait(trait_fam(X)) # then add to family
+            riv_log('added ' + sim_x.first_name + ' ' + sim_x.last_name + ' to family ' + X)
+            if sim_x.has_trait(trait_inc(X)): # remove inc trait
+                sim_x.remove_trait(trait_inc(X))
+    # if they have the trait, whether added before or now
+    if sim_x.has_trait(trait_fam(X)):
+        if riv_auto_inc_parent: # if we want to auto add parents
+            # riv_log('tmp!!! - auto_inc_parent, sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' in family ' + X)
+            for parent in get_parents_ingame(sim_x): # look at ingame parents
+                # riv_log('tmp!!! - ' + parent.first_name + ' ' + parent.last_name)
+                if not parent.has_trait(trait_fam(X)): # if the parent isn't in the family
+                    riv_log('including parent:')
+                    include_in_family(X, parent) # then include them
+        if riv_auto_inc_spouse: # if we want to auto add spouses
+            for spouse in get_spouses(sim_x): # look at spouses
+                if not spouse.has_trait(trait_fam(X)): # if the spouse isn't in the family
+                    riv_log('including spouse:')
+                    include_in_family(X, spouse) # then include them
+        if riv_auto_fam: # if we want to auto add fam to childen
+            for child in get_children_ingame(sim_x): # look at children
+                if not child.has_trait(trait_fam(X)): # if the child isn't in the family
+                    riv_log('including child:')
+                    add_to_family(X, child) # then add them
+            
+# above as a console command
+# e.g. riv_add_to_family Rhona "Pine I" A
+@sims4.commands.Command('riv_add_to_family', command_type=sims4.commands.CommandType.Live)
+def console_add_fam(sim_x: SimInfoParam, X: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    X = X.upper()  # makes sure it's uppercase
+
+    if sim_x.has_trait(trait_fam(X)):
+        output(sim_x.first_name + ' ' + sim_x.last_name + ' is already in this family!')
+        return
+    add_to_family(X, sim_x)
+    if sim_x.has_trait(trait_fam(X)):
+        output(sim_x.first_name + ' ' + sim_x.last_name + ' is now in family ' + X + '!')
+    elif sim_x.has_trait(trait_exc(X)):
+        output(sim_x.first_name + ' ' + sim_x.last_name + ' is excluded from family ' + X +'...')
+
+    # these get spammed
+    #if riv_auto_inc_parent:
+    #    output('your settings automatically include any parents of fam X')
+    #if riv_auto_inc_spouse:
+    #    output('your settings automatically include any spouses of fam X')
+    #if riv_auto_fam:
+    #    output('your settings automatically add any children of fam X to fam X')
+
+# excludes sim from family X
+def exclude_from_family(X: str, sim_x: SimInfoParam):
+    if not sim_x.has_trait(trait_exc(X)): # if they aren't already excluded
+        if not sim_x.has_trait(trait_founder(X)): # if they aren't the founder
+            sim_x.add_trait(trait_exc(X))
+            riv_log('excluded ' + sim_x.first_name + ' ' + sim_x.last_name + ' from family ' + X)
+    # remove family and inc traits
+    if sim_x.has_trait(trait_fam(X)):
+        sim_x.remove_trait(trait_fam(X))
+        riv_log('removed fam' + X + ' trait from ' + sim_x.first_name + ' ' + sim_x.last_name)
+    if sim_x.has_trait(trait_inc(X)):
+        sim_x.remove_trait(trait_inc(X))
+        riv_log('removed inc' + X + ' trait from ' + sim_x.first_name + ' ' + sim_x.last_name)
+
+# above as a console command
+# e.g. riv_exclude_from_family Kerry Oschner A
+@sims4.commands.Command('riv_exclude_from_family', command_type=sims4.commands.CommandType.Live)
+def console_add_exc(sim_x: SimInfoParam, X: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    X = X.upper()  # makes sure it's uppercase
+
+    if sim_x.has_trait(trait_exc(X)):
+        output(sim_x.first_name + ' is already excluded.')
+        return
+    elif sim_x.has_trait(trait_founder(X)):
+        output(sim_x.first_name + ' is the founder! You can\'t exclude them.')
+        return
+    exclude_from_family(X, sim_x)
+    output(sim_x.first_name + ' is now excluded from family ' + X)
+
+# console command to find the traits
+@sims4.commands.Command('riv_see_fam_traits', command_type=sims4.commands.CommandType.Live)
+def console_see_rivtraits(sim_x: SimInfoParam, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    for X in founder_ids.keys():
+        if sim_x.has_trait(trait_founder(X)):
+            output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is the founder of family ' + X)
+        if sim_x.has_trait(trait_fam(X)):
+            output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is a member of family ' + X)
+        if sim_x.has_trait(trait_inc(X)):
+            output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is included in family ' + X)
+        if sim_x.has_trait(trait_exc(X)):
+            output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is excluded from family ' + X)
+
+# do the above for all sims
+@sims4.commands.Command('riv_see_fam_traits_all', command_type=sims4.commands.CommandType.Live)
+def console_see_rivtraits_all(_connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    output('getting a list of sims with family traits...')
+    for sim_y in services.sim_info_manager().get_all():
+        console_see_rivtraits(sim_y, _connection)
+
+# adds founder trait to sim named, e.g. riv_add_founder Zaaham Pine A
+@sims4.commands.Command('riv_add_founder', command_type=sims4.commands.CommandType.Live)
+def console_add_founder(sim_x: SimInfoParam, X: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    X = X.upper() # makes sure it's uppercase
+
+    # make sure that there is NO other sim with this particular founder trait first
+    for sim_y in services.sim_info_manager().get_all():
+        if sim_y.has_trait(trait_founder(X)) and not sim_x == sim_y: # if another is the founder
+            output('sim ' + sim_y.first_name + ' ' + sim_y.last_name + ' is the founder of family ' + X)
+            riv_log('added ' + sim_x.first_name + ' ' + sim_x.last_name + ' as founder of family ' + X)
+
+    if is_founder(sim_x):
+        if sim_x.has_trait(trait_founder(X)):
+            output(sim_x.first_name + ' is already the founder of family ' + X + '!')
         else:
-            # The sim doesn't have that trait, so add it
-            sim_x.add_trait(founder_trait) # remove_trait removes it
-            output(sim_x.first_name + ' is now the founder of a legacy. Set the family in the Actions menu or via the cheat command [INSERT CHEAT]')
-            output('For everything to work properly, please make sure ' + sim_x.first_name + ' does NOT get culled (either by strengthening connection to the physical world on their grave or adding the never cull flag with MCCC).')
+            output(sim_x.first_name + ' is already a founder of a different legacy!')
+            return
     else:
-        output('Founder trait not found. (I haven\'t done this bit yet!)')
+        sim_x.add_trait(trait_founder(X))
+        output(sim_x.first_name + ' is now the founder of family ' + X + '!')
+
+    # add fam trait to descendants
+    output('adding fam ' + X + ' trait to all of ' + sim_x.first_name +'\'s descendants...')
+    descendants = [*get_descendants(sim_x)] # gives descendants as a list
+    # limit to sim infos for ones that are still in the game
+    # (culled ones are discarded)
+    if riv_sim_list.sims: # if using rivsims
+        tmp = []
+        for rivsim_y in descendants:
+            sim_y = get_sim_from_rivsim(rivsim_y)
+            if not sim_y is None:
+                tmp.append(sim_y)
+            else:
+                output('(sim ' + rivsim_y.first_name + ' ' + rivsim_y.last_name + ' has been culled)')
+        descendants = tmp
+    descendants = [sim_x] + descendants # count the founder in the family
+    descendants.reverse() # reverses the order to reduce the number of sims already getting added
+    for sim_y in descendants:
+        already_in_fam = sim_y.has_trait(trait_fam(X)) # was this sim in the family before this
+        console_add_fam(sim_y, X, _connection) # try to add to family
+        if not sim_y.has_trait(trait_exc(X)) and not sim_y.has_trait(trait_fam(X)):
+            riv_log(sim_y.first_name + ' ' + sim_y.last_name + ' cannot be given the fam trait for some other reason (usually a semi-culled ghost)')
 
 # removes founder trait from sim named
-# https://modthesims.info/t/603511
-@sims4.commands.Command('riv_remove_founder', command_type=sims4.commands.CommandType.Live)
-def riv_removefounder(sim_x: SimInfoParam, _connection=None):
-    output = sims4.commands.CheatOutput(_connection)
-
-    if not founder_trait == None:
-        if sim_x.has_trait(founder_trait):
-            sim_x.remove_trait(founder_trait)
-            output('removed founder trait from ' + sim_x.first_name)
-        else:
-            output(sim_x.first_name + ' is not a founder.')
-    else:
-        output('Founder trait not found. (I haven\'t done this bit yet!)')
+#@sims4.commands.Command('riv_remove_founder', command_type=sims4.commands.CommandType.Live)
+#def console_remove_founder(sim_x: SimInfoParam, _connection=None):
+#    output = sims4.commands.CheatOutput(_connection)
 
 # lists founders
 @sims4.commands.Command('riv_founders', command_type=sims4.commands.CommandType.Live)
-def riv_listfounders(_connection=None):
+def console_list_founders(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
     founders = []
-
-    if not founder_trait == None:
-        output('to see if this works: ' + str(founder_trait))
-        # find sims with the founder trait
-        for sim_x in services.sim_info_manager().get_all():
-            if sim_x.has_trait(founder_trait):
-                founders.append(sim_x)
-                output(sim_x.first_name + ' is the founder of a legacy.')
-        if founders:
-            output('founders in this save: ' + len(founders))
-        else:
-            output('there are no founders in this save.')
+    for sim_x in services.sim_info_manager().get_all():
+        if is_founder(sim_x):
+            founders.append(sim_x)
+            output(sim_x.first_name + ' is the founder of a legacy.')
+    if founders:
+        output('founders in this save: ' + str(len(founders)))
     else:
-        output('Founder trait not found. (I haven\'t done this bit yet!)')
+        output('there are no founders in this save.')
+
+# clears family X
+@sims4.commands.Command('riv_clear_fam', command_type=sims4.commands.CommandType.Live)
+def console_clear_fam(X: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    X = X.upper() # makes sure it's uppercase
+    for sim_x in services.sim_info_manager().get_all():
+        if sim_x.has_trait(trait_founder(X)):
+            sim_x.remove_trait(trait_founder(X))
+        if sim_x.has_trait(trait_fam(X)):
+            sim_x.remove_trait(trait_fam(X))
+        if sim_x.has_trait(trait_inc(X)):
+            sim_x.remove_trait(trait_inc(X))
+        if sim_x.has_trait(trait_exc(X)):
+            sim_x.remove_trait(trait_exc(X))
+    output('cleared all founder/fam/inc/exc traits for family ' + X)
+    riv_log('cleared all founder/fam/inc/exc traits for family ' + X)
+
+# clears all families
+@sims4.commands.Command('riv_clear_fam_all', command_type=sims4.commands.CommandType.Live)
+def console_clear_fam_all(X: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    for X in founder_ids.keys():
+        console_clear_fam(X, _connection)
+
+### AUTOMATIC JSON UPDATES - zone load, save, birth, cull
+
+# load in settings for this save
+def load_cfg_settings():
+    # config stuff
+    config_dir = Path(__file__).resolve().parent.parent
+    config_name = 'riv_rel_autojson.cfg'
+    file_path = os.path.join(config_dir, config_name)
+    config = configparser.ConfigParser()
+    config.read_file(open(file_path, 'r'))
+
+    # set globals
+    global riv_auto_enabled
+    global file_name_extra
+
+    try: # have to have this within 'try' or it throws an error when not in .cfg
+        riv_auto_enabled = config.getboolean(hex_slot_id, 'auto_update_json')
+        file_name_extra = config.get(hex_slot_id, 'file_name_extra')
+        riv_log('loaded in cfg settings: ' + hex_slot_id + ' ' + file_name_extra)
+    except:
+        riv_log('failed to load in cfg settings')
+        riv_auto_enabled = False
+        file_name_extra = ''
+
+    #[header]
+    #key = value
+    #some other key = some other value
+    #[another header]
+    #key = another value
+
+    #config.get("header", "key")  # this returns "value"
+    #config.get("header", "some other key")  # this returns "some other value"
+    #config.get("another header", "key")  # this returns "another value"
+
+# the above as a console command
+@sims4.commands.Command('riv_load_cfg_manually', command_type=sims4.commands.CommandType.Live)
+def console_load_cfg_manually(_connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    try:
+        global hex_slot_id
+        hex_slot_id = get_slot()
+        load_cfg_settings()
+        output('loaded in cfg settings for save ' + hex_slot_id + '.')
+    except Exception as e:
+        output('failed to load in cfg settings because of the below exception:')
+        output(str(e))
+        return
+    if not file_name_extra == '':
+        output('running riv_update ' + file_name_extra + '...')
+        console_update_sims(file_name_extra, _connection)
+    else:
+        output('...well, there are no cfg settings for this save ID. run "riv_auto xyz" with whatever keyword you want in place of xyz to set this up for this save ID.')
+    output('[riv_load_cfg_manually: all done]')
+
+def auto_json():
+    # update list in mem and in temporary .json file
+    if hex_slot_id == get_slot():
+        sim_time = services.time_service().sim_now
+        abs_tick = sim_time.absolute_ticks()
+
+        # riv_save without the console
+        save_sims(services.sim_info_manager().get_all(), file_name_extra) # global file_name_extra
+        save_rels(services.sim_info_manager().get_all(), file_name_extra)
+
+        # riv_load without the console
+        riv_sim_list.load_sims(file_name_extra)
+        riv_rel_dict.load_rels(file_name_extra)
+
+        riv_log('ran auto_json')
+
+# enter riv_auto xyz to set up automatic .json file updates
+@sims4.commands.Command('riv_auto', command_type=sims4.commands.CommandType.Live)
+def console_auto_json(file_name_extra: str, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+
+    # get file location
+    config_dir = Path(__file__).resolve().parent.parent
+    config_name = 'riv_rel_autojson.cfg'
+    file_path = os.path.join(config_dir, config_name)
+    config = configparser.ConfigParser()
+    # we want to create or update this file.
+
+    # grab the file
+    try:
+        config.read_file(open(file_path, 'r'))
+    except:
+        output('no .cfg file found. creating one...')
+
+    if hex_slot_id in config.sections(): # if we already have settings for this
+        output('updating settings for Slot_' + hex_slot_id + '.save to riv_rel_autojson.cfg...')
+    else: # we don't already have settings for this
+        output('adding settings for Slot_' + hex_slot_id + '.save to riv_rel_autojson.cfg...')
+        config[hex_slot_id] = {}
+
+    config[hex_slot_id]['file_name_extra'] = file_name_extra
+    config[hex_slot_id]['auto_update_json'] = 'True'
+
+    with open(file_path, 'w') as cfg_file:
+        config.write(cfg_file)
+        riv_log('added/updated cfg settings: slot ' + hex_slot_id + ' with word ' + file_name_extra)
+
+    output('loading in new .cfg settings...')
+    load_cfg_settings()
+
+    output('running save, clear, clean, then load...')
+    console_save_sims(file_name_extra, _connection)
+    console_clear_sims(_connection)
+    console_clean_sims(file_name_extra, _connection)
+    console_load_sims(file_name_extra, _connection)
+
+    output('[riv_auto: all done]')
+
+# on loading screen animation finished
+#@inject_to(SimInfoManager, 'on_loading_screen_animation_finished')
+#def get_slot_auto(original, self, *args, **kwargs):
+#    result = original(self, *args, **kwargs)
+#    # reading .cfg
+#    try:
+#        load_cfg_settings()
+#    except Exception as e:
+#        riv_log('riv messed up a thing in load_cfg_settings in on_loading_screen_animation_finished: ' + str(e))
+#        raise Exception('riv messed up a thing in load_cfg_settings in on_loading_screen_animation_finished: ' + str(e))
+
+# when going into live mode
+# also covers sims created in CAS
+@inject_to(SimInfoManager, 'on_all_households_and_sim_infos_loaded')
+def auto_json_oahasil(original, self, client):
+    result = original(self, client)
+    # set slot id
+    try:
+        global hex_slot_id
+        # gets old slot id
+        old_hsi = hex_slot_id
+        hex_slot_tmp = get_slot()
+        # replace if this is not 0
+        if not hex_slot_tmp == '00000000':
+            hex_slot_id = hex_slot_tmp
+            riv_log('save ID replaced by ' + hex_slot_id)
+        else:
+            riv_log('save ID not loaded in')
+            if (not riv_sim_list.sims) and riv_auto_enabled: # if there are no sims loaded in, but there should be
+                scumbumbo_show_notif_texttitle('failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, you quit a different save without saving and then loaded this one, or you moved/deleted the .json files. \nif you have not (or aren\'t about to) set up auto .json file updates for this save ID please ignore this notification. \notherwise, please save your game and then enter the following into the command line (CTRL+SHIFT+C): \n\nriv_load_cfg_manually', 'riv_rel issue')
+        # clears sims + rels if id changes
+        # clears tmp files if id was 0
+        if not old_hsi == hex_slot_id:
+            if not old_hsi == '00000000':
+                # riv_clear without the console
+                riv_sim_list.clear_sims()
+                riv_rel_dict.clear_rels()
+                riv_log('cleared sims and rels')
+            else:
+                # clear tmp files
+                if old_hsi == '00000000':
+                    file_dir = Path(__file__).resolve().parent.parent
+                    # go through each file
+                    for file in os.scandir(file_dir):
+                        # if it isn't one of mine
+                        if not file.name.startswith('riv'):
+                            global jsyk_ownfolder
+                            jsyk_ownfolder = True
+                        # if it is of the form 'riv_currentsession_tmp ... .json'
+                        if file.name.startswith('riv_currentsession_tmp') and file.name.endswith('.json'):
+                            os.remove(os.path.join(file_dir, file))
+                            riv_log('deleted ' + file.name)
+
+    except Exception as e:
+        riv_log('riv messed up a thing in getting the slot ID in on_all_households_and_sim_infos_loaded: ' + str(e))
+        raise Exception('riv messed up a thing in getting the slot ID in on_all_households_and_sim_infos_loaded: ' + str(e))
+    try:
+        load_cfg_settings()
+    except Exception as e:
+        riv_log('riv messed up a thing in load_cfg_settings in on_all_households_and_sim_infos_loaded: ' + str(e))
+        raise Exception('riv messed up a thing in load_cfg_settings in on_all_households_and_sim_infos_loaded: ' + str(e))
+    # automatically update .json files
+    try:
+        if riv_auto_enabled:
+            auto_json()
+            riv_log('ran auto_json_oahasil')
+            if jsyk_ownfolder:
+                ownfolder_warning = 'you have other files in the same folder as my mod - i would recommend putting all files starting riv_rel in their own subfolder (i.e. in Mods/riv_rel/) if you encounter any additional lag on save/load. '
+            else:
+                ownfolder_warning = ''
+            scumbumbo_show_notif_texttitle('loaded in settings from riv_rel_autojson.cfg for save ID ' + str(hex_slot_id) + ' and keyword ' + file_name_extra + '.\n\nsim mini-infos: ' + str(len(riv_sim_list.sims)) + '\n\nif this is the wrong file, run riv_clear, save your game, and run riv_load_cfg_manually.\n\n'+ownfolder_warning+'thank you for using my mod!'
+                                           , 'riv_rel: auto json')
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_json in on_all_households_and_sim_infos_loaded: ' + str(e))
+        raise Exception('riv messed up a thing in auto_json in on_all_households_and_sim_infos_loaded: ' + str(e))
+    return result
+
+# when creating a new sim
+    # for births - this works for sim but not parent rel
+    # works for generated npcs!
+    # test for cloning
+@inject_to(SimInfoManager, 'on_sim_info_created')
+def auto_json_fam_osic(original, self):
+    result = original(self)
+    try:
+        if riv_auto_enabled:
+            auto_json()
+            riv_log('ran auto_json_osic')
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_json in on_sim_info_created: ' + str(e))
+        raise Exception('riv messed up a thing in auto_json in on_sim_info_created: ' + str(e))
+    try:
+        # go through babies, get their parents
+        for sim in services.sim_info_manager().get_all():
+            if sim.is_baby:
+                # riv_log('tmp!! - auto_inc_parent, baby ' + sim.first_name + ' ' + sim.last_name)
+                # got to here on birth
+                ####
+                parents = get_parents_ingame(sim)
+                for parent in parents:
+                    # riv_log('tmp!!! - auto_inc_parent, parent ' + parent.first_name + ' ' + parent.last_name)
+                    if riv_auto_fam: # sim_y parent in fam X => sim_x in fam X
+                        for X in fam_ids.keys():
+                            if parent.has_trait(trait_fam(X)):
+                                add_to_family(X, sim)
+                    if riv_auto_inc_parent: # sim_x in fam X => sim_y included in X
+                        for X in inc_ids.keys():
+                            if sim.has_trait(trait_fam(X)):
+                                include_in_family(X, parent)
+                        # riv_log('ran auto_fam_osic for sim ' + sim.first_name + ' ' + sim.last_name)
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_fam in on_sim_info_created: ' + str(e))
+        raise Exception('riv messed up a thing in auto_fam in on_sim_info_created: ' + str(e))
+    return result
+
+# ^ how do i get the sim? __init__ in SimInfo breaks everything
+#        # auto add to family
+#        parents = get_parents_ingame(self)
+#        for parent in parents: # for each parent
+#            for X in founder_ids.keys(): # for each family
+#                if parent.has_trait(trait_fam(X)): # if a parent is in that family
+#                    add_to_family(X, self) # add the bab to the family
+
+# run on add parent
+# sim_x has parent bit for sim_y => sim_y parent of sim_x
+@inject_to(RelationshipBit, 'on_add_to_relationship')
+def auto_json_fam_oatr(original, self, sim, target_sim_info, relationship, from_load):
+    result = original(self, sim, target_sim_info, relationship, from_load)
+    try:
+        manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+        parent_relbit = manager.get(0x2269)
+        #     @classmethod
+        #     def matches_bit(cls, bit_type):
+        #         return cls is bit_type
+        if self.matches_bit(parent_relbit): # if a parent relbit has been added
+            riv_log('a parent relbit was identified in on_add_to_relationship')
+            if riv_auto_enabled:
+                auto_json() # then update the json files
+            if riv_auto_fam: # sim_y parent in fam X => sim_x in fam X
+                if target_sim_info.has_trait(trait_fam(X)):
+                    add_to_family(X, sim)
+            if riv_auto_inc_parent: # sim_x in fam X => sim_y parent
+                if sim.has_trait(trait_fam(X)):
+                    include_in_family(X, target_sim_info)
+                riv_log('ran auto_json_fam_oatr for sims ' + sim.first_name + ' and ' + target_sim_info.first_name)
+            # nb. should have already returned if it was an object rel
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_json in on_add_to_relationship: ' + str(e))
+        raise Exception('riv messed up a thing in auto_json in on_add_to_relationship: ' + str(e))
+    return result
+
+def auto_inc(sim, X):
+    try:
+        include_in_family(X, sim)
+        riv_log('ran auto_inc for sim ' + sim.first_name + ' into family ' + X)
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_inc: ' + str(e))
+        raise Exception('riv messed up a thing in auto_inc: ' + str(e))
+
+### AUTOMATIC ADD TO FAM, INC PARENT IN FAM
+# run on age up to toddler
+# !!! inject to age up
+
+### AUTOMATIC INC SPOUSE IN FAM
+# run on add spouse
+@inject_to(RelationshipBit, 'on_add_to_relationship')
+def auto_inc_spouse_oatr(original, self, sim, target_sim_info, relationship, from_load):
+    result = original(self, sim, target_sim_info, relationship, from_load)
+    try:
+        if riv_auto_inc_spouse:
+            manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+            spouse_relbit = manager.get(0x3DCE)
+            if self.matches_bit(spouse_relbit): # if a parent relbit has been added
+                # see if any family relbits need adding
+                for X in founder_ids.keys(): # for each family
+                    if target_sim_info.has_trait(trait_fam(X)): # if the target is in the family
+                        auto_inc(sim, X) # include the spouse
+                riv_log('ran auto_inc_spouse_oatr for sims ' + sim.first_name + ' and ' + target_sim_info.first_name)
+            # nb. should have already returned if it was an object rel
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_inc_spouse in on_add_to_relationship: ' + str(e))
+        raise Exception('riv messed up a thing in auto_inc_spouse in on_add_to_relationship: ' + str(e))
+    return result
+
+# AUTOMATIC UPDATE PERM .JSON ON SAVE
+#### doing this with PersistenceService's save_game_gen or save_using fucks up everything with all errors passing silently
+@inject_to(PersistenceService, 'save_using')
+def auto_json_del_tmp_su(original, self, *args, **kwargs):
+    result = original(self, *args, **kwargs)
+    try:
+        if riv_auto_enabled:
+            # update .json files
+            auto_json()
+        # copy tmp over to main files
+        # get dir and file names
+        if not file_name_extra == '':
+            file_dir = Path(__file__).resolve().parent.parent
+            for file in os.scandir(file_dir):
+                # if it is of the form 'riv_currentsession_tmp ... .json'
+                if file.name.startswith('riv_currentsession_tmp') and file.name.endswith('.json'):
+                    temp_file_name = file.name
+                    perm_file_name = temp_file_name.replace('currentsession_tmp','rel')
+                    # could be riv_rel_ or riv_relparents_
+                    # read from tmp, write to perm
+                    with open(os.path.join(file_dir,temp_file_name), 'r') as json_file:  # read from tmp file
+                        temp_contents = json.load(json_file)
+                    with open(os.path.join(file_dir,perm_file_name), 'w') as json_file:  # add to perm file
+                        json.dump(temp_contents, json_file)
+                    riv_log('written to ' + perm_file_name)
+                    os.remove(os.path.join(file_dir, temp_file_name))
+                    riv_log('removed file ' + temp_file_name)
+    except Exception as e:
+        riv_log('riv messed up a thing in auto_json_del_tmp_su in save_using: ' + str(e))
+        raise Exception('riv messed up a thing in auto_json_del_tmp_su in save_using: ' + str(e))
+    return result
+
+# tmp files are deleted when save slot ID changes from 0 to not 0
+
+#@inject_to(RelationshipTracker, 'add_relationship_bit')
+#def auto_json_addrelbit(original, self, target_sim_id, bit_to_add, force_add, from_load, send_rel_change_event, allow_readdition):
+#    original(self, target_sim_id, bit_to_add, force_add, from_load, send_rel_change_event, allow_readdition)
+
+# not working
+# on_loading_screen_animation_finished in SimInfoManager
+
+# unknown
+# on_sim_info_created in SimInfoManager?
+# __init__ in SimInfo?
+
+# example code from frankkulak:
+# @inject_to(SimInfoManager, 'on_loading_screen_animation_finished')
+# def CREATORNAME_MODNAME_update_traits(original, self, *args, **kwargs):
+#     result = original(self, *args, **kwargs)
+#     try:
+#         trait_manager = services.get_instance_manager(Types.TRAIT)
+#         old_trait = trait_manager.get(123456789)
+#         new_trait = trait_manager.get(12345)
+#         for sim_info in services.sim_info_manager().get_all():
+#             if sim_info.has_trait(old_trait):
+#                 sim_info.add_trait(new_trait)
+#                 sim_info.remove_trait(old_trait)
+#     except Exception as e:
+#         raise Exception(f"Error with MODNAME by CREATORNAME: {str(e)}")
+#     return result
 
 ### RIV_REL (and riv_rel_rand, riv_rel_all, riv_help)
 
@@ -1559,15 +2514,101 @@ def riv_getallrels(sim_x: SimInfoParam, _connection=None):
 def console_help(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
     # gen 2 (4 nov fix) for public ver, gen 3 (thank you for the support!) for early access ver
-    output('riv_rel gen 3 early access (tysm for the support!) - biological and in-law relations, console commands, interaction, .json files')
+    output('riv_rel gen 4 - biological and in-law relations, console commands, social interaction, auto .json files')
     output('sims can be typed as firstname lastname (use "" if there is a space in the first/last name, e.g. J "Huntington III") or as the sim ID')
     output('if you find an error but you typed the names correctly, please send me (rivforthesesh / riv#4381) the error text and any relevant rels/files!')
-    output('commands taking two sims: riv_rel, riv_get_sib_strength, riv_get_direct_rel, riv_get_indirect_rel, riv_show_relbits')
-    output('commands taking one sim: riv_get_parents, riv_get_ancestors, riv_rel_all, riv_rel_rand')
+    output('commands taking two sims: riv_rel, riv_get_sib_strength, riv_get_direct_rel, riv_get_indirect_rel, riv_show_relbits, riv_gen_diff')
+    output('commands taking one sim: riv_get_parents, riv_get_children, riv_get_ancestors, riv_get_descendants, riv_rel_all, riv_rel_rand')
     output('using .json files [replace xyz by whatever you want to create/use the files riv_rel_xyz.json and riv_relparents_xyz.json]:')
-    output('riv_save xyz (save sim info to .json files), riv_load xyz (load sim info from .json files), riv_clean xyz (removes duplicates from .json file), riv_mem (shows no. mini sim-infos in memory), riv_clear (clears memory), riv_update xyz (runs save, clear, then load)')
+    output('riv_auto xyz (runs riv_update xyz on every zone load or sim birth or save), riv_save xyz (save sim info to .json files), riv_load xyz (load sim info from .json files), riv_clean xyz (removes duplicates from .json file), riv_mem (shows no. mini sim-infos in memory), riv_clear (clears memory), riv_update xyz (runs save, clear, then load)')
+    #output('\nnew ones:')
+    #output('commands taking one sim and a letter from A to H: riv_add_founder, riv_add_to_family, riv_include_in_family, riv_exclude_from_family')
+    #output('commands taking one sim: riv_see_fam_traits')
+    #output('commands taking no sims: riv_see_fam_traits_all, riv_founders')
 
-# situation job?? for displaying relation on mouse-over
+# random shit for riv
+
+# gets mean of list
+def mean(list_boi: List):
+    if len(list_boi) == 0:
+        return None
+    else:
+        return sum(list_boi) / len(list_boi)
+
+# gets generational difference between the two sims
+def generational_difference(sim_x: SimInfoParam, sim_y: SimInfoParam):
+    x_ancestors = get_ancestors(sim_x)
+    y_ancestors = get_ancestors(sim_y)
+    direct_gen_diff = get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors)
+        # [n]
+        # n = 1 => x one gen lower than y
+    indirect_rels = get_indirect_rel(sim_x, sim_y, x_ancestors, y_ancestors)
+        # [(sim_z, sim_w, nx, ny, sib_strength)]
+        # nx - ny = 1 => x one gen lower than y
+    indirect_gen_diff = []
+    for tuple in indirect_rels:
+        nx = tuple[2]
+        ny = tuple[3]
+        indirect_gen_diff.append(nx-ny)
+    gen_diff_list = direct_gen_diff + indirect_gen_diff
+    mean_gd = mean(gen_diff_list)
+    if not mean_gd is None:
+        gen_diff = round(mean_gd, 3) # average rounded to 3dp
+    else:
+        gen_diff = None
+    return (gen_diff, gen_diff_list)
+
+@sims4.commands.Command('riv_gen_diff', command_type=sims4.commands.CommandType.Live)
+def riv_getgendiff(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    gen_diff_tuple = generational_difference(sim_x, sim_y)
+    gen_diff = gen_diff_tuple[0]
+    gen_diff_list = gen_diff_tuple[1]
+    output('as a list: ' + str(gen_diff_list))
+    output('the average generational difference is ' + str(gen_diff))
+    output('(negative means sim_x is higher up in the family tree than sim_y)')
+
+# SaveGameData = collections.namedtuple('SaveGameData', ('slot_id', 'slot_name', 'force_override', 'auto_save_slot_id'))
+# self._save_game_data_proto = serialization.SaveGameData()
+# (in __init__ of PersistenceService())
+# trying to get the save slot ID
+@sims4.commands.Command('riv_save_slot_id', command_type=sims4.commands.CommandType.Live)
+def riv_getsaveslotid(_connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    try:
+        per = services.get_persistence_service()
+    except:
+        output('failed to get persistence service')
+    output('str(per.get_save_slot_proto_guid()) = ' + str(per.get_save_slot_proto_guid()))
+    output('str(per._save_game_data_proto.save_slot.slot_id) = ' + str(per._save_game_data_proto.save_slot.slot_id))
+    try:
+        output('str(per._save_game_data_proto.get_save_slot_proto_buff().slot_id) = ' + str(per._save_game_data_proto.get_save_slot_proto_buff().slot_id))
+    except:
+        pass
+
+# ones that fail:
+# EA.Sims4.Persistence.SaveSlotData.slot_id
+# str( ^^ )
+# per.get_save_slot_proto_guid()
+# per._save_game_data_proto
+# per._save_game_data_proto[1][0]
+# str( ^^ )
+# per._save_game_data_proto[1][1]
+# str( ^^ )
+# type(per._save_game_data_proto)
+# str(per._save_game_data_proto.save_slot[slot_id])
+# json.dump(per._save_game_data_proto, json_file)
+
+# ones that work:
+# str(per.get_save_slot_proto_guid())
+# ^ came out as 3017080839
+# str(per._save_game_data_proto.save_slot)
+# ^ VERY VERY long boi
+# str(per._save_game_data_proto.save_slot.slot_id)
+# ^ came out as 14
+# json.dump([str(per._save_game_data_proto)], json_file)
+# used in ww:
+# per._save_game_data_proto.get_save_slot_proto_buff().slot_id
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
 
