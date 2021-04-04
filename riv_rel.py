@@ -11,6 +11,7 @@ from relationships.relationship_bit import RelationshipBit
 from typing import List, Dict
 from functools import wraps
 import sims4.resources
+from sims.sim_info_types import Age
 from sims4.resources import Types, get_resource_key
 from sims4.tuning.instance_manager import InstanceManager
 import random
@@ -32,9 +33,6 @@ from pathlib import Path
 
 # for config file (used for auto_json settings)
 import configparser
-
-# for new update to get_parents and get_parents_ingame
-# from sims.genealogy_tracker import FamilyRelationshipIndex
 
 # for getting save IDs and running on save
 from services.persistence_service import PersistenceService
@@ -3735,16 +3733,44 @@ def is_eligible_couple(sim_x, sim_y):
     # make rivsims
     sim_x = get_rivsim_from_sim(sim_x)
     sim_y = get_rivsim_from_sim(sim_y)
+
+    # handle the funny case
+    if sim_x == sim_y:
+        return False, 'mate, that\'s just being single with extra steps'
+
     # check direct rel
     if get_direct_relation(sim_x, sim_y):
-        return False, 'these two sims are not an eligible couple: they are directly related'
+        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                      f'are not an eligible couple: they are directly related'
     # check consanguinity
     xy_consang = consang(sim_x, sim_y)
     if xy_consang >= consang_limit:
-        return False, 'these two sims are not an eligible couple: over the consanguinity limit'
+        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                      f'are not an eligible couple: over the consanguinity limit'
     # (traits module will check if in same fam)
+
+    # now we're gonna check stuff that relies on the sim info
+    sim_x = get_sim_from_rivsim(sim_x)
+    sim_y = get_sim_from_rivsim(sim_y)
+
+    one_apart = [{Age.TEEN, Age.YOUNGADULT}, {Age.YOUNGADULT, Age.ADULT}, {Age.ADULT, Age.ELDER}]
+    # two_apart = [{Age.TEEN, Age.ADULT}, {Age.YOUNGADULT, Age.ELDER}]
+    # three_apart = [{Age.TEEN, Age.ELDER}]
+
+    if sim_x is not None and sim_y is not None:
+        x_age = sim_x.age
+        y_age = sim_y.age
+        if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
+            return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                          f'are not an eligible couple: at least one is too young for romance'
+        elif x_age != y_age:
+            # both legal but different ages
+            if {x_age, y_age} not in one_apart:
+                return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                              f'are not an eligible couple: they\'re too far apart in age'
+
     # should be all good
-    return True, 'these two sims are an eligible couple with your settings!'
+    return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
 
 
 # eligible couple console command
@@ -3755,14 +3781,16 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
     output(eligibility[1])
 
 
-# all eligible couple console command
+# all eligible suitors console command (eligible couple + same age + sim_y is alive)
 @sims4.commands.Command('riv_get_suitors', command_type=sims4.commands.CommandType.Live)
 def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     for sim_y in services.sim_info_manager().get_all():
         eligibility = is_eligible_couple(sim_x, sim_y)
         if eligibility[0]:  # this couple is eligible
-            output(f'{sim_y.first_name} {sim_y.last_name}, with age {sim_y.age}')
+            if sim_x.age == sim_y.age:  # this couple is the same age
+                if not sim_y.is_ghost():  # sim_y isn't dead
+                    output(f'{sim_y.first_name} {sim_y.last_name}, with consanguinity {100 * consang(sim_x, sim_y)}%')
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
 
