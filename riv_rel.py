@@ -291,7 +291,7 @@ try:
 
     # show consanguinity in notifications
     try:
-        show_consang = config.getfloat('main_mod', 'show_consanguinity_in_notifs')
+        show_consang = config.getboolean('main_mod', 'show_consanguinity_in_notifs')
         riv_log(f'grabbed main_mod show_consanguinity_in_notifs as {show_consang}')
     except Exception as e:
         config['main_mod']['show_consanguinity_in_notifs'] = str(show_consang)
