@@ -1793,8 +1793,10 @@ def consang(sim_x: RivSim, sim_y: RivSim):
     # populate if one is missing
     if consang_tuple[0] == -1:
         get_direct_relation(sim_x, sim_y)
+        consang_tuple = riv_rel_dict.cached_percentages[xy_id]
     elif consang_tuple[1] == -1:
         get_indirect_relation(sim_x, sim_y)
+        consang_tuple = riv_rel_dict.cached_percentages[xy_id]
 
     # return sum of these values
     return sum(consang_tuple)

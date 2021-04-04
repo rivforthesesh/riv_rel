@@ -758,6 +758,6 @@ def is_eligible_couple(original, sim_x, sim_y):
         # check if in same fam
         for X in founder_ids.keys():
             if sim_x.has_trait(trait_fam(X)) and sim_y.has_trait(trait_fam(X)):
-                return False, f'these two sims are not an eligible couple: both sims are in fam {X.upper}'
+                return False, f'these two sims are not an eligible couple: both sims are in fam {X.upper()}'
         # if not in same fam, just do the consang/direct descendants check
     return result
