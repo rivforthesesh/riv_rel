@@ -1770,7 +1770,7 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
 def consang(sim_x: RivSim, sim_y: RivSim):
     # 100% relationship with self
     if sim_x == sim_y:
-        return 1
+        return 1.0
 
     # o/w get key for cached percentage
     ids = [int(sim_x.sim_id), int(sim_y.sim_id)]
@@ -3660,71 +3660,6 @@ def riv_clear_log(_connection=None):
                 log_file.write(line + '\n')
 
     output(f'done: gone from {old_line_num} lines to {new_line_num}.')
-
-
-# list sims in each generation in fam A
-@sims4.commands.Command('riv_pines', command_type=sims4.commands.CommandType.Live)
-def console_pines(max_iters=10, _connection=None):
-    output = sims4.commands.CheatOutput(_connection)
-
-    # find zaaham
-    for sim_x in [sim_z for sim_z in riv_sim_list.sims if get_sim_from_rivsim(sim_z) is not None]:
-        if sim_x.first_name == 'Zaaham' and sim_x.last_name == 'Pine':
-            # alternatively...
-            # if get_sim_from_rivsim(sim_x) is not None:
-            # if get_sim_from_rivsim(sim_x).has_trait(services.get_instance_manager(Types.TRAIT).get('0xa2e336f4')):
-            founder = sim_x
-            riv_log('found Zaaham')
-            break
-    else:
-        output('did not find Zaaham')
-        return  # no founder
-
-    # find their descendants
-    pines_tmp = get_descendants(founder)  # = {sim_z: [(n, sim_zx), ...]}
-    riv_log('got pines_tmp')
-    pines_list = [(f'{founder.first_name} {founder.last_name}', 1)]
-    for sim_z in pines_tmp.keys():
-        pines_list.append((f'{sim_z.first_name} {sim_z.last_name}',
-                           max([tup[0] for tup in pines_tmp[sim_z]]) + 1))
-    # pines_list = [(sim_z's name, n), ...] where n is the (max!) generation number of that sim
-    riv_log('got pines_list')
-
-    # TODO: make sure this doesn't loop infinitely without the max_iters temp fix
-    #   modify to use founder A
-    #   output to text file
-    gen = 0
-    iters = 0
-    max_gen = max([pine[1] for pine in pines_list])
-    this_gen = []
-    while pines_list:
-        min_gen = min([pine[1] for pine in pines_list])
-        # set new generation number
-        if min_gen > gen:
-            output(str(this_gen).replace('[', '').replace(']', '').replace('\'', ''))
-            this_gen = []
-            gen = min_gen
-            output(f'\n ---- gen {gen} ---- ')
-            iters = 0
-        elif gen > max_gen:
-            if pines_list:
-                output(f'\nnumber of sims left off: {len(pines_list)}')
-            return  # don't want to keep going
-        elif iters >= max_iters:
-            this_gen.append('(maybe more)')
-            output(str(this_gen).replace('[', '').replace(']', '').replace('\'', ''))
-            gen += 1
-            output(f'\n ---- gen {gen} ---- ')
-            iters = 0
-            continue  # go to start of while loop
-        for pine in pines_list:
-            if pine[1] == gen:
-                this_gen.append(pine[0])
-                pines_list.remove(pine)
-        iters += 1
-        # make sure it prints the final bunch!
-        if this_gen and not pines_list:
-            output(str(this_gen).replace('[', '').replace(']', '').replace('\'', ''))
 
 
 # test if two sims are an eligible couple

@@ -294,7 +294,7 @@ def include_in_family(X: str, sim_x: SimInfoParam, via=False, _connection=None):
 
 
 # above as a console command
-# e.g. riv_include_in_family Pihn Pine A
+# e.g. riv_include_in_family Pihn sim_gen A
 @sims4.commands.Command('riv_include_in_family', command_type=sims4.commands.CommandType.Live)
 def console_add_inc(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -361,7 +361,7 @@ def add_to_family(X: str, sim_x: SimInfoParam, output=None, via=False):
 
 
 # above as a console command
-# e.g. riv_add_to_family Rhona "Pine I" A
+# e.g. riv_add_to_family Rhona "sim_gen I" A
 @sims4.commands.Command('riv_add_to_family', command_type=sims4.commands.CommandType.Live)
 def console_add_fam(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -463,7 +463,7 @@ def make_heir(X: str, sim_x: SimInfoParam, output=None):
 
 
 # above as a console command
-# e.g. riv_make_heir Avina Pine A
+# e.g. riv_make_heir Avina sim_gen A
 @sims4.commands.Command('riv_make_heir', command_type=sims4.commands.CommandType.Live)
 def console_make_heir(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -568,7 +568,7 @@ def console_rivtraits(_connection=None):
         output('')
 
 
-# adds founder trait to sim named, e.g. riv_add_founder Zaaham Pine A
+# adds founder trait to sim named, e.g. riv_add_founder Zaaham sim_gen A
 @sims4.commands.Command('riv_add_founder', command_type=sims4.commands.CommandType.Live)
 def console_add_founder(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -758,6 +758,94 @@ def is_eligible_couple(original, sim_x, sim_y):
         # check if in same fam
         for X in founder_ids.keys():
             if sim_x.has_trait(trait_fam(X)) and sim_y.has_trait(trait_fam(X)):
-                return False, f'these two sims are not an eligible couple: both sims are in fam {X.upper()}'
+                return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                              f'are not an eligible couple: both sims are in fam {X.upper()}'
         # if not in same fam, just do the consang/direct descendants check
     return result
+
+
+# list sims in each generation in fam A
+@sims4.commands.Command('riv_show_family', command_type=sims4.commands.CommandType.Live)
+def console_famX(X='A', max_iters=10, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    X = X.upper()
+
+    # find heir
+    for sim_x in [sim_z for sim_z in riv_rel.riv_sim_list.sims if riv_rel.get_sim_from_rivsim(sim_z) is not None]:
+        if sim_x.has_trait(trait_founder(X)):
+            # alternatively...
+            # if get_sim_from_rivsim(sim_x) is not None:
+            # if get_sim_from_rivsim(sim_x).has_trait(services.get_instance_manager(Types.TRAIT).get('0xa2e336f4')):
+            founder = sim_x
+            riv_log(f'got the founder for family {X}')
+            break
+    else:
+        output(f'did not find founder for family {X}')
+        return  # no founder
+
+    # find their descendants
+    famX_tmp = riv_rel.get_descendants(founder)  # = {sim_z: [(n, sim_zx), ...]}
+    riv_log('got list of founder\'s descendants')
+    famX_list = [(f'{founder.first_name} {founder.last_name}', 1, 0)]
+    for sim_z in famX_tmp.keys():
+        # get the stage heir, fam, exc, no traits
+        if sim_z.has_trait(trait_heir(X)):
+            stage = 0
+        elif sim_z.has_trait(trait_fam(X)):
+            stage = 1
+        elif sim_z.has_trait(trait_exc(X)):
+            stage = 2
+        else:
+            stage = 3
+        famX_list.append((f'{sim_z.first_name} {sim_z.last_name}', max([tup[0] for tup in famX_tmp[sim_z]]) + 1, stage))
+    # famX_list = [(sim_z's name, n), ...] where n is the (max!) generation number of that sim
+    riv_log('got famX_list')
+
+    # TODO: make sure this doesn't loop infinitely without the max_iters temp fix
+    #   output to text file
+    # stages: 0 heir, 1 fam, 2 exc, 3 no traits
+    gen = 0
+    iters = 0
+    max_gen = max([sim_gen[1] for sim_gen in famX_list])
+    this_gen = []
+    current_stage = 0
+    fam_group = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other'}
+    while famX_list:
+        min_gen = min([sim_gen[1] for sim_gen in famX_list])
+        min_stage_for_gen = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])
+        # set new stage/generation number if needed
+        if min_stage_for_gen > current_stage:  # need to go to next stage
+            output(fam_group[current_stage] + ' sims: ' +
+                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
+            this_gen = []
+            current_stage = min_stage_for_gen
+        elif min_gen > gen:  # need to go to next gen
+            output(fam_group[current_stage] + ' sims: ' +
+                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
+            this_gen = []
+            gen = min_gen
+            output(f'\n ---- gen {gen} ---- ')
+            iters = 0
+            current_stage = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])
+        elif gen > max_gen:
+            if famX_list:
+                output(f'\nnumber of sims left off: {len(famX_list)}')
+            return  # don't want to keep going
+        elif iters >= max_iters:
+            this_gen.append('(maybe more)')
+            output(fam_group[current_stage] + ' sims: ' +
+                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
+            gen += 1
+            output(f'\n ---- gen {gen} ---- ')
+            iters = 0
+            current_stage = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])
+            continue  # go to start of while loop
+        for sim_gen in famX_list:
+            if sim_gen[1] == gen:
+                this_gen.append(sim_gen[0])
+                famX_list.remove(sim_gen)
+        iters += 1
+        # make sure it prints the final bunch!
+        if this_gen and not famX_list:
+            output(fam_group[current_stage] + ' sims: ' +
+                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
