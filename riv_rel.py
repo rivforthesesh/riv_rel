@@ -236,6 +236,15 @@ for file in os.scandir(Path(__file__).resolve().parent.parent):
         os.rename(os.path.join(Path(__file__).resolve().parent.parent, file),
                   os.path.join(Path(__file__).resolve().parent.parent, 'riv_rel - individual save settings.cfg'))
 
+# recognise riv_rel_addon_traits (add other ones later if needed)
+sys.path.append('../')
+# https://stackoverflow.com/questions/4383571/importing-files-from-different-folder
+try:
+    import riv_rel_addon_traits
+    riv_log('riv_rel successfully imported riv_rel_addon_traits')
+except Exception as e:
+    riv_log('error - riv_rel failed to import riv_rel_addon_traits because ' + str(e))
+
 # search_if_updating_settings
 consang_limit = 2 ** -5  # second cousin
 drel_incest = True  # whether direct rels always count as incestuous
@@ -3490,14 +3499,13 @@ def riv_getallallrels(include_step_rels=global_include_step_rels, _connection=No
 @sims4.commands.Command('riv_help', command_type=sims4.commands.CommandType.Live)
 def console_help(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    # gen 2 (4 nov fix) for public ver, gen 3 (thank you for the support!) for early access ver
     if addons['GT']:
         addon_GT_text = ' (fam and inc can be used as club requirements)'
     else:
         addon_GT_text = ''
     output(
-        'riv_rel gen 5 - biological, in-law, and (optional) step relations, console commands, social interaction, '
-        'auto .json files, optional computer help menu, optional traits' + addon_GT_text)
+        'riv_rel gen 6 - biological, in-law, and (optional) step relations, console commands, social interaction, '
+        'auto .json files, optional computer help menu, optional traits' + addon_GT_text + ', consanguinity')
     output(
         'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, '
         'e.g. J "Huntington III") or as the sim ID')
@@ -3509,10 +3517,11 @@ def console_help(_connection=None):
     output(
         'commands taking two sims: '
         'riv_rel, riv_rel_more_info, riv_get_sib_strength, riv_get_direct_rel, riv_get_indirect_rel, riv_show_relbits, '
-        'riv_gen_diff, riv_is_eligible_couple')
+        'riv_gen_diff, riv_consang, riv_is_eligible_couple')
     output(
         'commands taking one sim: '
-        'riv_get_parents, riv_get_children, riv_get_ancestors, riv_get_descendants, riv_rel_all, riv_rel_rand')
+        'riv_get_parents, riv_get_children, riv_get_ancestors, riv_get_descendants, riv_rel_all, riv_rel_rand, '
+        'riv_get_suitors')
 
     output('')
 
@@ -3532,7 +3541,7 @@ def console_help(_connection=None):
         output('trait commands taking one sim, and a letter from A to H: '
                'riv_include_in_family, riv_add_to_family, riv_exclude_from_family, riv_make_heir, riv_add_founder')
         output('trait commands taking one sim: riv_traits_by_name')
-        output('trait commands taking a letter from A to H: riv_traits_by_fam, riv_clear_fam')
+        output('trait commands taking a letter from A to H: riv_traits_by_fam, riv_clear_fam, riv_show_family')
         output('trait commands taking no arguments: riv_traits, riv_clear_fam_all')
     if addons['computer']:
         output('')
@@ -3716,10 +3725,17 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
     output(eligibility[1])
 
 
-# all eligible suitors console command (eligible couple + same age + sim_y is alive)
+# all eligible suitors console command (eligible couple + same age + sim_y is alive) TODO: test!
 @sims4.commands.Command('riv_get_suitors', command_type=sims4.commands.CommandType.Live)
 def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
+    incest_rules = f'consanguinity under {100*consang_limit}%'
+    if drel_incest:
+        incest_rules = incest_rules + ', not directly related'
+    if riv_rel_addon_traits.both_in_famX_incest:
+        incest_rules = incest_rules + f', not with the same famX trait'
+    output(f'all eligible partners for {sim_x.first_name}, i.e. different sims, same age, alive, '
+           f'and their relationship wouldn\'t be incestuous ({incest_rules})')
     for sim_y in services.sim_info_manager().get_all():
         eligibility = is_eligible_couple(sim_x, sim_y)
         if eligibility[0]:  # this couple is eligible

@@ -294,7 +294,7 @@ def include_in_family(X: str, sim_x: SimInfoParam, via=False, _connection=None):
 
 
 # above as a console command
-# e.g. riv_include_in_family Pihn sim_gen A
+# e.g. riv_include_in_family Pihn Pine A
 @sims4.commands.Command('riv_include_in_family', command_type=sims4.commands.CommandType.Live)
 def console_add_inc(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -361,7 +361,7 @@ def add_to_family(X: str, sim_x: SimInfoParam, output=None, via=False):
 
 
 # above as a console command
-# e.g. riv_add_to_family Rhona "sim_gen I" A
+# e.g. riv_add_to_family Rhona "Pine I" A
 @sims4.commands.Command('riv_add_to_family', command_type=sims4.commands.CommandType.Live)
 def console_add_fam(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -463,7 +463,7 @@ def make_heir(X: str, sim_x: SimInfoParam, output=None):
 
 
 # above as a console command
-# e.g. riv_make_heir Avina sim_gen A
+# e.g. riv_make_heir Avina Pine A
 @sims4.commands.Command('riv_make_heir', command_type=sims4.commands.CommandType.Live)
 def console_make_heir(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -568,7 +568,7 @@ def console_rivtraits(_connection=None):
         output('')
 
 
-# adds founder trait to sim named, e.g. riv_add_founder Zaaham sim_gen A
+# adds founder trait to sim named, e.g. riv_add_founder Zaaham Pine A
 @sims4.commands.Command('riv_add_founder', command_type=sims4.commands.CommandType.Live)
 def console_add_founder(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
