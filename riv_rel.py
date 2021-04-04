@@ -97,26 +97,70 @@ class RivSimList:
 
     # loads in list of sims from .json
     def load_sims(self, file_name_extra: str):
-        pass
+        # clears sims if they exist
+        if self.sims:
+            self.sims = []
+
+# from os import sep as os_separator         # at top of file
+# file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+# scriptFullPath = normpath(__file__)
+# fileparts = scriptFullPath.split(os_separator)
+# if 1 < len(fileparts):
+#   outputFullPath = '{}'.format(os_separator).join(fileparts[:len(fileparts) - 2]) + '{}{}'.format(os_separator, file_name)
+# with open(outputFullPath, 'r') as json_file:
+#   temp_sims = json.load(json_file)
+
+        file_dir = Path(__file__).resolve().parent.parent
+        file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+        file_path = os.path.join(file_dir, file_name)
+
+        # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+        with open(file_path, 'r') as json_file:
+            temp_sims = json.load(json_file)
+        for sim in temp_sims:
+            self.sims.append(RivSim(sim))
+        return self.sims
 
     def update_sims(self, file_name_extra: str):
         pass # still need to do this!!!
 
     def clear_sims(self):
-        pass
+        self.sims = []
 
 class RivRelDict:
     rels = {}
 
     # loads in dict of rels from .json
     def load_rels(self, file_name_extra: str):
-        pass
+        # clears rels if they exist
+        if self.rels:
+            self.rels = []
+
+        file_dir = Path(__file__).resolve().parent.parent
+        file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+        file_path = os.path.join(file_dir, file_name)
+
+        # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+        with open(file_path, 'r') as json_file:
+            self.rels = json.load(json_file)
+        return self.rels
 
     def update_rels(self, file_name_extra: str):
         pass # still need to do this!!!
 
     def clear_rels(self):
-        pass
+        self.rels = {}
+
+# this is within class Zone in simulation/zone.py
+#
+#     def on_households_and_sim_infos_loaded(self):
+#         self._set_zone_state(zone_types.ZoneState.HOUSEHOLDS_AND_SIM_INFOS_LOADED)
+#         object_preference_tracker = services.object_preference_tracker()
+#         if object_preference_tracker is not None:
+#             object_preference_tracker.convert_existing_preferences()
+#
+# maybe use for replacing code to run on zone spin up as in
+# https://medium.com/swlh/the-sims-4-modern-python-modding-project-1-random-pitch-2371b79c0bcc
 
 # creates empty lists
 # this will store sims as RivSims and rels as a dict with sim_id: [parent_id1, parent_id2]
@@ -172,6 +216,7 @@ def get_parents(sim_x):
 def console_get_parents(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     sim_parents = get_parents(sim_x)
+    output('DEBUG: ' + str(sim_parents))
     if not sim_parents:
         output('{}\'s parents not found'.format(sim_x.first_name))
     else:
@@ -1067,61 +1112,254 @@ def riv_get_notif(x_id: int, y_id: int, _connection=None):
 ### save/load/clean json
 
 def load_sims(file_name_extra: str):
-    return []
+    file_dir = Path(__file__).resolve().parent.parent
+    file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_path = os.path.join(file_dir, file_name)
+
+    # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+    with open(file_path, 'r') as json_file:
+        sims = json.load(json_file)
+    return sims # is this a list??
 
 # sims_input is a list of sims as SimInfoParam, Dict, or RivSim (can be mixed in list)
 # file_name_extra is a str that fits in the * in riv_rel_*.json
 def save_sims(sims_input: List, file_name_extra: str): #List<RivSim>
-    pass
+    sim_time = services.time_service().sim_now.absolute_ticks()
+    file_dir = Path(__file__).resolve().parent.parent
+    file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_path = os.path.join(file_dir, file_name)
+    sims = [] # for output; each sim is a Dict here!
+        # game_sims if file does not exist
+        # UPDATED file_sims + new_sims (subset of game_sims) if file does exist
+    game_sims = [] # sims from the game as RivSims
+    for sim in sims_input:
+        if isinstance(sim, RivSim):
+            game_sims.append(sim)
+        else:
+            game_sims.append(RivSim(sim))
+
+    if os.path.isfile(file_path):  # update file
+        json_sims = load_sims(file_name_extra) #! should use list in mem
+        file_sims = [] # sims from the file as RivSims
+        for sim in json_sims:
+            file_sims.append(RivSim(sim))
+        new_sims = [] # sims from the game that are NOT in the file
+
+        # add in game sims (append if sim not in file, update if in file AND needs updating)
+        for sim_g in game_sims:
+            sim_in_file = False  # initialise
+            for sim_f in file_sims:
+                if sim_g.sim_id == sim_f.sim_id: # if sim is in file and in game
+                    sim_in_file = True
+                    if sim_g.first_name == sim_f.first_name and sim_g.last_name == sim_f.last_name and sim_g.is_female == sim_f.is_female: # all details are the same
+                        pass # no updates needed
+                    elif sim_f.time < sim_time:
+                        sim_f.update_info(sim_g.first_name, sim_g.last_name, sim_g.is_female, sim_time) # updates sim in file
+            if not sim_in_file: # sim_g is in game and not in file
+                new_sims.append(sim_g)
+
+        # update to show if sims are culled (sim in file and not in game)
+        for sim_f in file_sims: # sim is in file
+            sim_in_game = False
+            for sim_g in game_sims:
+                if sim_f.sim_id == sim_g.sim_id: # if sim is in file and in game
+                    sim_in_game = True
+                    break # don't need to continue checking against sims in the file
+            if not sim_in_game: # if sim is in file and not in game
+                if not sim_f.is_culled: # and if sim isn't registered as culled
+                    sim_f.cull() # then register sim as culled
+            sims.append(sim_f.to_dict()) # put each sim_f in the output WHETHER CULLED OR NOT
+
+        for sim_n in new_sims: # for sim that is in game and not in file
+            sims.append(sim_n.to_dict()) # add to sims (list for file)
+
+    else: # new file
+        # makes a list of sims as dict
+        for sim_g in game_sims:
+            sims.append(sim_g.to_dict())
+        # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+
+    with open(file_path, 'w') as json_file:
+        json.dump(sims, json_file)
 
 def clean_sims(file_name_extra: str):
-    pass
+    # we want to remove duplicate sim IDs by taking the MOST RECENT version
+    dict_sims = load_sims(file_name_extra)
+
+    # get list of RivSims
+    sims = []
+    for sim in dict_sims:
+        sims.append(RivSim(sim))
+
+    # get list of sims to be removed
+    to_remove = []
+    for sim_x in sims:
+        for sim_y in sims:
+            if sim_x.sim_id == sim_y.sim_id: # same sim
+                if sim_x.time < sim_y.time: # sim_x is earlier
+                    if not sim_x in to_remove: # sim_x isn't already flagged to remove
+                        to_remove.append(sim_x)
+
+    # remove these sims
+    for sim in to_remove:
+        sims.remove(sim)
+
+    # make back into dicts for json
+    output_sims = []
+    for sim in sims:
+        output_sims.append(sim.to_dict())
+
+    file_dir = Path(__file__).resolve().parent.parent
+    file_name = 'riv_rel_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_path = os.path.join(file_dir, file_name)
+
+    # replace info in file with cleaned one
+    with open(file_path, 'w') as json_file:
+        json.dump(output_sims, json_file)
+
+    # do we also want to remove sims with no parents from riv_relparents?
 
 # loads in dict of rels
 def load_rels(file_name_extra: str):
-    return {}
+    file_dir = Path(__file__).resolve().parent.parent
+    file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_rel_pine.json
+    file_path = os.path.join(file_dir, file_name)
+
+    # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+    with open(file_path, 'r') as json_file:
+        rels = json.load(json_file) # use json.load if this doesn't work
+    return rels # should be a dict
 
 # saves parent rels as a dict { sim_id : [parent1_id, parent2_id], ... }
     # does all new rels if new file
     # adds in new rels if updating file, taking the union of lists where possible
 def save_rels(game_sims: List, file_name_extra: str): #List<RivSim>
-    pass
+    file_dir = Path(__file__).resolve().parent.parent
+    file_name = 'riv_relparents_' + file_name_extra + '.json'  # e.g. riv_relparents_pine.json
+    file_path = os.path.join(file_dir, file_name)
+    rels = {} # for output
+    new_rels = {} # contains rels from the game
+
+    # makes a list of parent rels in the game
+    manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+    parent_relbit = manager.get(0x2269)
+    for sim_x in game_sims:
+        # get list of parents
+        parents = []
+        for sim_y in game_sims:
+            if sim_x.relationship_tracker.has_bit(int(sim_y.sim_id), parent_relbit):
+                parents.append(sim_y)
+        # get list of parent IDs
+        parents_id = []
+        for parent in parents:
+            parents_id.append(parent.sim_id)
+        # add to dict
+        new_rels[str(sim_x.sim_id)] = parents_id
+
+    if os.path.isfile(file_path): # update file
+        json_rels = load_rels(file_name_extra) # dict where key is a sim ID, value is list of parent IDs
+        for sim in list(set(new_rels.keys()) | set(json_rels.keys())):
+                # add union of parent lists to new file. either gets list if exists, or uses empty list
+                rels[sim] = list(set(json_rels.get(sim,[])) | set(new_rels.get(sim,[])))
+    else: # new file
+        rels = new_rels
+
+    # https://stackabuse.com/reading-and-writing-json-to-a-file-in-python/
+    with open(file_path, 'w') as json_file:
+        json.dump(rels, json_file)
 
 # saves sims
 @sims4.commands.Command('riv_save', command_type=sims4.commands.CommandType.Live)
 def console_save_sims(file_name_extra: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('this command isn\'t available - grab the early access one on itch.io or get it free from 19 nov!')
+
+    sim_time = services.time_service().sim_now
+    abs_tick = sim_time.absolute_ticks()
+    output('the current sim time is ' + str(sim_time))
+    output('[this number appears at the end of sims that are not culled and were added/updated this time] abs_tick = ' + str(abs_tick))
+
+    save_sims(services.sim_info_manager().get_all(), file_name_extra)
+    output('saved sims.') #add debug info later
+    save_rels(services.sim_info_manager().get_all(), file_name_extra)
+    output('saved parent rels. \nto use these relations in riv_rel, type the following: riv_load ' + file_name_extra + '\n[riv_save: all done]') #add debug info later
+    #output('added details from ' + str(len(sims)) + ' sims to file ' + 'riv_rel_' + file_name_extra + '.json')
 
 # loads sims from file, or from mem if nothing is entered
 @sims4.commands.Command('riv_load', command_type=sims4.commands.CommandType.Live)
 def console_load_sims(file_name_extra: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('this command isn\'t available - grab the early access one on itch.io or get it free from 19 nov!')
+
+    try:
+        riv_sim_list.load_sims(file_name_extra)
+        riv_rel_dict.load_rels(file_name_extra)
+        # sims = load_sims(file_name_extra)
+        output('loaded in parent rels and ' + str(len(riv_sim_list.sims)) + ' sim mini-infos. \nshowing a random sim and their parents:')
+        # gets random sim and outputs them
+        randsim = random.choice(riv_sim_list.sims)
+        output(str(randsim.to_dict()))
+        # gets their parent list
+        randparents = riv_rel_dict.rels.get(randsim.sim_id, [])
+        output(str(randparents))
+        # gets parent names
+        for parent in randparents:
+            for sim in riv_sim_list.sims:
+                if str(parent) == sim.sim_id:
+                    output(sim.first_name + ' ' + sim.last_name)
+                    break
+    except:
+        output('something went wrong while loading these sims and rels; please check that these files exist in the same folder as riv_rel.ts4script:')
+        output('riv_rel_' + file_name_extra + '.json and riv_relparents_' + file_name_extra + '.json')
+        output('if these files do exist then please let me (rivforthesesh / riv#4381) know; if you are able to provide your current save and/or the .json files, that would be helpful for finding the issue')
+
+    output('[riv_load: all done]')
 
 # shows which RivSims are in mem
 @sims4.commands.Command('riv_mem', command_type=sims4.commands.CommandType.Live)
 def console_mem_sims(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('this command isn\'t available - grab the early access one on itch.io or get it free from 19 nov!')
+    sims = riv_sim_list.sims
+    output('currently there are ' + str(len(sims)) + ' sim mini-infos in memory.')
+    if sims:
+        output('showing a random sim:')
+        randsim = random.choice(sims)
+        output(str(randsim))
+        output(str(randsim.to_dict()))
+    else:
+        output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
+    output('[riv_mem: all done]')
 
 # cleans riv_rel_pine.json
 @sims4.commands.Command('riv_clean', command_type=sims4.commands.CommandType.Live)
 def console_clean_sims(file_name_extra: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('this command isn\'t available - grab the early access one on itch.io or get it free from 19 nov!')
+    sims = load_sims(file_name_extra)
+    old_n = len(sims)
+    output('this file contains ' + str(old_n) + ' sim mini-infos. cleaning...')
+    clean_sims(file_name_extra)
+    sims = load_sims(file_name_extra)
+    new_n = len(sims)
+    output('after removing duplicates, this file contains ' + str(new_n) + ' sim mini-infos.')
+    if old_n < new_n:
+        output('if you\'re currently using this file, please run riv_update ' + file_name_extra)
+    output('[riv_clean: all done]')
 
 # clears sims and rels from mem
 @sims4.commands.Command('riv_clear', command_type=sims4.commands.CommandType.Live)
 def console_clear_sims(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('this command isn\'t available - grab the early access one on itch.io or get it free from 19 nov!')
+    riv_sim_list.clear_sims()
+    riv_rel_dict.clear_rels()
+    output('[riv_clear: all done]')
 
 # updates json files
 @sims4.commands.Command('riv_update', command_type=sims4.commands.CommandType.Live)
 def console_update_sims(file_name_extra: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('this command isn\'t available - grab the early access one on itch.io or get it free from 19 nov!')
+    output('running save, clear, then load (updates sim/rel info in mem and .json file)...')
+    console_save_sims(file_name_extra, _connection)
+    console_clear_sims(_connection)
+    console_load_sims(file_name_extra, _connection)
+    output('[riv_update: all done]')
 
 ### SETTING FOUNDERS AND GROWING FAMILIES
 
@@ -1320,11 +1558,14 @@ def riv_getallrels(sim_x: SimInfoParam, _connection=None):
 @sims4.commands.Command('riv_help', command_type=sims4.commands.CommandType.Live)
 def console_help(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    output('riv_rel gen 2 (5 nov fix) - biological and in-law relations, console commands, "are we related?" interaction')
+    # gen 2 (4 nov fix) for public ver, gen 3 (thank you for the support!) for early access ver
+    output('riv_rel gen 3 early access (tysm for the support!) - biological and in-law relations, console commands, interaction, .json files')
     output('sims can be typed as firstname lastname (use "" if there is a space in the first/last name, e.g. J "Huntington III") or as the sim ID')
     output('if you find an error but you typed the names correctly, please send me (rivforthesesh / riv#4381) the error text and any relevant rels/files!')
     output('commands taking two sims: riv_rel, riv_get_sib_strength, riv_get_direct_rel, riv_get_indirect_rel, riv_show_relbits')
     output('commands taking one sim: riv_get_parents, riv_get_ancestors, riv_rel_all, riv_rel_rand')
+    output('using .json files [replace xyz by whatever you want to create/use the files riv_rel_xyz.json and riv_relparents_xyz.json]:')
+    output('riv_save xyz (save sim info to .json files), riv_load xyz (load sim info from .json files), riv_clean xyz (removes duplicates from .json file), riv_mem (shows no. mini sim-infos in memory), riv_clear (clears memory), riv_update xyz (runs save, clear, then load)')
 
 # situation job?? for displaying relation on mouse-over
 
