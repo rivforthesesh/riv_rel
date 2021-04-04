@@ -234,6 +234,7 @@ def is_founder(sim_x: SimInfoParam):
 
 
 # includes sim in family X
+# TODO: clean it up
 # via = True <=> this is being done by calling a boi
 # output and _connection=None are just included for the sake of it!
 def include_in_family(X: str, sim_x: SimInfoParam, via=False, _connection=None):
@@ -260,7 +261,19 @@ def include_in_family(X: str, sim_x: SimInfoParam, via=False, _connection=None):
 def console_add_inc(sim_x: SimInfoParam, X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
-    include_in_family(X, sim_x, _connection)
+    if not (sim_x.has_trait(trait_fam(X)) or sim_x.has_trait(trait_inc(X))):  # if they're not already in famX / incX
+        if not sim_x.has_trait(trait_exc(X)):  # and if they're not excluded from X
+            sim_x.add_trait(trait_inc(X))  # then include them
+            riv_log('included ' + sim_x.first_name + ' ' + sim_x.last_name + ' in family ' + X)
+            try:  # for console output
+                output(sim_x.first_name + ' ' + sim_x.last_name + ' is now included in family ' + X)
+            except:
+                pass
+    else:
+        try:
+            output(sim_x.first_name + ' is in this family or already included.')
+        except:
+            pass
 
 
 # gets spouses ingame
@@ -434,42 +447,42 @@ def rivtraits_name_fam(sim_x: SimInfoParam, X: str, _connection=None):
     if sim_x.has_trait(trait_exc(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is excluded from family ' + X)
         if sim_x.has_trait(trait_founder(X)):
-            output('    they also have the founder{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the founder{X} trait - please remove the wrong one with MCCC')
         if sim_x.has_trait(trait_heir(X)):
-            output('    they also have the heir{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the heir{X} trait - please remove the wrong one with MCCC')
         if sim_x.has_trait(trait_founder(X)):
-            output('    they also have the fam{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the fam{X} trait - please remove the wrong one with MCCC')
         if sim_x.has_trait(trait_heir(X)):
-            output('    they also have the inc{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC')
     elif sim_x.has_trait(trait_founder(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is the founder of family ' + X)
         if sim_x.has_trait(trait_heir(X)):
-            output('    they also have the heir{X} trait!')
+            output(f'    they also have the heir{X} trait!')
         else:
-            output('    they don\'t have the heir{X} trait - you\'ll want to add this one with the command:')
+            output(f'    they don\'t have the heir{X} trait - you\'ll want to add this one with the command:')
             output('        riv_make_heir {} {} {}'.format(sim_x.first_name, sim_x.last_name, X))
         if sim_x.has_trait(trait_fam(X)):
-            output('    they also have the fam{X} trait!')
+            output(f'    they also have the fam{X} trait!')
         else:
-            output('    they don\'t have the fam{X} trait - you\'ll want to add this one with the command:')
+            output(f'    they don\'t have the fam{X} trait - you\'ll want to add this one with the command:')
             output('        riv_add_to_family {} {} {}'.format(sim_x.first_name, sim_x.last_name, X))
         if sim_x.has_trait(trait_inc(X)):
-            output('    they also have the inc{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC')
     elif sim_x.has_trait(trait_heir(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is an heir of family ' + X)
         if sim_x.has_trait(trait_fam(X)):
-            output('    they also have the fam{X} trait!')
+            output(f'    they also have the fam{X} trait!')
         elif sim_x.has_trait(trait_inc(X)):
-            output('    they also have the inc{X} trait!')
+            output(f'    they also have the inc{X} trait!')
         else:
-            output('    they don\'t have the fam{X} or inc{X} traits - if they\'re related to your founder, enter:')
+            output(f'    they don\'t have the fam{X} or inc{X} traits - if they\'re related to your founder, enter:')
             output('        riv_add_to_family {} {} {}'.format(sim_x.first_name, sim_x.last_name, X))
             output('    otherwise, if they aren\'t related to your founder, enter this command:')
             output('        riv_include_in_family {} {} {}'.format(sim_x.first_name, sim_x.last_name, X))
     elif sim_x.has_trait(trait_fam(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is a member of family ' + X)
         if sim_x.has_trait(trait_inc(X)):
-            output('    they also have the inc{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC')
     elif sim_x.has_trait(trait_inc(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is included in family ' + X)
     else:
@@ -481,19 +494,30 @@ def rivtraits_name_fam(sim_x: SimInfoParam, X: str, _connection=None):
 @sims4.commands.Command('riv_traits_by_name', command_type=sims4.commands.CommandType.Live)
 def console_rivtraits_name(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
+    num_fams = 0
     for X in founder_ids.keys():
-        if not rivtraits_name_fam(sim_x, X, _connection):
+        if rivtraits_name_fam(sim_x, X, _connection):
+            num_fams += 1
+        else:
             continue  # doesn't have any of these traits
+    if num_fams == 1:
+        output(sim_x.first_name + ' ' + sim_x.last_name + ' is a member of 1 family')
+    else:
+        output(sim_x.first_name + ' ' + sim_x.last_name + ' is a member of ' + str(num_fams) + ' families')
 
 
 # console command to find the traits
 @sims4.commands.Command('riv_traits_by_fam', command_type=sims4.commands.CommandType.Live)
 def console_rivtraits_fam(X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
+    num_sims = 0
     X = X.upper()  # makes sure it's uppercase
     for sim_x in services.sim_info_manager().get_all():
-        if not rivtraits_name_fam(sim_x, X, _connection):
+        if rivtraits_name_fam(sim_x, X, _connection):
+            num_sims += 1
+        else:
             continue  # doesn't have any of these traits
+    output('number of sims in this family = ' + str(num_sims))
 
 
 # do the above for all sims
@@ -545,19 +569,25 @@ def console_add_founder(sim_x: SimInfoParam, X: str, _connection=None):
 def console_clear_fam(X: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
+    traits_count = 0
     for sim_x in services.sim_info_manager().get_all():
         if sim_x.has_trait(trait_founder(X)):
             sim_x.remove_trait(trait_founder(X))
+            traits_count += 1
         if sim_x.has_trait(trait_heir(X)):
             sim_x.remove_trait(trait_heir(X))
+            traits_count += 1
         if sim_x.has_trait(trait_fam(X)):
             sim_x.remove_trait(trait_fam(X))
+            traits_count += 1
         if sim_x.has_trait(trait_inc(X)):
             sim_x.remove_trait(trait_inc(X))
+            traits_count += 1
         if sim_x.has_trait(trait_exc(X)):
             sim_x.remove_trait(trait_exc(X))
-    output('cleared all founder/fam/inc/exc traits for family ' + X)
-    riv_log('cleared all founder/fam/inc/exc traits for family ' + X)
+            traits_count += 1
+    output(f'cleared {str(traits_count)} founder/heir/fam/inc/exc traits for family {X}')
+    riv_log(f'cleared {str(traits_count)} founder/heir/fam/inc/exc traits for family {X}')
 
 
 # clears all families
@@ -572,7 +602,7 @@ def console_clear_fam_all(_connection=None):
 @sims4.commands.Command('riv_propagate_heir_A', command_type=sims4.commands.CommandType.Live)
 def console_propagate_heir_A(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    founder = None # making sure this variable exists outside the loop
+    founder = None  # making sure this variable exists outside the loop
 
     # get founder
     for sim_y in services.sim_info_manager().get_all():
@@ -595,7 +625,7 @@ def console_propagate_heir_A(sim_x: SimInfoParam, _connection=None):
         for rivsim in heir_list_tmp:
             # get ingame sims
             heir = riv_rel.get_sim_from_rivsim(rivsim)
-            if not heir is None:
+            if heir is not None:
                 heir_list.append(heir)
     else:
         heir_list = [heir for heir in founder_descendants.keys() if heir in sim_ancestors.keys()]
