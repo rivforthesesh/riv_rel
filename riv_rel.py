@@ -236,15 +236,6 @@ for file in os.scandir(Path(__file__).resolve().parent.parent):
         os.rename(os.path.join(Path(__file__).resolve().parent.parent, file),
                   os.path.join(Path(__file__).resolve().parent.parent, 'riv_rel - individual save settings.cfg'))
 
-# recognise riv_rel_addon_traits (add other ones later if needed)
-sys.path.append('../')
-# https://stackoverflow.com/questions/4383571/importing-files-from-different-folder
-try:
-    import riv_rel_addon_traits
-    riv_log('riv_rel successfully imported riv_rel_addon_traits')
-except Exception as e:
-    riv_log('error - riv_rel failed to import riv_rel_addon_traits because ' + str(e))
-
 # search_if_updating_settings
 consang_limit = 2 ** -5  # second cousin
 drel_incest = True  # whether direct rels always count as incestuous
@@ -308,6 +299,14 @@ try:
         with open(file_path, 'w') as cfg_file:
             config.write(cfg_file)
         riv_log(f'set up main_mod direct rel is always incest as {drel_incest}')
+
+    # both in fam X => incest (nb. want to be false if we don't have the addon)
+    if addons['traits']:
+        both_in_famX_incest = config.getboolean('addon_traits', 'both_sims_in_famX_is_incestuous')
+        riv_log(f'grabbed addon_traits both_sims_in_famX_is_incestuous as {both_in_famX_incest}')
+    else:
+        riv_log(f'failed to get settings for both in fam X because {e}; setting to False')
+        both_in_famX_incest = False
 
     riv_log('loaded in cfg settings')
 except Exception as e2:
@@ -3732,7 +3731,7 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     incest_rules = f'consanguinity under {100*consang_limit}%'
     if drel_incest:
         incest_rules = incest_rules + ', not directly related'
-    if riv_rel_addon_traits.both_in_famX_incest:
+    if both_in_famX_incest:
         incest_rules = incest_rules + f', not with the same famX trait'
     output(f'all eligible partners for {sim_x.first_name}, i.e. different sims, same age, alive, '
            f'and their relationship wouldn\'t be incestuous ({incest_rules})')
