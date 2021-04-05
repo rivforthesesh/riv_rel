@@ -771,7 +771,9 @@ def console_famX(X='A', max_iters=10, _connection=None):
     X = X.upper()
 
     # find heir
-    for sim_x in [sim_z for sim_z in riv_rel.riv_sim_list.sims if riv_rel.get_sim_from_rivsim(sim_z) is not None]:
+    # for sim_x in [riv_rel.get_sim_from_rivsim(sim_z) for sim_z in riv_rel.riv_sim_list.sims
+    # if riv_rel.get_sim_from_rivsim(sim_z) is not None]:
+    for sim_x in services.sim_info_manager().get_all():
         if sim_x.has_trait(trait_founder(X)):
             # alternatively...
             # if get_sim_from_rivsim(sim_x) is not None:
