@@ -790,15 +790,19 @@ def console_famX(X='A', max_iters=10, _connection=None):
     riv_log('got list of founder\'s descendants')
     famX_list = [(f'{founder.first_name} {founder.last_name}', 1, 0)]
     for sim_z in famX_tmp.keys():
-        # get the stage heir, fam, exc, no traits
-        if sim_z.has_trait(trait_heir(X)):
-            stage = 0
-        elif sim_z.has_trait(trait_fam(X)):
-            stage = 1
-        elif sim_z.has_trait(trait_exc(X)):
-            stage = 2
+        sim_z = riv_rel.get_sim_from_rivsim(sim_z)
+        if sim_z is None:
+            stage = 4
         else:
-            stage = 3
+            # get the stage heir, fam, exc, no traits
+            if sim_z.has_trait(trait_heir(X)):
+                stage = 0
+            elif sim_z.has_trait(trait_fam(X)):
+                stage = 1
+            elif sim_z.has_trait(trait_exc(X)):
+                stage = 2
+            else:
+                stage = 3
         famX_list.append((f'{sim_z.first_name} {sim_z.last_name}', max([tup[0] for tup in famX_tmp[sim_z]]) + 1, stage))
     # famX_list = [(sim_z's name, n), ...] where n is the (max!) generation number of that sim
     riv_log('got famX_list')
@@ -811,7 +815,7 @@ def console_famX(X='A', max_iters=10, _connection=None):
     max_gen = max([sim_gen[1] for sim_gen in famX_list])
     this_gen = []
     current_stage = 0
-    fam_group = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other'}
+    fam_group = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other, unculled', 4: 'culled'}
     while famX_list:
         min_gen = min([sim_gen[1] for sim_gen in famX_list])
         min_stage_for_gen = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])

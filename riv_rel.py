@@ -2519,9 +2519,9 @@ def save_rels(game_sims: List, file_name_extra: str):  # List<RivSim>
 def console_save_sims(file_name_extra: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
 
-    sim_time = services.time_service().sim_now.absolute_ticks()
+    sim_time = services.time_service().sim_now
     abs_tick = sim_time.absolute_ticks()
-    output(f'the current sim time is {sim_time}')
+    output(f'the current sim time is {sim_time}, formatted as {format_sim_date()}')
     output(f'[this number appears at the end of sims that are not culled and were added/updated this time] '
            f'abs_tick = {abs_tick}')
 
