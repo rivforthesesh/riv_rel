@@ -803,7 +803,9 @@ def console_famX(X='A', max_iters=10, _connection=None):
                 stage = 2
             else:
                 stage = 3
-        famX_list.append((f'{sim_z.first_name} {sim_z.last_name}', max([tup[0] for tup in famX_tmp[sim_z]]) + 1, stage))
+        famX_list.append((f'{sim_z.first_name} {sim_z.last_name}',
+                          max([tup[0] for tup in famX_tmp[riv_rel.get_rivsim_from_sim(sim_z)]]) + 1,
+                          stage))
     # famX_list = [(sim_z's name, n), ...] where n is the (max!) generation number of that sim
     riv_log('got famX_list')
 

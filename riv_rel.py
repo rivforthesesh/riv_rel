@@ -1163,8 +1163,9 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         yy_parents = [p for p in get_parents(sim_yy) if get_rivsim_from_sim(p) in xy_ancestors]
                         # get parents of sim_xx AND sim_yy that are ancestors of x and y
                         if not [p for p in xx_parents if p in yy_parents]:
-                            riv_log(xx_parents)
-                            riv_log(yy_parents)
+                            # convert back to rivsims
+                            sim_xx = get_rivsim_from_sim(sim_xx)
+                            sim_yy = get_rivsim_from_sim(sim_yy)
                             # sim_xx and sim_yy have no parents that are ancestors of sim_x and sim_y
                             #   => rels via xx and yy have not been added yet
                             for sim_xz in x_ancestors[sim_xx]:
@@ -1190,6 +1191,9 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 # this case will already by covered by sib case, using yy's parent = xx's sib
                                 break
                         else:
+                            # convert back to rivsims
+                            sim_xx = get_rivsim_from_sim(sim_xx)
+                            sim_yy = get_rivsim_from_sim(sim_yy)
                             for sim_xz in x_ancestors[sim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
@@ -1215,6 +1219,9 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 # this case will already by covered by sib case, using xx's parent = yy's sib
                                 break
                         else:
+                            # convert back to rivsims
+                            sim_xx = get_rivsim_from_sim(sim_xx)
+                            sim_yy = get_rivsim_from_sim(sim_yy)
                             for sim_xz in x_ancestors[sim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
@@ -1256,6 +1263,9 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 # handled by pnibling case
                                 break
                         else:  # sim_xx and sim_yy are first cousins, but have no parents who are siblings
+                            # convert back to rivsims
+                            sim_xx = get_rivsim_from_sim(sim_xx)
+                            sim_yy = get_rivsim_from_sim(sim_yy)
                             for sim_xz in x_ancestors[sim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
