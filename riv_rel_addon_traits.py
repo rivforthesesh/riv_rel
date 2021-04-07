@@ -636,6 +636,37 @@ def console_clear_fam_all(_connection=None):
         console_clear_fam(X, _connection)
 
 
+# clears all family traits from one sim
+@sims4.commands.Command('riv_clear_fam_sim', command_type=sims4.commands.CommandType.Live)
+def console_clear_fam_from_sim(sim_x: SimInfoParam, _connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    traits_count = 0
+    for X in founder_ids.keys():
+        if sim_x.has_trait(trait_founder(X)):
+            sim_x.remove_trait(trait_founder(X))
+            output(f'removed founder{X} trait - you might want to run "riv_clear_fam {X}" to remove family {X} traits '
+                   f'from all sims, or readd with "riv_add_founder {sim_x.first_name} {sim_x.last_name} {X}"')
+            traits_count += 1
+        if sim_x.has_trait(trait_heir(X)):
+            sim_x.remove_trait(trait_heir(X))
+            output(f'removed heir{X} trait; readd with "riv_make_heir {sim_x.first_name} {sim_x.last_name} {X}"')
+            traits_count += 1
+        if sim_x.has_trait(trait_fam(X)):
+            sim_x.remove_trait(trait_fam(X))
+            output(f'removed fam{X} trait; readd with "riv_add_to_family {sim_x.first_name} {sim_x.last_name} {X}"')
+            traits_count += 1
+        if sim_x.has_trait(trait_inc(X)):
+            sim_x.remove_trait(trait_inc(X))
+            output(f'removed inc{X} trait; readd with "riv_include_in_family {sim_x.first_name} {sim_x.last_name} {X}"')
+            traits_count += 1
+        if sim_x.has_trait(trait_exc(X)):
+            sim_x.remove_trait(trait_exc(X))
+            output(f'removed exc{X} trait; readd with "riv_exclude_from_family {sim_x.first_name} {sim_x.last_name} {X}"')
+            traits_count += 1
+    output(f'cleared {str(traits_count)} founder/heir/fam/inc/exc traits from {sim_x.first_name}')
+    riv_log(f'cleared {str(traits_count)} founder/heir/fam/inc/exc traits from {sim_x.first_name}')
+
+
 # for me lol
 @sims4.commands.Command('riv_propagate_heir_A', command_type=sims4.commands.CommandType.Live)
 def console_propagate_heir_A(sim_x: SimInfoParam, _connection=None):
