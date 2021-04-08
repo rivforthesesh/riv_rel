@@ -1822,7 +1822,7 @@ def consang(sim_x: RivSim, sim_y: RivSim):
 def console_get_consanguinity(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     xy_consang = consang(sim_x, sim_y)
-    output(f'consanguinity between {sim_x.first_name} and {sim_y.first_name} is {100 * xy_consang}%')
+    output(f'consanguinity between {sim_x.first_name} and {sim_y.first_name} is {round(100 * xy_consang,3)}%')
 
 
 # riv_rel interactions below
@@ -2278,7 +2278,7 @@ def riv_get_notif(x_id: int, y_id: int, _connection=None):
 
     # add consanguinity
     if show_consang:
-        notif_text = notif_text + f'\n\n[consanguinity: {100 * consang(sim_x, sim_y)}%]'
+        notif_text = notif_text + f'\n\n[consanguinity: {round(100 * consang(sim_x, sim_y),3)}%]'
 
     scumbumbo_show_notification(sim_x, sim_y, notif_text)
 
@@ -3404,7 +3404,7 @@ def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_s
 
             # consanguinity
             xy_consang = consang(sim_x, sim_y)
-            output(f'consanguinity: {100 * xy_consang}%')
+            output(f'consanguinity: {round(100 * xy_consang,3)}%')
 
             # part 2: work with sims
             sim_x = get_sim_from_rivsim(sim_x)
@@ -3738,7 +3738,7 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
 @sims4.commands.Command('riv_get_suitors', command_type=sims4.commands.CommandType.Live)
 def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    incest_rules = f'consanguinity under {100*consang_limit}%'
+    incest_rules = f'consanguinity under {round(100*consang_limit, 3)}%'
     if drel_incest:
         incest_rules = incest_rules + ', not directly related'
     if both_in_famX_incest:
@@ -3750,7 +3750,8 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
         if eligibility[0]:  # this couple is eligible
             if sim_x.age == sim_y.age:  # this couple is the same age
                 if not sim_y.is_ghost():  # sim_y isn't dead
-                    output(f'{sim_y.first_name} {sim_y.last_name}, with consanguinity {100 * consang(sim_x, sim_y)}%')
+                    output(f'{sim_y.first_name} {sim_y.last_name}, with '
+                           f'consanguinity {round(100 * consang(sim_x, sim_y),3)}%')
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
 
