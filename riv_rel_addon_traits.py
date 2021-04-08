@@ -809,7 +809,7 @@ def console_famX(X='A', max_iters=10, _connection=None):
             # alternatively...
             # if get_sim_from_rivsim(sim_x) is not None:
             # if get_sim_from_rivsim(sim_x).has_trait(services.get_instance_manager(Types.TRAIT).get('0xa2e336f4')):
-            founder = sim_x
+            founder = riv_rel.get_rivsim_from_sim(sim_x)
             riv_log(f'got the founder for family {X}')
             break
     else:
@@ -820,22 +820,22 @@ def console_famX(X='A', max_iters=10, _connection=None):
     famX_tmp = riv_rel.get_descendants(founder)  # = {sim_z: [(n, sim_zx), ...]}
     riv_log('got list of founder\'s descendants')
     famX_list = [(f'{founder.first_name} {founder.last_name}', 1, 0)]
-    for sim_z in famX_tmp.keys():
-        sim_z = riv_rel.get_sim_from_rivsim(sim_z)
-        if sim_z is None:
+    # TODO: see why there's an error that None has no first_name
+    for sim_z in [sim for sim in famX_tmp.keys() if sim is not None]: # ????
+        game_sim_z = riv_rel.get_sim_from_rivsim(sim_z)
+        # get the stage heir, fam, exc, no traits
+        if game_sim_z is None:
             stage = 4
+        elif game_sim_z.has_trait(trait_heir(X)):
+            stage = 0
+        elif game_sim_z.has_trait(trait_fam(X)):
+            stage = 1
+        elif game_sim_z.has_trait(trait_exc(X)):
+            stage = 2
         else:
-            # get the stage heir, fam, exc, no traits
-            if sim_z.has_trait(trait_heir(X)):
-                stage = 0
-            elif sim_z.has_trait(trait_fam(X)):
-                stage = 1
-            elif sim_z.has_trait(trait_exc(X)):
-                stage = 2
-            else:
-                stage = 3
+            stage = 3
         famX_list.append((f'{sim_z.first_name} {sim_z.last_name}',
-                          max([tup[0] for tup in famX_tmp[riv_rel.get_rivsim_from_sim(sim_z)]]) + 1,
+                          max([tup[0] for tup in famX_tmp[sim_z]]) + 1,
                           stage))
     # famX_list = [(sim_z's name, n), ...] where n is the (max!) generation number of that sim
     riv_log('got famX_list')
