@@ -904,7 +904,7 @@ def console_get_descendants(sim_x: SimInfoParam, _connection=None):
 def get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors):
     xy_direct_rels = []
 
-    if riv_sim_list.sims:  # if using riv_sim_list, we want to use RivSims (bc these rels might not rely on a connection)
+    if riv_sim_list.sims:
         sim_x = get_rivsim_from_sim(sim_x)
         sim_y = get_rivsim_from_sim(sim_y)
 
@@ -2581,8 +2581,9 @@ def console_load_sims(file_name_extra: str, _connection=None):
 @sims4.commands.Command('riv_mem', command_type=sims4.commands.CommandType.Live)
 def console_mem_sims(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
+
+    output(f'riv_sim_list = {riv_sim_list}')
     sims = riv_sim_list.sims
-    output(f'currently there are {len(sims)} sim mini-infos in memory.')
     if sims:
         output('showing a random sim:')
         randsim = random.choice(sims)
@@ -2590,6 +2591,25 @@ def console_mem_sims(_connection=None):
         output(str(randsim.to_dict()))
     else:
         output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
+
+    output(f'riv_rel_dict = {riv_rel_dict}')
+    rels = riv_rel_dict.rels
+    csng = riv_rel_dict.cached_percentages
+    if rels:
+        output('showing a random sim\'s parents:')
+        randsim = random.choice(sims)
+        output(str(randsim))
+        output(str(riv_rel_dict.rels[randsim.sim_id]))
+    else:
+        output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
+    if csng:
+        output('showing a random sim pair\'s consanguinity:')
+        randsims = random.choice(list(csng.keys()))
+        output(str(randsims))
+        output(str(csng[randsims]))
+    else:
+        output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
+
     output('[riv_mem: all done]')
 
 

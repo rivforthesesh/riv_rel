@@ -820,8 +820,10 @@ def console_famX(X='A', max_iters=10, _connection=None):
     famX_tmp = riv_rel.get_descendants(founder)  # = {sim_z: [(n, sim_zx), ...]}
     riv_log('got list of founder\'s descendants')
     famX_list = [(f'{founder.first_name} {founder.last_name}', 1, 0)]
-    # TODO: see why there's an error that None has no first_name
-    for sim_z in [sim for sim in famX_tmp.keys() if sim is not None]: # ????
+
+    for sim_z in famX_tmp.keys():  # ????
+        # TODO: see why there's an error that None has no first_name
+        riv_log(sim_z)
         game_sim_z = riv_rel.get_sim_from_rivsim(sim_z)
         # get the stage heir, fam, exc, no traits
         if game_sim_z is None:
