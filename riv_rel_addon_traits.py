@@ -144,7 +144,7 @@ except Exception as e:
 
 # new rivlog
 def riv_log(string):
-    return riv_rel.riv_log('[traits] ' + string)
+    return riv_rel.riv_log('[traits] ' + str(string))
 
 
 # trait IDs

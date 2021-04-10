@@ -1128,20 +1128,18 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
         y_ancestors[sim_y] = [(0, sim_y)]  # trust me it'll be useful later
         for sim_xx in x_ancestors.keys():
             if sim_xx not in y_ancestors.keys():
-                xx.append(get_rivsim_from_sim(sim_xx))
+                xx.append(get_sim_from_rivsim(sim_xx))
         for sim_yy in y_ancestors.keys():
             if sim_yy not in x_ancestors.keys():
-                yy.append(get_rivsim_from_sim(sim_yy))
+                yy.append(get_sim_from_rivsim(sim_yy))
 
-        # now make sure we're only using sims in the game
-        if riv_sim_list.sims:  # if we're using rivsims...
-            # ancestors of only x
-            xx = [sim for sim in [get_sim_from_rivsim(rivsim_xx) for rivsim_xx in xx] if sim is not None]
-            # ancestors of only y
-            yy = [sim for sim in [get_sim_from_rivsim(rivsim_yy) for rivsim_yy in yy] if sim is not None]
-            # ancestors of x and y
-            xy_ancestors = [sim for sim in [get_rivsim_from_sim(rsim_xy) for rsim_xy in xy_ancestors] if
-                            sim is not None]
+        # remove nones
+        # ancestors of only x
+        xx = [sim for sim in xx if sim is not None]
+        # ancestors of only y
+        yy = [sim for sim in yy if sim is not None]
+        # ancestors of x and y
+        xy_ancestors = [sim for sim in xx if sim in yy]
 
         # x (has an ancestor who) is a close indirect relative of y('s ancestor), but these share no ancestor who is an
         # ancestor of x AND y changed from elifs bc some rels are gross af
@@ -1155,7 +1153,7 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
         nibling_relbit = manager.get(0x2705)
         for sim_xx in xx:
             for sim_yy in yy:
-                try:  # something goes wrong so like.. cba
+                try:
                     # sim_xx and sim_yy siblings, with no parent who is an ancestor of x and y
                     if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, sibling_relbit):
                         # get parents of sim_xx or sim_yy that are ancestors of x and y
