@@ -45,6 +45,9 @@ import time
 # for despawn (death) things
 from interactions.utils.death_interactions import DeathSuperInteraction
 
+# for cache TODO: use for cached percentages too
+from functools import lru_cache
+
 # get irl datetime
 from datetime import datetime
 
@@ -302,14 +305,6 @@ try:
         with open(file_path, 'w') as cfg_file:
             config.write(cfg_file)
         riv_log(f'set up main_mod direct rel is always incest as {drel_incest}')
-
-    # both in fam X => incest (nb. want to be false if we don't have the addon)
-    if addons['traits']:
-        both_in_famX_incest = config.getboolean('addon_traits', 'both_sims_in_famX_is_incestuous')
-        riv_log(f'grabbed addon_traits both_sims_in_famX_is_incestuous as {both_in_famX_incest}')
-    else:
-        riv_log(f'failed to get settings for both in fam X because {e}; setting to False')
-        both_in_famX_incest = False
 
     riv_log('loaded in cfg settings')
 except Exception as e2:
@@ -3702,6 +3697,7 @@ def riv_clear_log(_connection=None):
 
 
 # test if two sims are an eligible couple
+@lru_cache
 def is_eligible_couple(sim_x, sim_y):
     # make rivsims
     sim_x = get_rivsim_from_sim(sim_x)
@@ -3712,9 +3708,10 @@ def is_eligible_couple(sim_x, sim_y):
         return False, 'mate, that\'s just being single with extra steps'
 
     # check direct rel
-    if get_direct_relation(sim_x, sim_y):
+    if drel_incest and get_direct_relation(sim_x, sim_y):
         return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
                       f'are not an eligible couple: they are directly related'
+
     # check consanguinity
     xy_consang = consang(sim_x, sim_y)
     if xy_consang >= consang_limit:
@@ -3762,8 +3759,6 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     incest_rules = f'consanguinity under {round(100*consang_limit, 3)}%'
     if drel_incest:
         incest_rules = incest_rules + ', not directly related'
-    if both_in_famX_incest:
-        incest_rules = incest_rules + f', not with the same famX trait'
     output(f'all eligible partners for {sim_x.first_name}, i.e. different sims, same age, alive, '
            f'and their relationship wouldn\'t be incestuous ({incest_rules})')
     for sim_y in services.sim_info_manager().get_all():

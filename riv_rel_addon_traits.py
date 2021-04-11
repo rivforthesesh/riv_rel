@@ -172,8 +172,6 @@ riv_auto_inc_spouse = False
 riv_auto_inc_heir_spouse = True
 # child of fam
 riv_auto_fam_child = True
-# same fam => incestuous?
-both_in_famX_incest = False
 
 try:
     # config stuff
@@ -197,7 +195,6 @@ try:
         config['addon_traits']['riv_auto_inc_spouse'] = str(riv_auto_inc_spouse)
         config['addon_traits']['riv_auto_inc_heir_spouse'] = str(riv_auto_inc_heir_spouse)
         config['addon_traits']['riv_auto_fam_child'] = str(riv_auto_fam_child)
-        config['addon_traits']['both_sims_in_famX_is_incestuous'] = str(both_in_famX_incest)
         with open(file_path, 'w') as cfg_file:
             config.write(cfg_file)
             riv_log('added cfg settings')
@@ -211,15 +208,6 @@ try:
         riv_auto_inc_spouse = config.getboolean('addon_traits', 'riv_auto_inc_spouse')
         riv_auto_inc_heir_spouse = config.getboolean('addon_traits', 'riv_auto_inc_heir_spouse')
         riv_auto_fam_child = config.getboolean('addon_traits', 'riv_auto_fam_child')
-
-        try:
-            both_in_famX_incest = config.getboolean('addon_traits', 'both_sims_in_famX_is_incestuous')
-            riv_log(f'grabbed addon_traits both_sims_in_famX_is_incestuous as {both_in_famX_incest}')
-        except Exception as e0:
-            config['addon_traits']['both_sims_in_famX_is_incestuous'] = str(both_in_famX_incest)
-            with open(file_path, 'w') as cfg_file:
-                config.write(cfg_file)
-            riv_log(f'set up addon_traits both_sims_in_famX_is_incestuous as {both_in_famX_incest}')
 
         riv_log('loaded in cfg settings')
     except Exception as e:
@@ -778,20 +766,6 @@ def auto_inc_spouse_oatr(original, self, sim, target_sim_info, relationship, fro
     except Exception as e:
         riv_log('error in auto_inc_spouse in on_add_to_relationship: ' + str(e))
         raise Exception('(riv) error in auto_inc_spouse in on_add_to_relationship: ' + str(e))
-    return result
-
-
-# hook into new eligible couple check
-@inject_to(riv_rel, 'is_eligible_couple')
-def is_eligible_couple(original, sim_x, sim_y):
-    result = original(sim_x, sim_y)
-    if both_in_famX_incest:
-        # check if in same fam
-        for X in founder_ids.keys():
-            if sim_x.has_trait(trait_fam(X)) and sim_y.has_trait(trait_fam(X)):
-                return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-                              f'are not an eligible couple: both sims are in fam {X.upper()}'
-        # if not in same fam, just do the consang/direct descendants check
     return result
 
 
