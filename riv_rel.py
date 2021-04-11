@@ -42,6 +42,9 @@ from services.persistence_service import PersistenceService
 import sys
 import time
 
+# for despawn (death) things
+from simulation.interactions.utils.death_interactions import DeathSuperInteraction
+
 # get irl datetime
 from datetime import datetime
 
@@ -1058,7 +1061,7 @@ def console_get_sib_strength(sim_x: SimInfoParam, sim_y: SimInfoParam, _connecti
         output('something went wrong')
 
 
-# TODO: ensure this removes the edge case without losing rels
+# TODO: make sure the rel-stitching now works
 # input: two sims and ancestors. output: None if there is no indirect relation, list if there is
 def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict, y_ancestors: Dict):
     xy_indirect_rels = []  # will be the output
@@ -3699,7 +3702,6 @@ def riv_clear_log(_connection=None):
 
 
 # test if two sims are an eligible couple
-# TODO: factor in age (options: teen+, YA+, one age bracket apart, same age bracket)
 def is_eligible_couple(sim_x, sim_y):
     # make rivsims
     sim_x = get_rivsim_from_sim(sim_x)
@@ -3770,6 +3772,24 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
                 if not sim_y.is_ghost():  # sim_y isn't dead
                     output(f'{sim_y.first_name} {sim_y.last_name}, with '
                            f'consanguinity {round(100 * consang(sim_x, sim_y),3)}%')
+
+
+# use my consanguinity in incest prevention test. n.b. True = not incest, so we want my result AND original
+@inject_to(SimInfo, 'incest_prevention_test')
+def riv_incest_prevention_test(original, self, sim_info_b):
+    result = original(self, sim_info_b)
+    riv_result = True
+
+    # TODO: make sure this doesn't override WW incest settings
+    try:
+        riv_result = is_eligible_couple(self, sim_info_b)
+        # TODO: set to 3 after done testing
+        riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name}: '
+                f'original result is {result}, my mod says {riv_result}. __name__ = {__name__}', 2)
+    except Exception as e:
+        riv_log(f'didn\'t manage to influence incest settings because {e}')
+
+    return result and riv_result
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
 
@@ -3938,6 +3958,18 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
 # 0x278EC - testSetInstance_FamilyRelBitAcquired_HasNoParentBit
 
 # DO NOT ADVERTISE YET
+
+# despawns added
+# DeathSuperInteraction, run_death_behavior(self, death_object_data=None, from_reset=False)
+@inject_to(DeathSuperInteraction, 'run_death_behavior')
+def riv_run_death_behaviour(original, self, death_object_data, from_reset):
+    result = original(self, death_object_data, from_reset)
+    try:
+        riv_log(f'dead sim: {self.sim().first_name} {self.sim().last_name} despawned {format_sim_date()}')
+    except Exception as e:
+        riv_log(f'error in riv_run_death_behaviour: {e}')
+    return result
+
 # performance tests
 # global_include_step_rels = config.getboolean(hex_slot_id, 'include_step_rels')
 # use_currentsession_files = config.getboolean(hex_slot_id, 'advanced_use_currentsession_files')

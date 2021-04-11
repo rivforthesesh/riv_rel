@@ -173,7 +173,7 @@ riv_auto_inc_heir_spouse = True
 # child of fam
 riv_auto_fam_child = True
 # same fam => incestuous?
-both_in_famX_incest = True
+both_in_famX_incest = False
 
 try:
     # config stuff
