@@ -490,7 +490,7 @@ class RivSimList:
 
 class RivRelDict:
     rels = {}  # sim_id: [parent_ids]
-    cached_percentages = {}  # dict will have f'{x_id}-{y_id}': (dbl drel%, dbl irel%) where x_id < y_id
+    cached_percentages = {}  # dict will have f'{x_id}-{y_id}': (dbl drel%, dbl irel%) where x_id < y_id. TODO: remove
 
     # TODO: check if works
     def __str__(self):
@@ -1781,6 +1781,7 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
 
 
 # calculate consanguinity for two sims
+@lru_cache(maxsize=None)
 def consang(sim_x: RivSim, sim_y: RivSim):
     # 100% relationship with self
     if sim_x == sim_y:
@@ -3697,7 +3698,7 @@ def riv_clear_log(_connection=None):
 
 
 # test if two sims are an eligible couple
-@lru_cache
+@lru_cache(maxsize=None)
 def is_eligible_couple(sim_x, sim_y):
     # make rivsims
     sim_x = get_rivsim_from_sim(sim_x)
