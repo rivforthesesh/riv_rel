@@ -3726,9 +3726,10 @@ def is_eligible_couple(sim_x, sim_y):
     sim_x = get_sim_from_rivsim(sim_x)
     sim_y = get_sim_from_rivsim(sim_y)
 
+    # TODO: throw in these settings
     one_apart = [{Age.TEEN, Age.YOUNGADULT}, {Age.YOUNGADULT, Age.ADULT}, {Age.ADULT, Age.ELDER}]
-    # two_apart = [{Age.TEEN, Age.ADULT}, {Age.YOUNGADULT, Age.ELDER}]
-    # three_apart = [{Age.TEEN, Age.ELDER}]
+    two_apart = [{Age.TEEN, Age.ADULT}, {Age.YOUNGADULT, Age.ELDER}]
+    three_apart = [{Age.TEEN, Age.ELDER}]
 
     if sim_x is not None and sim_y is not None:
         x_age = sim_x.age
@@ -3736,11 +3737,11 @@ def is_eligible_couple(sim_x, sim_y):
         if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
             return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
                           f'are not an eligible couple: at least one is too young for romance'
-        elif x_age != y_age:
-            # both legal but different ages
-            if {x_age, y_age} not in one_apart:
-                return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-                              f'are not an eligible couple: they\'re too far apart in age'
+        #elif x_age != y_age:
+        #    # both legal but different ages
+        #    if {x_age, y_age} not in one_apart:
+        #        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+        #                      f'are not an eligible couple: they\'re too far apart in age'
 
     # should be all good
     return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
@@ -3780,7 +3781,6 @@ def riv_incest_prevention_test(original, self, sim_info_b):
     result = original(self, sim_info_b)
     riv_result = True
 
-    # TODO: make sure this doesn't override WW incest settings
     try:
         riv_result = is_eligible_couple(self, sim_info_b)[0]
         # TODO: set to 3 after done testing
