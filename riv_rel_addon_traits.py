@@ -826,8 +826,21 @@ def console_famX(X='A', max_iters=10, _connection=None):
     current_stage = 0
     fam_group = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other, unculled', 4: 'culled'}
     while famX_list:
-        min_gen = min([sim_gen[1] for sim_gen in famX_list])
-        min_stage_for_gen = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])
+
+        gens = [sim_gen[1] for sim_gen in famX_list]
+        if gens:
+            min_gen = min(gens)
+        else:
+            gen += 1
+            continue
+
+        stages_for_gen = [sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen]
+        if stages_for_gen:
+            min_stage_for_gen = min(stages_for_gen)
+        else:
+            gen += 1
+            continue
+
         # set new stage/generation number if needed
         if min_stage_for_gen > current_stage:  # need to go to next stage
             output(fam_group[current_stage] + ' sims: ' +
