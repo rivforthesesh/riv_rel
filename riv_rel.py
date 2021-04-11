@@ -1165,19 +1165,19 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         # get parents of sim_xx AND sim_yy that are ancestors of x and y
                         if not [p for p in xx_parents if p in yy_parents]:
                             # convert back to rivsims
-                            sim_xx = get_rivsim_from_sim(sim_xx)
-                            sim_yy = get_rivsim_from_sim(sim_yy)
+                            rivsim_xx = get_rivsim_from_sim(sim_xx)
+                            rivsim_yy = get_rivsim_from_sim(sim_yy)
                             # sim_xx and sim_yy have no parents that are ancestors of sim_x and sim_y
                             #   => rels via xx and yy have not been added yet
-                            for sim_xz in x_ancestors[sim_xx]:
+                            for sim_xz in x_ancestors[rivsim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
-                                for sim_yz in y_ancestors[sim_yy]:
+                                for sim_yz in y_ancestors[rivsim_yy]:
                                     # y_ancestors[sim_yy] = [sim_yz,...], sim_yz = (n, sim)
                                     # where sim_yy is n gens back from sim_x via sim
                                     nx = sim_xz[0]
                                     ny = sim_yz[0]
-                                    to_add = (sim_xx, sim_yy, nx + 1, ny + 1, get_sib_strength(sim_xx, sim_yy))
+                                    to_add = (rivsim_xx, rivsim_yy, nx + 1, ny + 1, get_sib_strength(sim_xx, sim_yy))
                                     # connections are sibs (sharing parents), so gen + 1
                                     if to_add not in xy_indirect_rels:
                                         xy_indirect_rels.append(to_add)
@@ -1193,17 +1193,17 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 break
                         else:
                             # convert back to rivsims
-                            sim_xx = get_rivsim_from_sim(sim_xx)
-                            sim_yy = get_rivsim_from_sim(sim_yy)
-                            for sim_xz in x_ancestors[sim_xx]:
+                            rivsim_xx = get_rivsim_from_sim(sim_xx)
+                            rivsim_yy = get_rivsim_from_sim(sim_yy)
+                            for sim_xz in x_ancestors[rivsim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
-                                for sim_yz in y_ancestors[sim_yy]:
+                                for sim_yz in y_ancestors[rivsim_yy]:
                                     # y_ancestors[sim_yy] = [sim_yz,...], sim_yz = (n, sim)
                                     # where sim_yy is n gens back from sim_x via sim
                                     nx = sim_xz[0]
                                     ny = sim_yz[0]
-                                    to_add = (sim_xx, sim_yy, nx + 2, ny + 1, 1)
+                                    to_add = (rivsim_xx, rivsim_yy, nx + 2, ny + 1, 1)
                                     # connections are nibling + pibling, so an extra 2, 1 to joining point.
                                     # assume missing parent of xx is yy's full sib
                                     if to_add not in xy_indirect_rels:
@@ -1221,17 +1221,17 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 break
                         else:
                             # convert back to rivsims
-                            sim_xx = get_rivsim_from_sim(sim_xx)
-                            sim_yy = get_rivsim_from_sim(sim_yy)
-                            for sim_xz in x_ancestors[sim_xx]:
+                            rivsim_xx = get_rivsim_from_sim(sim_xx)
+                            rivsim_yy = get_rivsim_from_sim(sim_yy)
+                            for sim_xz in x_ancestors[rivsim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
-                                for sim_yz in y_ancestors[sim_yy]:
+                                for sim_yz in y_ancestors[rivsim_yy]:
                                     # y_ancestors[sim_yy] = [sim_yz,...], sim_yz = (n, sim)
                                     # where sim_yy is n gens back from sim_x via sim
                                     nx = sim_xz[0]
                                     ny = sim_yz[0]
-                                    to_add = (sim_xx, sim_yy, nx + 1, ny + 2, 1)
+                                    to_add = (rivsim_xx, rivsim_yy, nx + 1, ny + 2, 1)
                                     # connections are pibling + nibling, so an extra 1, 2 to joining point.
                                     # assume missing parent of yy is xx's full sib
                                     if to_add not in xy_indirect_rels:
@@ -1265,17 +1265,17 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                                 break
                         else:  # sim_xx and sim_yy are first cousins, but have no parents who are siblings
                             # convert back to rivsims
-                            sim_xx = get_rivsim_from_sim(sim_xx)
-                            sim_yy = get_rivsim_from_sim(sim_yy)
-                            for sim_xz in x_ancestors[sim_xx]:
+                            rivsim_xx = get_rivsim_from_sim(sim_xx)
+                            rivsim_yy = get_rivsim_from_sim(sim_yy)
+                            for sim_xz in x_ancestors[rivsim_xx]:
                                 # x_ancestors[sim_xx] = [sim_xz,...], sim_xz = (n, sim)
                                 # where sim_xx is n gens back from sim_x via sim
-                                for sim_yz in y_ancestors[sim_yy]:
+                                for sim_yz in y_ancestors[rivsim_yy]:
                                     # y_ancestors[sim_yy] = [sim_yz,...], sim_yz = (n, sim)
                                     # where sim_yy is n gens back from sim_x via sim
                                     nx = sim_xz[0]
                                     ny = sim_yz[0]
-                                    to_add = (sim_xx, sim_yy, nx + 2, ny + 2, 1)
+                                    to_add = (rivsim_xx, rivsim_yy, nx + 2, ny + 2, 1)
                                     # connections are cousins (sharing grandparents), so gen + 2.
                                     # assume missing parents would be full sibs
                                     if to_add not in xy_indirect_rels:
@@ -3782,7 +3782,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 
     # TODO: make sure this doesn't override WW incest settings
     try:
-        riv_result = is_eligible_couple(self, sim_info_b)
+        riv_result = is_eligible_couple(self, sim_info_b)[0]
         # TODO: set to 3 after done testing
         riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name}: '
                 f'original result is {result}, my mod says {riv_result}. __name__ = {__name__}', 2)
