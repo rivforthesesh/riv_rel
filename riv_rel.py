@@ -43,7 +43,7 @@ import sys
 import time
 
 # for despawn (death) things
-from simulation.interactions.utils.death_interactions import DeathSuperInteraction
+from interactions.utils.death_interactions import DeathSuperInteraction
 
 # get irl datetime
 from datetime import datetime
