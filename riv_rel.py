@@ -43,7 +43,7 @@ import sys
 import time
 
 # for despawn (death) things
-from interactions.utils.death_interactions import DeathSuperInteraction
+from interactions.utils.death import DeathTracker
 
 # for cache TODO: use for cached percentages too
 from functools import lru_cache
@@ -3955,14 +3955,13 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 # DO NOT ADVERTISE YET
 
 # despawns added
-# DeathSuperInteraction, run_death_behavior(self, death_object_data=None, from_reset=False)
-@inject_to(DeathSuperInteraction, 'run_death_behavior')
-def riv_run_death_behaviour(original, self, death_object_data, from_reset):
-    result = original(self, death_object_data, from_reset)
+@inject_to(DeathTracker, 'set_death_type')
+def riv_set_death_type(original, self, death_type, is_off_lot_death):
+    result = original(self, death_type, is_off_lot_death)
     try:
         riv_log(f'dead sim: {self.sim().first_name} {self.sim().last_name} despawned {format_sim_date()}')
     except Exception as e:
-        riv_log(f'error in riv_run_death_behaviour: {e}')
+        riv_log(f'error in riv_set_death_type: {e}')
     return result
 
 # performance tests
