@@ -3779,9 +3779,8 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 
     try:
         riv_result = is_eligible_couple(self, sim_info_b)[0]
-        # TODO: set to 3 after done testing
         riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name}: '
-                f'original result is {result}, my mod says {riv_result}. __name__ = {__name__}', 2)
+                f'original result is {result}, my mod says {riv_result}. __name__ = {__name__}', 3)
     except Exception as e:
         riv_log(f'didn\'t manage to influence incest settings because {e}')
 
