@@ -3959,7 +3959,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 def riv_set_death_type(original, self, death_type, is_off_lot_death):
     result = original(self, death_type, is_off_lot_death)
     try:
-        riv_log(f'dead sim: {self.sim().first_name} {self.sim().last_name} despawned {format_sim_date()}')
+        riv_log(f'dead sim: {self._sim_info.first_name} {self._sim_info.last_name} despawned {format_sim_date()}')
     except Exception as e:
         riv_log(f'error in riv_set_death_type: {e}')
     return result
