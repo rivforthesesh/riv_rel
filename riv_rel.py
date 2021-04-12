@@ -1053,10 +1053,9 @@ def console_get_sib_strength(sim_x: SimInfoParam, sim_y: SimInfoParam, _connecti
     elif sib_strength == 0:
         output('{} and {} are not siblings.'.format(sim_x.first_name, sim_y.first_name))
     else:
-        output('something went wrong')
+        output(f'something went wrong: sib_strength is {sib_strength} when it should be 0, 0.5, or 1')
 
 
-# TODO: make sure the rel-stitching now works
 # input: two sims and ancestors. output: None if there is no indirect relation, list if there is
 def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict, y_ancestors: Dict):
     xy_indirect_rels = []  # will be the output
@@ -3709,7 +3708,7 @@ def is_eligible_couple(sim_x, sim_y):
         return False, 'mate, that\'s just being single with extra steps'
 
     # check direct rel
-    if drel_incest and get_direct_relation(sim_x, sim_y):
+    if not drel_incest and get_direct_relation(sim_x, sim_y):
         return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
                       f'are not an eligible couple: they are directly related'
 
@@ -3725,9 +3724,9 @@ def is_eligible_couple(sim_x, sim_y):
     sim_y = get_sim_from_rivsim(sim_y)
 
     # TODO: throw in these settings
-    one_apart = [{Age.TEEN, Age.YOUNGADULT}, {Age.YOUNGADULT, Age.ADULT}, {Age.ADULT, Age.ELDER}]
-    two_apart = [{Age.TEEN, Age.ADULT}, {Age.YOUNGADULT, Age.ELDER}]
-    three_apart = [{Age.TEEN, Age.ELDER}]
+    # one_apart = [{Age.TEEN, Age.YOUNGADULT}, {Age.YOUNGADULT, Age.ADULT}, {Age.ADULT, Age.ELDER}]
+    # two_apart = [{Age.TEEN, Age.ADULT}, {Age.YOUNGADULT, Age.ELDER}]
+    # three_apart = [{Age.TEEN, Age.ELDER}]
 
     if sim_x is not None and sim_y is not None:
         x_age = sim_x.age
@@ -3751,6 +3750,14 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
     output = sims4.commands.CheatOutput(_connection)
     eligibility = is_eligible_couple(sim_x, sim_y)
     output(eligibility[1])
+    try:
+        eligibility2 = sim_x.incest_prevention_test(sim_y)
+        if eligibility2:
+            output('the game considers this as incest')
+        else:
+            output('the game does not consider this as incest')
+    except Exception as e:
+        riv_log(f'riv_is_eligible_couple couldn\'t check if this is ingame incest because {e}', 1)
 
 
 # all eligible suitors console command (eligible couple + same age + sim_y is alive) TODO: test!
@@ -3764,7 +3771,12 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
            f'and their relationship wouldn\'t be incestuous ({incest_rules})')
     for sim_y in services.sim_info_manager().get_all():
         eligibility = is_eligible_couple(sim_x, sim_y)
-        if eligibility[0]:  # this couple is eligible
+        try:
+            eligibility2 = sim_x.incest_prevention_test(sim_y)
+        except Exception as e:
+            riv_log(f'riv_get_suitors couldn\'t check if this is ingame incest because {e}', 1)
+            eligibility2 = True  # x and True = x
+        if eligibility[0] and eligibility2:  # this couple is eligible
             if sim_x.age == sim_y.age:  # this couple is the same age
                 if not sim_y.is_ghost():  # sim_y isn't dead
                     output(f'{sim_y.first_name} {sim_y.last_name}, with '
