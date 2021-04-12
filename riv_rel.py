@@ -3689,7 +3689,7 @@ def riv_clear_log(_connection=None):
     new_line_num = 0
     while old_text:
         line = old_text.pop(0)
-        if 'error' in line or 'spawned' in line:
+        if 'error' in line or 'spawned' in line or 'game loaded' in line or 'save ID' in line:
             new_line_num += 1
             with open(file_path, 'a') as log_file:
                 log_file.write(line + '\n')
@@ -3954,6 +3954,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 
 # DO NOT ADVERTISE YET
 
+
 # despawns added
 @inject_to(DeathTracker, 'set_death_type')
 def riv_set_death_type(original, self, death_type, is_off_lot_death):
@@ -3963,6 +3964,7 @@ def riv_set_death_type(original, self, death_type, is_off_lot_death):
     except Exception as e:
         riv_log(f'error in riv_set_death_type: {e}')
     return result
+
 
 # performance tests
 # global_include_step_rels = config.getboolean(hex_slot_id, 'include_step_rels')
