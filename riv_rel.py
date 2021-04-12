@@ -3708,7 +3708,7 @@ def is_eligible_couple(sim_x, sim_y):
         return False, 'mate, that\'s just being single with extra steps'
 
     # check direct rel
-    if not drel_incest and get_direct_relation(sim_x, sim_y):
+    if drel_incest and get_direct_relation(sim_x, sim_y):
         return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
                       f'are not an eligible couple: they are directly related'
 
