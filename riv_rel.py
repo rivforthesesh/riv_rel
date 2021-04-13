@@ -45,7 +45,7 @@ import time
 # for despawn (death) things
 from interactions.utils.death import DeathTracker
 
-# for cache TODO: use for cached percentages too
+# for cache (used for consang and is_eligible_couple)
 from functools import lru_cache
 
 # get irl datetime
@@ -100,13 +100,6 @@ mccc_autosave_enabled = False  # keep default false, set to true later
 addons = {'computer': False, 'traits': False, 'GT': False}
 # performance
 use_currentsession_files = False
-# dictionary of married sims
-# populated when sims+rels are imported
-# accessed when checking for spouses
-# cleared when sims+rels are cleared
-# updated on relbit gain
-use_married_sims_dict = False
-married_sims = {}  # if you implement: test if updates on divorced / dead spouse relbit / deletion of spouse
 # features
 global_include_step_rels = False
 # TODO: make step rels more efficient
@@ -121,7 +114,6 @@ cfg_default_vals = dict(
     # gen 6
     # include_step_rels='False',
     # gen ?
-    # advanced_use_married_sims_dict='False',
 )
 # ones that affect performance
 # search_if_updating_settings
@@ -388,48 +380,14 @@ class RivSim:
     # TODO: work out why every already culled sim gets culled AGAIN
     def cull(self):
         if not self.is_culled:
-            # riv_log(f'marked {self.first_name} {self.last_name} as culled')
+            riv_log(f'marked {self.first_name} {self.last_name} as culled')
             self.is_culled = True
-            try:
-                if use_married_sims_dict:
-                    if self.sim_id in married_sims.keys():
-                        del married_sims[self.sim_id]
-                        for other_sim_id in married_sims.keys():
-                            if self.sim_id in married_sims[other_sim_id]:
-                                temp_list = married_sims[other_sim_id]
-                                temp_list.remove(self.sim_id)
-                                married_sims[other_sim_id] = temp_list.copy()
-                        riv_log('also cleared their marriage(s)')
-            except Exception as e:
-                riv_log(f'error in clearing marriages (by culling): {e}')
 
     # for marking a sim as unculled; for cleaning
-    # also reinstates their marriages
     def uncull(self):
         if self.is_culled:
             self.is_culled = False
             riv_log(f'marked {self.first_name} {self.last_name} as unculled')
-            manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-            spouse_relbit = manager.get(0x3DCE)
-            for sim_y in services.sim_info_manager().get_all():
-                if services.sim_info_manager().get(int(self.sim_id)).sim_info.relationship_tracker.has_bit(sim_y.sim_id,
-                                                                                                           spouse_relbit):
-                    if use_married_sims_dict:
-                        try:
-                            married_sims[self.sim_id] = married_sims[self.sim_id] + [sim_y.sim_id]
-                        except:
-                            try:
-                                married_sims[self.sim_id] = [sim_y.sim_id]
-                            except Exception as e:
-                                riv_log('error in readding marriage: ' + str(e))
-                        try:
-                            married_sims[sim_y.sim_id] = married_sims[sim_y.sim_id] + [self.sim_id]
-                        except:
-                            try:
-                                married_sims[sim_y.sim_id] = [self.sim_id]
-                            except Exception as e:
-                                riv_log('error in readding marriage: ' + str(e))
-                        riv_log(f'readded marriage for sims {self.first_name} and {sim_y.first_name}')
 
     # for updating a sim in the file if that sim exists with different details
     def update_info(self, new_first_name, new_last_name, new_is_female, new_time):
@@ -490,12 +448,9 @@ class RivSimList:
 
 class RivRelDict:
     rels = {}  # sim_id: [parent_ids]
-    cached_percentages = {}  # dict will have f'{x_id}-{y_id}': (dbl drel%, dbl irel%) where x_id < y_id. TODO: remove
 
-    # TODO: check if works
     def __str__(self):
-        return f'<RivRelDict - len {len(list(self.rels.keys()))} ' \
-               f'with {len(list(self.cached_percentages.keys()))} cached rel percentages>'
+        return f'<RivRelDict - len {len(list(self.rels.keys()))}>'
 
     def __repr__(self):
         return str(self)
@@ -526,12 +481,8 @@ class RivRelDict:
     def clear_rels(self):
         self.rels = {}
 
-    def clear_percentages(self):
-        self.cached_percentages = {}
-
     def clear_rivreldict(self):
         self.clear_rels()
-        self.clear_percentages()
 
 
 # this is within class Zone in simulation/zone.py
@@ -922,23 +873,8 @@ def get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors):
     # order the rels by magnitude
     xy_direct_rels.sort(key=abs)
 
-    # get key for cached percentage
-    ids = [int(sim_x.sim_id), int(sim_y.sim_id)]
-    ids.sort()
-    xy_id = f'{ids[0]}-{ids[1]}'
-
     # calculate direct rel percentage
-    drel = sum([0.5 ** abs(gen) for gen in xy_direct_rels])
-
-    # update cached percentage in dict
-    if xy_id in riv_rel_dict.cached_percentages.keys():
-        # get indirect rel percentage
-        irel = riv_rel_dict.cached_percentages[xy_id][1]
-        # update percentages
-        riv_rel_dict.cached_percentages[xy_id] = (drel, irel)
-    else:
-        # create (with -1 as irel since this is unknown)
-        riv_rel_dict.cached_percentages[xy_id] = (drel, -1)
+    drel = drel_percent(xy_direct_rels)
 
     return xy_direct_rels
 
@@ -1283,24 +1219,8 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
     # order the rels by magnitude
     xy_indirect_rels.sort(key=lambda irel: -irel[4] * -(2 ** (irel[2] + irel[3])))  # - to ensure ascending
 
-    # get key for cached percentage
-    ids = [int(sim_x.sim_id), int(sim_y.sim_id)]
-    ids.sort()
-    xy_id = f'{ids[0]}-{ids[1]}'
-
     # calculate indirect rel percentage
-    # [2] = nx, [3] = ny, [4] = sib_strength
-    irel = sum([2 * irel[4] * (2 ** -(irel[2] + irel[3])) for irel in xy_indirect_rels])
-
-    # update cached percentage in dict
-    if xy_id in riv_rel_dict.cached_percentages.keys():
-        # get indirect rel percentage
-        drel = riv_rel_dict.cached_percentages[xy_id][0]
-        # update percentages
-        riv_rel_dict.cached_percentages[xy_id] = (drel, irel)
-    else:
-        # create (with -1 as irel since this is unknown)
-        riv_rel_dict.cached_percentages[xy_id] = (-1, irel)
+    irel = irel_percent(xy_indirect_rels)
 
     return xy_indirect_rels  # [(sim_z, sim_w, nx, ny, sib_strength)]
     # where sim_z and sim_w are parents/sibs/relations to link, sim_z = sim_w if half-
@@ -1418,22 +1338,18 @@ def console_get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, _connecti
 
 # gets spouses ingame
 def get_spouses(sim_x: SimInfoParam):
-    global married_sims
 
     sim_x = get_sim_from_rivsim(sim_x)
     if sim_x is None:
         return []
 
-    if not married_sims:
-        manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-        spouse_relbit = manager.get(0x3DCE)
-        sim_spouses = []
-        for sim_y in services.sim_info_manager().get_all():
-            if sim_x.relationship_tracker.has_bit(sim_y.sim_id, spouse_relbit):
-                sim_spouses.append(sim_y)
-    else:
-        x_id = sim_x.sim_id
-        sim_spouses = [services.sim_info_manager().get(int(y_id)).sim_info for y_id in married_sims[x_id]]
+    manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+    spouse_relbit = manager.get(0x3DCE)
+    sim_spouses = []
+    for sim_y in services.sim_info_manager().get_all():
+        if sim_x.relationship_tracker.has_bit(sim_y.sim_id, spouse_relbit):
+            sim_spouses.append(sim_y)
+
     return sim_spouses
 
 
@@ -1580,9 +1496,7 @@ def get_step_rel(sim_x, sim_y, x_ancestors_tmp, y_ancestors_tmp):
 
     # test for married sims:
     # sim_z.spouse_sim_id is not None
-    # or sim is in married_sims.keys()
     manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-    global married_sims
 
     x_ancestors = {}
     x_list_ingame = rivsims_to_sims(x_ancestors_tmp.keys())
@@ -1633,7 +1547,7 @@ def get_step_rel(sim_x, sim_y, x_ancestors_tmp, y_ancestors_tmp):
     num_zy = 0
     for sim_z in services.sim_info_manager().get_all():
         try:
-            if (sim_z.sim_id in married_sims.keys() or sim_z.spouse_sim_id is not None) and sim_z not in [sim_x, sim_y]:
+            if sim_z.spouse_sim_id is not None and sim_z not in [sim_x, sim_y]:
                 z_ancestors = get_ancestors_ingame(sim_z)
                 xz = get_direct_rel(sim_x, sim_z, x_ancestors, z_ancestors) + \
                      get_indirect_rel(sim_x, sim_z, x_ancestors, z_ancestors) + \
@@ -1779,6 +1693,18 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
     return step_rels  # [(string, sim_xz, sim_zy)]
 
 
+# get drel% from two sims' drels
+@lru_cache(maxsize=None)
+def drel_percent(drels):
+    return sum([0.5 ** abs(gen) for gen in drels])
+
+
+# get irel% from two sims' irels
+@lru_cache(maxsize=None)
+def irel_percent(irels):
+    return sum([2 * irel[4] * (2 ** -(irel[2] + irel[3])) for irel in irels])
+
+
 # calculate consanguinity for two sims
 @lru_cache(maxsize=None)
 def consang(sim_x: RivSim, sim_y: RivSim):
@@ -1786,32 +1712,15 @@ def consang(sim_x: RivSim, sim_y: RivSim):
     if sim_x == sim_y:
         return 1.0
 
-    # o/w get key for cached percentage
-    ids = [int(sim_x.sim_id), int(sim_y.sim_id)]
-    ids.sort()
-    xy_id = f'{ids[0]}-{ids[1]}'
+    # o/w add percentages
+    x_ancestors = get_ancestors(sim_x)
+    y_ancestors = get_ancestors(sim_y)
+    # calculate drels + irels
+    drels = get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors)
+    irels = get_indirect_rel(sim_x, sim_y, x_ancestors, y_ancestors)
 
-    # add if not already there
-    if xy_id not in riv_rel_dict.cached_percentages.keys():
-        x_ancestors = get_ancestors(sim_x)
-        y_ancestors = get_ancestors(sim_y)
-        # calculate drels + irels
-        get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors)
-        get_indirect_rel(sim_x, sim_y, x_ancestors, y_ancestors)
-
-    # grab tuple
-    consang_tuple = riv_rel_dict.cached_percentages[xy_id]
-
-    # populate if one is missing
-    if consang_tuple[0] == -1:
-        get_direct_relation(sim_x, sim_y)
-        consang_tuple = riv_rel_dict.cached_percentages[xy_id]
-    elif consang_tuple[1] == -1:
-        get_indirect_relation(sim_x, sim_y)
-        consang_tuple = riv_rel_dict.cached_percentages[xy_id]
-
-    # return sum of these values
-    return sum(consang_tuple)
+    # return sum of consang percentages
+    return drel_percent(drels) + irel_percent(irels)
 
 
 @sims4.commands.Command('riv_consang', command_type=sims4.commands.CommandType.Live)
@@ -2366,8 +2275,6 @@ def save_sims(sims_input: List, file_name_extra: str):  # List<RivSim>
 
         riv_log(f'number of new sims = {len(new_sims)}')
         riv_log(f'number of sims in file = {len(sims)}')
-        if use_married_sims_dict:
-            riv_log('number of married sims in dict = ' + str(len(list(married_sims.values()))))
 
     else:  # haven't got a tmp file right now, and we should have one
         if os.path.isfile(file_path):  # we have a perm file
@@ -2590,19 +2497,11 @@ def console_mem_sims(_connection=None):
 
     output(f'riv_rel_dict = {riv_rel_dict}')
     rels = riv_rel_dict.rels
-    csng = riv_rel_dict.cached_percentages
     if rels:
         output('showing a random sim\'s parents:')
         randsim = random.choice(sims)
         output(str(randsim))
         output(str(riv_rel_dict.rels[randsim.sim_id]))
-    else:
-        output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
-    if csng:
-        output('showing a random sim pair\'s consanguinity:')
-        randsims = random.choice(list(csng.keys()))
-        output(str(randsims))
-        output(str(csng[randsims]))
     else:
         output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
 
@@ -2673,7 +2572,6 @@ def console_update_sims(file_name_extra: str, _connection=None):
 #     auto_update_json='True',
 #     include_step_rels='False',
 #     advanced_use_currentsession_files='False',
-#     advanced_use_married_sims_dict='False'
 # always put this in a try clause!
 def fix_cfg_settings():
     config_dir = Path(__file__).resolve().parent.parent
@@ -2754,7 +2652,6 @@ def load_cfg_settings(attempt_number=1):
                 else:
                     riv_log('not using currentsession files')
 
-                # use_married_sims_dict = config.getboolean(hex_slot_id, 'advanced_use_married_sims_dict')
                 # riv_log(str(config[hex_slot_id])) # <Section: 0000000e>
             except Exception as e1:
                 if attempt_number == 1:
@@ -3020,23 +2917,6 @@ def get_slot_olsaf(original, self, *args, **kwargs):
 @inject_to(SimInfoManager, 'on_all_households_and_sim_infos_loaded')
 def auto_json_oahasil(original, self, client):
     result = original(self, client)
-    global married_sims
-    # set up marriages
-    if use_married_sims_dict:
-        try:
-            manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-            spouse_relbit = manager.get(0x3DCE)
-            married_sims_oahasil_tic = time.perf_counter()
-            for sim_x in services.sim_info_manager().get_all():
-                sim_spouses = []
-                for sim_y in services.sim_info_manager().get_all():
-                    if sim_x.relationship_tracker.has_bit(sim_y.sim_id, spouse_relbit):
-                        sim_spouses.append(sim_y.sim_id)
-                married_sims[int(sim_x.sim_id)] = sim_spouses
-            married_sims_oahasil_toc = time.perf_counter()
-            riv_log(f'time taken to set up married sims: {married_sims_oahasil_toc - married_sims_oahasil_tic}')
-        except Exception as e:
-            riv_log(f'error in getting marriages in oahasil: {e}')
     # set slot id
     try:
         global jsyk_ownfolder
@@ -3065,8 +2945,6 @@ def auto_json_oahasil(original, self, client):
                 # riv_clear without the console
                 riv_sim_list.clear_sims()
                 riv_rel_dict.clear_rivreldict()
-                # empty marriage dict
-                married_sims = {}
                 riv_log('cleared sims and rels (parents and spouses)')
             else:
                 # clear tmp files
@@ -3182,58 +3060,6 @@ def auto_json_fam_oatr(original, self, sim, target_sim_info, relationship, from_
     except Exception as e:
         riv_log(f'error in auto_json in on_add_to_relationship: {e}')
         raise Exception(f'(riv) error in auto_json in on_add_to_relationship: {e}')
-    return result
-
-
-# update marriage
-# AUTOMATIC INC SPOUSE IN FAM
-# run on add spouse
-@inject_to(RelationshipBit, 'on_add_to_relationship')
-def auto_update_marriages(original, self, sim, target_sim_info, relationship, from_load):
-    result = original(self, sim, target_sim_info, relationship, from_load)
-    if use_married_sims_dict:
-        try:
-            manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-            spouse_relbit = manager.get(0x3DCE)
-
-            if self.matches_bit(spouse_relbit):  # if a spouse relbit has been added
-                try:
-                    married_sims[sim.sim_id] = married_sims[sim.sim_id] + [target_sim_info.sim_id]
-                except:
-                    try:
-                        married_sims[sim.sim_id] = [target_sim_info.sim_id]
-                    except Exception as e:
-                        riv_log(f'error in updating marriage: {e}')
-                try:
-                    married_sims[target_sim_info.sim_id] = married_sims[target_sim_info.sim_id] + [sim.sim_id]
-                except:
-                    try:
-                        married_sims[target_sim_info.sim_id] = [sim.sim_id]
-                    except Exception as e:
-                        riv_log(f'error in updating marriage: {e}')
-                riv_log(f'added marriage for sims {sim.first_name} and {target_sim_info.first_name}')
-            elif self.matches_bit(manager.get(0x18EC1)) or self.matches_bit(manager.get(0x191FF)) or self.matches_bit(
-                    manager.get(0x196E1)) or self.matches_bit(manager.get(0x3DC7)):
-                try:
-                    if sim.sim_id in married_sims[target_sim_info.sim_id]:
-                        temp_list = married_sims[target_sim_info.sim_id]
-                        temp_list.remove(sim.sim_id)
-                        married_sims[target_sim_info.sim_id] = temp_list.copy()
-                    if target_sim_info.sim_id in married_sims[sim.sim_id]:
-                        temp_list = married_sims[sim.sim_id]
-                        temp_list.remove(target_sim_info.sim_id)
-                        married_sims[sim.sim_id] = temp_list.copy()
-                except Exception as e:
-                    riv_log(f'error in clearing marriage (by divorce/death): {e}')
-                # 0x18EC1	RelationshipBit	romantic-Widow
-                # 0x191FF	RelationshipBit	romantic-Widower
-                # 0x196E1	RelationshipBit	romantic_DeadSpouse
-                # 0x3DC7	RelationshipBit	romantic-Divorced
-
-            # nb. should have already returned if it was an object rel
-        except Exception as e:
-            riv_log(f'error in auto_update_marriages in on_add_to_relationship: {e}')
-            raise Exception(f'(riv) error in auto_update_marriages in on_add_to_relationship: {e}')
     return result
 
 
@@ -3825,9 +3651,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 # 0x1ABED	RelationshipBit	relationshipBit_IsClone		[GTW]
 # 0x34CCE	RelationshipBit	relationshipBit_Clone		[RoM]
 
-#
-
-# OTHER BIO
+# PARENTHOOD
 # 0x0000000000027875	RelationshipBit	familyRelationshipBitsAcquired_Grandparent_HighRel
 # 0x0000000000027876	RelationshipBit	familyRelationshipBitsAcquired_Grandchild_HighRel
 # 0x0000000000027877	RelationshipBit	familyRelationshipBitsAcquired_Grandparent_NeutralRel
@@ -3903,7 +3727,6 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 # MISC
 # 0x27AB2	RelationshipBit	CT_notParent_CareGiver		[PH]
 # 0x27AB3	RelationshipBit	CT_notParent_CareDependent	[PH]
-# 0x1261E	RelationshipBit	neighbor
 # 0x000000000000692B	RelationshipBit	relationshipBits_Mischief_PartnersInCrime
 # 0x00000000000070EF	RelationshipBit	LoanRelationshipBits_Small
 # 0x00000000000070F0	RelationshipBit	LoanRelationshipBits_Large
@@ -3976,196 +3799,3 @@ def riv_set_death_type(original, self, death_type, is_off_lot_death):
     except Exception as e:
         riv_log(f'error in riv_set_death_type: {e}')
     return result
-
-
-# performance tests
-# global_include_step_rels = config.getboolean(hex_slot_id, 'include_step_rels')
-# use_currentsession_files = config.getboolean(hex_slot_id, 'advanced_use_currentsession_files')
-# use_married_sims_dict = config.getboolean(hex_slot_id, 'advanced_use_married_sims_dict')
-# checks n random pairs of sims for each test
-@sims4.commands.Command('riv_rel_performance_check', command_type=sims4.commands.CommandType.Live)
-def riv_checkperformance(n: int, _connection=None):
-    output = sims4.commands.CheatOutput(_connection)
-
-    # options to juggle
-    global option_names
-    options_to_check = len(option_names)
-    # save original settings
-    original_settings = tuple([globals()[varname] for varname in option_names])
-
-    # get tuples like (T,F,F) of the length options_to_check
-    true_false_combos = []
-    for i in range(0, 2 ** options_to_check):
-        bitstring = ('0' * (options_to_check - len(str(bin(i))[2:]))) + str(bin(i))[2:]
-        options_tuple = tuple([bool(int(j)) for j in list(bitstring)])
-        if not options_tuple[1]:  # leave it out if currentsession is True
-            true_false_combos.append(options_tuple)
-        # bin(2) = 0b10
-        # str(bin(2)) = '0b10'
-        # str(bin(i))[2:] = '10'
-        # bitstring = ('0' * (options_to_check - len(str(bin(i))[2:]))) + str(bin(i))[2:] = '0...010'
-        # list(bitstring) = ['1','0']
-        # [int(j) for j in list(bitstring)] = [1,0]
-        # [bool(int(j)) for j in list(bitstring)] = [True, False]
-        # tuple([bool(int(j)) for j in list(bitstring)]) = (True, False)
-
-    # go through combos of settings
-    output('options we\'re checking: ' + str(option_names) + '\n')
-    best_time = 100000  # this better be larger than any time
-    best_step_time = 100000  # best time with step rels
-    # with_step_rels = 2 ** (options_to_check - 1)
-
-    # get sims for examples
-    sims = []
-    while len(sims) < 2 * n:
-        sim = random.choice(list(services.sim_info_manager()._objects.values()))
-        if sim not in sims:
-            sims.append(sim)
-
-    for setting in true_false_combos:
-        for j in range(0, options_to_check):
-            # globals()[str] sets global variable with that name to the thing
-            globals()[option_names[j]] = setting[j]
-
-            global married_sims
-            # set up marriage dict if needed
-            if use_married_sims_dict and (not married_sims):
-                try:
-                    manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-                    spouse_relbit = manager.get(0x3DCE)
-                    married_sims_oahasil_tic = time.perf_counter()
-                    for sim_x in services.sim_info_manager().get_all():
-                        sim_spouses = []
-                        for sim_y in services.sim_info_manager().get_all():
-                            if sim_x.relationship_tracker.has_bit(sim_y.sim_id, spouse_relbit):
-                                sim_spouses.append(sim_y.sim_id)
-                        married_sims[int(sim_x.sim_id)] = sim_spouses
-                    married_sims_oahasil_toc = time.perf_counter()
-                    riv_log('time taken to set up married_sims: ' +
-                            str(married_sims_oahasil_toc - married_sims_oahasil_tic))
-                except Exception as e:
-                    riv_log('error in getting marriages in performance test: ' + str(e))
-            # clear marriage dict if needed
-            elif (not use_married_sims_dict) and married_sims:
-                married_sims = {}
-
-            # run n rel tests with these settings
-            perf_tic = time.perf_counter()
-            output('trying to get some rels with these settings: ' + str(setting))
-            for i in range(0, n):
-                riv_getrelation(sims[2 * i], sims[(2 * i) + 1], True, global_include_step_rels, _connection)
-            perf_toc = time.perf_counter()
-
-            # record the average time taken to grab a rel
-            perf = (perf_toc - perf_tic) / n
-            if perf < best_time:
-                # this is a best setting now
-                best_time = perf
-                best_setting = j
-            if perf < best_step_time and setting[0]:
-                # this is a best setting given that we have step rels
-                best_step_time = perf
-                best_step_setting = j
-            output('average time = ' + str(perf) + '\n')
-
-    # give player feedback
-    global rec_setting
-    rec_setting = true_false_combos[best_setting]
-    output('your recommended settings: ' + str(rec_setting))
-    output('each relation check will take around ' + str(best_time) + ' seconds')
-    # give recommended settings if it's different for step rels
-    if best_time < best_step_time:
-        global rec_step_setting
-        rec_step_setting = true_false_combos[best_step_setting]
-        output('if you want to include step rels, use these settings: ' + str(rec_step_setting))
-        output('each relation check will take around ' + str(best_step_time) + ' seconds')
-
-    # reset to previous options
-    for j in range(0, options_to_check):
-        # globals()[str] sets global variable with that name to the thing
-        globals()[option_names[j]] = original_settings[j]
-
-    # let the user know what to do next
-    output('your settings have now been changed back to whatever they were before')
-    output('to use recommended settings in this save, type the command "riv_recommended"')
-    if best_time < best_step_time:
-        output('to use recommended settings with step rels in this save, type the command "riv_recommended_step"')
-    output('[performance check done]')
-
-
-# do recommended settings
-@sims4.commands.Command('riv_recommended', command_type=sims4.commands.CommandType.Live)
-def riv_recommended_settings(_connection=None):
-    output = sims4.commands.CheatOutput(_connection)
-    # change settings ingame
-    global option_names
-    options_to_check = len(option_names)
-    global rec_setting
-    for j in range(0, options_to_check):
-        globals()[option_names[j]] = rec_setting[j]
-
-    # change settings in .cfg
-    config_dir = Path(__file__).resolve().parent.parent
-    config_name = 'riv_rel - individual save settings.cfg'
-    file_path = os.path.join(config_dir, config_name)
-    config = configparser.ConfigParser()
-
-    # read in cfg
-    if os.path.isfile(file_path):
-        config.read_file(open(file_path, 'r'))
-
-    # add section if it isn't there, and fix to make sure we have all keys
-    global hex_slot_id
-    if hex_slot_id not in config.sections():
-        output('there are no settings for this ID. adding them...')
-        config[hex_slot_id] = {}
-        fix_cfg_settings()
-
-    # do settings
-    # search_if_updating_settings
-    config[hex_slot_id]['include_step_rels'] = str(rec_setting[0])
-    config[hex_slot_id]['advanced_use_currentsession_files'] = str(rec_setting[1])
-
-    # update cfg file
-    with open(file_path, 'w') as cfg_file:
-        config.write(cfg_file)
-    output('settings updated!')
-
-
-# do recommended settings for step rels
-@sims4.commands.Command('riv_recommended_step', command_type=sims4.commands.CommandType.Live)
-def riv_recommended_step_settings(_connection=None):
-    output = sims4.commands.CheatOutput(_connection)
-    # change settings ingame
-    global option_names
-    options_to_check = len(option_names)
-    global rec_step_setting
-    for j in range(0, options_to_check):
-        globals()[option_names[j]] = rec_step_setting[j]
-
-    # change settings in .cfg
-    config_dir = Path(__file__).resolve().parent.parent
-    config_name = 'riv_rel - individual save settings.cfg'
-    file_path = os.path.join(config_dir, config_name)
-    config = configparser.ConfigParser()
-
-    # read in cfg
-    if os.path.isfile(file_path):
-        config.read_file(open(file_path, 'r'))
-
-    # add section if it isn't there, and fix to make sure we have all keys
-    global hex_slot_id
-    if hex_slot_id not in config.sections():
-        output('there are no settings for this ID. adding them...')
-        config[hex_slot_id] = {}
-        fix_cfg_settings()
-
-    # do settings
-    # search_if_updating_settings
-    config[hex_slot_id]['include_step_rels'] = str(rec_step_setting[0])
-    config[hex_slot_id]['advanced_use_currentsession_files'] = str(rec_step_setting[1])
-
-    # update cfg file
-    with open(file_path, 'w') as cfg_file:
-        config.write(cfg_file)
-    output('settings updated!')
