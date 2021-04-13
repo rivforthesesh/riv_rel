@@ -850,7 +850,6 @@ def console_get_descendants(sim_x: SimInfoParam, _connection=None):
 
 
 # input: two sims and ancestors. output: [] if there is no direct relation, generational difference if there is
-@lru_cache(maxsize=1)
 def get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors):
     xy_direct_rels = []
 
@@ -1690,15 +1689,15 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
 
 # get drel% from two sims' drels
 @lru_cache(maxsize=None)
-def drel_percent(sim_x, sim_y):
-    drels = get_direct_relation(sim_x, sim_y)
+def drel_percent(x_id, y_id):
+    drels = get_direct_relation(get_rivsim_from_id(x_id), get_rivsim_from_id(y_id))
     return sum([0.5 ** abs(gen) for gen in drels])
 
 
 # get irel% from two sims' irels
 @lru_cache(maxsize=None)
-def irel_percent(sim_x: RivSim, sim_y: RivSim):
-    irels = get_indirect_relation(sim_x, sim_y)
+def irel_percent(x_id, y_id):
+    irels = get_indirect_relation(get_rivsim_from_id(x_id), get_rivsim_from_id(y_id))
     return sum([2 * irel[4] * (2 ** -(irel[2] + irel[3])) for irel in irels])
 
 
@@ -1709,7 +1708,7 @@ def consang(sim_x: RivSim, sim_y: RivSim):
     if sim_x == sim_y:
         return 1.0
     # o/w return sum of consang percentages
-    return drel_percent(sim_x, sim_y) + irel_percent(sim_x, sim_y)
+    return drel_percent(sim_x.sim_id, sim_y.sim_id) + irel_percent(sim_x.sim_id, sim_y.sim_id)
 
 
 @sims4.commands.Command('riv_consang', command_type=sims4.commands.CommandType.Live)
@@ -3513,10 +3512,10 @@ def riv_clear_log(_connection=None):
 
 # test if two sims are an eligible couple
 @lru_cache(maxsize=None)
-def is_eligible_couple(sim_x, sim_y):
+def is_eligible_couple(x_id, y_id):
     # make rivsims
-    sim_x = get_rivsim_from_sim(sim_x)
-    sim_y = get_rivsim_from_sim(sim_y)
+    sim_x = get_rivsim_from_id(x_id)
+    sim_y = get_rivsim_from_id(y_id)
 
     # handle the funny case
     if sim_x == sim_y:
@@ -3563,7 +3562,7 @@ def is_eligible_couple(sim_x, sim_y):
 @sims4.commands.Command('riv_is_eligible_couple', command_type=sims4.commands.CommandType.Live)
 def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    eligibility = is_eligible_couple(sim_x, sim_y)
+    eligibility = is_eligible_couple(sim_x.sim_id, sim_y.sim_id)
     output(eligibility[1])
     try:
         eligibility2 = sim_x.incest_prevention_test(sim_y)
@@ -3585,7 +3584,7 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     output(f'all eligible partners for {sim_x.first_name}, i.e. different sims, same age, alive, '
            f'and their relationship wouldn\'t be incestuous ({incest_rules})')
     for sim_y in services.sim_info_manager().get_all():
-        eligibility = is_eligible_couple(sim_x, sim_y)
+        eligibility = is_eligible_couple(sim_x.sim_id, sim_y.sim_id)
         try:
             eligibility2 = sim_x.incest_prevention_test(sim_y)
         except Exception as e:
@@ -3605,7 +3604,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
     riv_result = True
 
     try:
-        riv_result = is_eligible_couple(self, sim_info_b)[0]
+        riv_result = is_eligible_couple(self.sim_id, sim_info_b.sim_id)[0]
         riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name}: '
                 f'original result is {result}, my mod says {riv_result}. __name__ = {__name__}', 3)
     except Exception as e:
