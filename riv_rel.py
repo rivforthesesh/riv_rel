@@ -3588,7 +3588,7 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
         try:
             eligibility2 = sim_x.incest_prevention_test(sim_y)
         except Exception as e:
-            riv_log(f'riv_get_suitors couldn\'t check if this is ingame incest because {e}', 1)
+            riv_log(f'error: riv_get_suitors couldn\'t check if this is ingame incest because {e}', 1)
             eligibility2 = True  # x and True = x
         if eligibility[0] and eligibility2:  # this couple is eligible
             if sim_x.age == sim_y.age:  # this couple is the same age
@@ -3601,16 +3601,21 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
 @inject_to(SimInfo, 'incest_prevention_test')
 def riv_incest_prevention_test(original, self, sim_info_b):
     result = original(self, sim_info_b)
-    riv_result = True
 
+    # checks if this is already incest (i.e. False)
+    if not result:
+        return result
+
+    # otherwise, might need to check consanguinity
+    riv_result = True
     try:
         riv_result = is_eligible_couple(self.sim_id, sim_info_b.sim_id)[0]
         riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name}: '
                 f'original result is {result}, my mod says {riv_result}. __name__ = {__name__}', 3)
     except Exception as e:
-        riv_log(f'didn\'t manage to influence incest settings because {e}')
+        riv_log(f'error: didn\'t manage to influence incest settings because {e}')
 
-    return result and riv_result
+    return riv_result
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
 
