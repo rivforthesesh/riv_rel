@@ -380,7 +380,7 @@ class RivSim:
     # TODO: work out why every already culled sim gets culled AGAIN
     def cull(self):
         if not self.is_culled:
-            riv_log(f'marked {self.first_name} {self.last_name} as culled')
+            # riv_log(f'marked {self.first_name} {self.last_name} as culled')
             self.is_culled = True
 
     # for marking a sim as unculled; for cleaning
@@ -850,6 +850,7 @@ def console_get_descendants(sim_x: SimInfoParam, _connection=None):
 
 
 # input: two sims and ancestors. output: [] if there is no direct relation, generational difference if there is
+@lru_cache(maxsize=1)
 def get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors):
     xy_direct_rels = []
 
@@ -872,9 +873,6 @@ def get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors):
 
     # order the rels by magnitude
     xy_direct_rels.sort(key=abs)
-
-    # calculate direct rel percentage
-    drel = drel_percent(xy_direct_rels)
 
     return xy_direct_rels
 
@@ -1218,9 +1216,6 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
 
     # order the rels by magnitude
     xy_indirect_rels.sort(key=lambda irel: -irel[4] * -(2 ** (irel[2] + irel[3])))  # - to ensure ascending
-
-    # calculate indirect rel percentage
-    irel = irel_percent(xy_indirect_rels)
 
     return xy_indirect_rels  # [(sim_z, sim_w, nx, ny, sib_strength)]
     # where sim_z and sim_w are parents/sibs/relations to link, sim_z = sim_w if half-
@@ -1695,13 +1690,15 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
 
 # get drel% from two sims' drels
 @lru_cache(maxsize=None)
-def drel_percent(drels):
+def drel_percent(sim_x, sim_y):
+    drels = get_direct_relation(sim_x, sim_y)
     return sum([0.5 ** abs(gen) for gen in drels])
 
 
 # get irel% from two sims' irels
 @lru_cache(maxsize=None)
-def irel_percent(irels):
+def irel_percent(sim_x: RivSim, sim_y: RivSim):
+    irels = get_indirect_relation(sim_x, sim_y)
     return sum([2 * irel[4] * (2 ** -(irel[2] + irel[3])) for irel in irels])
 
 
@@ -1711,16 +1708,8 @@ def consang(sim_x: RivSim, sim_y: RivSim):
     # 100% relationship with self
     if sim_x == sim_y:
         return 1.0
-
-    # o/w add percentages
-    x_ancestors = get_ancestors(sim_x)
-    y_ancestors = get_ancestors(sim_y)
-    # calculate drels + irels
-    drels = get_direct_rel(sim_x, sim_y, x_ancestors, y_ancestors)
-    irels = get_indirect_rel(sim_x, sim_y, x_ancestors, y_ancestors)
-
-    # return sum of consang percentages
-    return drel_percent(drels) + irel_percent(irels)
+    # o/w return sum of consang percentages
+    return drel_percent(sim_x, sim_y) + irel_percent(sim_x, sim_y)
 
 
 @sims4.commands.Command('riv_consang', command_type=sims4.commands.CommandType.Live)
@@ -2984,7 +2973,7 @@ def auto_json_oahasil(original, self, client):
                                            'riv_auto again.', 'riv_rel: auto json issue')
         elif hex_slot_id in mccc_autosaves:
             riv_log('   with riv_auto_enabled = false, slot ID is an autosave')
-            opener = f'you\'ve loaded up an autosave slot! to use riv_auto backups, please save the game to another' \
+            opener = f'you\'ve loaded up an autosave slot! to use riv_auto backups, please save the game to another ' \
                      f'slot first (if you don\'t want to use riv_auto, you don\'t need to do this)' \
                      f'\n\nnumber of sims: {len(riv_sim_list.sims)}'
         else:
