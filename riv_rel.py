@@ -82,6 +82,8 @@ def format_sim_date():
 
 
 # GLOBALS
+# mod gen/version
+rr_gen = 6
 # autosave
 riv_auto_enabled = False  # this can be set by the user for each save. KEEP this as default false!!!
 file_name_extra = ''
@@ -92,17 +94,16 @@ riv_rel_int_24508_MixerId = (17552881007513514036,)
 riv_rel_int_163702_SnippetId = 163702
 riv_rel_int_163702_MixerId = (17552881007513514036,)
 # for giving a heads up about own folder
-jsyk_ownfolder = False
+jsyk_ownfolder = False  # KEEP FALSE
 # for MCCC autosave compatibility
 mccc_autosaves = []
-mccc_autosave_enabled = False  # keep default false, set to true later
+mccc_autosave_enabled = False  # KEEP FALSE
 # existence of addons
-addons = {'computer': False, 'traits': False, 'GT': False}
+addons = {'computer': False, 'traits': False, 'GT': False}  # KEEP FALSE
 # performance
-use_currentsession_files = False
+use_currentsession_files = False  # KEEP FALSE
 # features
-global_include_step_rels = False
-# TODO: make step rels more efficient
+global_include_step_rels = False  # KEEP FALSE TODO: until they work
 # default cfg values
 # search_if_updating_settings
 cfg_default_vals = dict(
@@ -115,14 +116,6 @@ cfg_default_vals = dict(
     # include_step_rels='False',
     # gen ?
 )
-# ones that affect performance
-# search_if_updating_settings
-option_names = tuple([
-    # 'global_include_step_rels',
-    'use_currentsession_files'
-])
-rec_setting = tuple([False, False])
-rec_step_setting = tuple([True, False])
 # logging stuff for testing (true <=> riv_rel.log is in the folder)
 riv_auto_log = os.path.isfile(os.path.join(Path(__file__).resolve().parent.parent, 'riv_rel.log'))
 riv_log_last_line = ''
@@ -3006,7 +2999,7 @@ def auto_json_oahasil(original, self, client):
         scumbumbo_show_notif_texttitle(
             f'{opener} {mccc_autosaves_str}\n\nif this is the wrong file, run riv_clear, save your game, '
             f'and run riv_load_cfg_manually.{ownfolder_warning}{computer_str}\n\nthank you for using my mod! '
-            , 'riv_rel: auto json')
+            , f'riv_rel gen {rr_gen}')
 
     except Exception as e:
         riv_log(f'error in auto_json in on_all_households_and_sim_infos_loaded: {e}')
@@ -3343,8 +3336,8 @@ def console_help(_connection=None):
     else:
         addon_GT_text = ''
     output(
-        'riv_rel gen 6 - biological, in-law, and (optional) step relations, console commands, social interaction, '
-        'auto .json files, optional computer help menu, optional traits' + addon_GT_text + ', consanguinity')
+        f'riv_rel gen {rr_gen} - biological, in-law, and (optional) step relations, console commands, social '
+        f'interaction, auto .json files, optional computer help menu, optional traits{addon_GT_text}, consanguinity')
     output('all settings can be edited by opening the .cfg files (in the same folder as riv_rel) in notepad++')
     output(
         'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, '
