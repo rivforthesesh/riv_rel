@@ -3345,6 +3345,7 @@ def console_help(_connection=None):
     output(
         'riv_rel gen 6 - biological, in-law, and (optional) step relations, console commands, social interaction, '
         'auto .json files, optional computer help menu, optional traits' + addon_GT_text + ', consanguinity')
+    output('all settings can be edited by opening the .cfg files (in the same folder as riv_rel) in notepad++')
     output(
         'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, '
         'e.g. J "Huntington III") or as the sim ID')
@@ -3359,8 +3360,7 @@ def console_help(_connection=None):
         'riv_gen_diff, riv_consang, riv_is_eligible_couple')
     output(
         'commands taking one sim: '
-        'riv_get_parents, riv_get_children, riv_get_ancestors, riv_get_descendants, riv_rel_all, riv_rel_rand, '
-        'riv_get_suitors')
+        'riv_get_parents, riv_get_children, riv_get_ancestors, riv_get_descendants, riv_rel_all, riv_rel_rand')
 
     output('')
 
@@ -3379,7 +3379,7 @@ def console_help(_connection=None):
 
         output('trait commands taking one sim, and a letter from A to H: '
                'riv_include_in_family, riv_add_to_family, riv_exclude_from_family, riv_make_heir, riv_add_founder')
-        output('trait commands taking one sim: riv_traits_by_name')
+        output('trait commands taking one sim: riv_traits_by_name, riv_clear_fam_sim (removes fam traits)')
         output('trait commands taking a letter from A to H: riv_traits_by_fam, riv_clear_fam, riv_show_family')
         output('trait commands taking no arguments: riv_traits, riv_clear_fam_all')
     if addons['computer']:
