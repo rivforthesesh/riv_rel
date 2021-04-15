@@ -121,7 +121,8 @@ riv_auto_log = os.path.isfile(os.path.join(Path(__file__).resolve().parent.paren
 riv_log_last_line = ''
 num_reps = 1
 # log level (3 for showing extra, 2 for normal, 1 for errors only, 0 for none)
-log_level = 2
+log_level = 3  # TODO: set to 2
+# TODO: change round(100 * consang, 3) to scale by log 10
 
 
 # TODO [gen 6] always print errors option (rk. alter to make sure they don't keep getting sib/nib/pib pairs)
@@ -1069,6 +1070,7 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
 
         #   sim_x.relationship_tracker.has_bit(sim_y.sim_id, relname_relbit) <=> sim_y is the relname of sim_x
 
+        # todo: FOR FUCK SAKE
         manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
         sibling_relbit = manager.get(0x2262)
         cousin_relbit = manager.get(0x227A)
@@ -1082,6 +1084,12 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         # get parents of sim_xx or sim_yy that are ancestors of x and y
                         xx_parents = [p for p in get_parents(sim_xx) if get_rivsim_from_sim(p) in xy_ancestors]
                         yy_parents = [p for p in get_parents(sim_yy) if get_rivsim_from_sim(p) in xy_ancestors]
+
+                        # TODO: remove once this shit works
+                        riv_log(xx_parents, 3)
+                        riv_log(yy_parents, 3)
+                        riv_log([p for p in xx_parents if p in yy_parents], 3)
+
                         # get parents of sim_xx AND sim_yy that are ancestors of x and y
                         if not [p for p in xx_parents if p in yy_parents]:
                             # convert back to rivsims
@@ -1684,14 +1692,19 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
 @lru_cache(maxsize=None)
 def drel_percent(x_id, y_id):
     drels = get_direct_relation(get_rivsim_from_id(x_id), get_rivsim_from_id(y_id))
-    return sum([0.5 ** abs(gen) for gen in drels])
+    drel_ps = [0.5 ** abs(gen) for gen in drels]
+    riv_log(drel_ps, 3)
+    return sum(drel_ps)
 
 
 # get irel% from two sims' irels
+# TODO: why is this wrong lmao
 @lru_cache(maxsize=None)
 def irel_percent(x_id, y_id):
     irels = get_indirect_relation(get_rivsim_from_id(x_id), get_rivsim_from_id(y_id))
-    return sum([2 * irel[4] * (2 ** -(irel[2] + irel[3])) for irel in irels])
+    irel_ps = [2 * irel[4] * (0.5 ** (irel[2] + irel[3])) for irel in irels]
+    riv_log(irel_ps, 3)
+    return sum(irel_ps)
 
 
 # calculate consanguinity for two sims
@@ -1708,7 +1721,7 @@ def consang(sim_x: RivSim, sim_y: RivSim):
 def console_get_consanguinity(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     xy_consang = consang(sim_x, sim_y)
-    output(f'consanguinity between {sim_x.first_name} and {sim_y.first_name} is {round(100 * xy_consang,3)}%')
+    output(f'consanguinity between {sim_x.first_name} and {sim_y.first_name} is {round(100 * xy_consang,5)}%')
 
 
 # riv_rel interactions below
@@ -2164,7 +2177,7 @@ def riv_get_notif(x_id: int, y_id: int, _connection=None):
 
     # add consanguinity
     if show_consang:
-        notif_text = notif_text + f'\n\n[consanguinity: {round(100 * consang(sim_x, sim_y),3)}%]'
+        notif_text = notif_text + f'\n\n[consanguinity: {round(100 * consang(sim_x, sim_y),5)}%]'
 
     scumbumbo_show_notification(sim_x, sim_y, notif_text)
 
@@ -3168,6 +3181,7 @@ def riv_getrelation(sim_x: SimInfoParam, sim_y: SimInfoParam, show_if_not_relate
 
 
 # always has step rels enabled
+# TODO: add consang for each rel
 @sims4.commands.Command('riv_rel_more_info', command_type=sims4.commands.CommandType.Live)
 def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_step_rels=True, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -3227,7 +3241,7 @@ def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_s
 
             # consanguinity
             xy_consang = consang(sim_x, sim_y)
-            output(f'consanguinity: {round(100 * xy_consang,3)}%')
+            output(f'consanguinity: {round(100 * xy_consang,5)}%')
 
             # part 2: work with sims
             sim_x = get_sim_from_rivsim(sim_x)
@@ -3571,7 +3585,7 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
 @sims4.commands.Command('riv_get_suitors', command_type=sims4.commands.CommandType.Live)
 def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    incest_rules = f'consanguinity under {round(100*consang_limit, 3)}%'
+    incest_rules = f'consanguinity under {round(100*consang_limit, 5)}%'
     if drel_incest:
         incest_rules = incest_rules + ', not directly related'
     output(f'all eligible partners for {sim_x.first_name}, i.e. different sims, same age, alive, '
@@ -3587,12 +3601,13 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
             if sim_x.age == sim_y.age:  # this couple is the same age
                 if not sim_y.is_ghost():  # sim_y isn't dead
                     output(f'{sim_y.first_name} {sim_y.last_name}, with '
-                           f'consanguinity {round(100 * consang(sim_x, sim_y),3)}%')
+                           f'consanguinity {round(100 * consang(sim_x, sim_y),5)}%')
 
 
 # use my consanguinity in incest prevention test. n.b. True = not incest, so we want my result AND original
 @inject_to(SimInfo, 'incest_prevention_test')
 def riv_incest_prevention_test(original, self, sim_info_b):
+    incest_prevention_tic = time.perf_counter()
     result = original(self, sim_info_b)
 
     # checks if this is already incest (i.e. False)
@@ -3608,6 +3623,9 @@ def riv_incest_prevention_test(original, self, sim_info_b):
     except Exception as e:
         riv_log(f'error: didn\'t manage to influence incest settings because {e}')
 
+    incest_prevention_toc = time.perf_counter()
+    riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name} took '
+            f'{incest_prevention_toc - incest_prevention_tic}')
     return riv_result
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
