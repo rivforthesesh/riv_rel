@@ -121,8 +121,7 @@ riv_auto_log = os.path.isfile(os.path.join(Path(__file__).resolve().parent.paren
 riv_log_last_line = ''
 num_reps = 1
 # log level (3 for showing extra, 2 for normal, 1 for errors only, 0 for none)
-log_level = 3  # TODO: set to 2
-# TODO: change round(100 * consang, 3) to scale by log 10
+log_level = 2
 
 
 # TODO [gen 6] always print errors option (rk. alter to make sure they don't keep getting sib/nib/pib pairs)
@@ -1084,7 +1083,7 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         yy_parents = [p for p in get_parents(sim_yy) if p in xy_ancestors]
 
                         # TODO: remove once this shit works
-                        riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:')
+                        riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:', 3)
                         riv_log(xx_parents, 3)
                         riv_log(yy_parents, 3)
                         riv_log([p for p in xx_parents if p in yy_parents], 3)
@@ -1116,9 +1115,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                     if sim_xx.relationship_tracker.has_bit(int(sim_yy.sim_id), pibling_relbit):
                         for sim_xxx in get_parents(sim_xx):
                             sim_xxx = get_sim_from_rivsim(sim_xxx)
-                            if sim_xxx.relationship_tracker.has_bit(int(sim_yy.sim_id), sibling_relbit):
-                                # this case will already by covered by sib case, using yy's parent = xx's sib
-                                break
+                            if sim_xxx is not None:
+                                if sim_xxx.relationship_tracker.has_bit(int(sim_yy.sim_id), sibling_relbit):
+                                    # this case will already by covered by sib case, using yy's parent = xx's sib
+                                    break
                         else:
                             # convert back to rivsims
                             rivsim_xx = get_rivsim_from_sim(sim_xx)
@@ -1145,9 +1145,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                     if sim_xx.relationship_tracker.has_bit(int(sim_yy.sim_id), nibling_relbit):
                         for sim_yyy in get_parents(sim_yy):
                             sim_yyy = get_sim_from_rivsim(sim_yyy)
-                            if sim_yyy.relationship_tracker.has_bit(int(sim_xx.sim_id), sibling_relbit):
-                                # this case will already by covered by sib case, using xx's parent = yy's sib
-                                break
+                            if sim_yyy is not None:
+                                if sim_yyy.relationship_tracker.has_bit(int(sim_xx.sim_id), sibling_relbit):
+                                    # this case will already by covered by sib case, using xx's parent = yy's sib
+                                    break
                         else:
                             # convert back to rivsims
                             rivsim_xx = get_rivsim_from_sim(sim_xx)
@@ -1179,21 +1180,22 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         for sim_xxx, sim_yyy in get_pairs_yield(xx_parents, yy_parents):
                             sim_xxx = get_sim_from_rivsim(sim_xxx)
                             sim_yyy = get_sim_from_rivsim(sim_yyy)
-                            if sim_xxx.relationship_tracker.has_bit(sim_yyy.sim_id, sibling_relbit):
-                                # handled by sibling case
-                                break
-                            if sim_xxx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
-                                # handled by pnibling case
-                                break
-                            if sim_xx.relationship_tracker.has_bit(sim_yyy.sim_id, nibling_relbit):
-                                # handled by pnibling case
-                                break
-                            if sim_yyy.relationship_tracker.has_bit(sim_xx.sim_id, nibling_relbit):
-                                # handled by pnibling case
-                                break
-                            if sim_yy.relationship_tracker.has_bit(sim_xxx.sim_id, nibling_relbit):
-                                # handled by pnibling case
-                                break
+                            if sim_xxx is not None and sim_yyy is not None:
+                                if sim_xxx.relationship_tracker.has_bit(sim_yyy.sim_id, sibling_relbit):
+                                    # handled by sibling case
+                                    break
+                                if sim_xxx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
+                                    # handled by pnibling case
+                                    break
+                                if sim_xx.relationship_tracker.has_bit(sim_yyy.sim_id, nibling_relbit):
+                                    # handled by pnibling case
+                                    break
+                                if sim_yyy.relationship_tracker.has_bit(sim_xx.sim_id, nibling_relbit):
+                                    # handled by pnibling case
+                                    break
+                                if sim_yy.relationship_tracker.has_bit(sim_xxx.sim_id, nibling_relbit):
+                                    # handled by pnibling case
+                                    break
                         else:  # sim_xx and sim_yy are first cousins, but have no parents who are siblings
                             # convert back to rivsims
                             rivsim_xx = get_rivsim_from_sim(sim_xx)

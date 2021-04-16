@@ -771,7 +771,7 @@ def auto_inc_spouse_oatr(original, self, sim, target_sim_info, relationship, fro
 
 # list sims in each generation in fam A
 @sims4.commands.Command('riv_show_family', command_type=sims4.commands.CommandType.Live)
-def console_famX(X='A', max_iters=10, _connection=None):
+def console_famX(X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()
 
@@ -795,12 +795,10 @@ def console_famX(X='A', max_iters=10, _connection=None):
     riv_log('got list of founder\'s descendants')
     famX_list = [(f'{founder.first_name} {founder.last_name}', 1, 0)]
 
-    for sim_z in famX_tmp.keys():  # ????
-        # TODO: see why there's an error that None has no first_name
-        riv_log(sim_z)
+    for sim_z in famX_tmp.keys():
         game_sim_z = riv_rel.get_sim_from_rivsim(sim_z)
         # get the stage heir, fam, exc, no traits
-        if game_sim_z is None:
+        if sim_z.is_culled:
             stage = 4
         elif game_sim_z.has_trait(trait_heir(X)):
             stage = 0
@@ -816,64 +814,19 @@ def console_famX(X='A', max_iters=10, _connection=None):
     # famX_list = [(sim_z's name, n), ...] where n is the (max!) generation number of that sim
     riv_log('got famX_list')
 
-    # TODO: make sure this doesn't loop infinitely without the max_iters temp fix
+    # TODO: make sure this doesn't loop infinitely
     #   output to text file
-    # stages: 0 heir, 1 fam, 2 exc, 3 no traits
     gen = 0
-    iters = 0
-    max_gen = max([sim_gen[1] for sim_gen in famX_list])
-    this_gen = []
-    current_stage = 0
-    fam_group = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other, unculled', 4: 'culled'}
-    while famX_list:
-
-        gens = [sim_gen[1] for sim_gen in famX_list]
-        if gens:
-            min_gen = min(gens)
-        else:
-            gen += 1
-            continue
-
-        stages_for_gen = [sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen]
-        if stages_for_gen:
-            min_stage_for_gen = min(stages_for_gen)
-        else:
-            gen += 1
-            continue
-
-        # set new stage/generation number if needed
-        if min_stage_for_gen > current_stage:  # need to go to next stage
-            output(fam_group[current_stage] + ' sims: ' +
-                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
-            this_gen = []
-            current_stage = min_stage_for_gen
-        elif min_gen > gen:  # need to go to next gen
-            output(fam_group[current_stage] + ' sims: ' +
-                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
-            this_gen = []
-            gen = min_gen
-            output(f'\n ---- gen {gen} ---- ')
-            iters = 0
-            current_stage = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])
-        elif gen > max_gen:
-            if famX_list:
-                output(f'\nnumber of sims left off: {len(famX_list)}')
-            return  # don't want to keep going
-        elif iters >= max_iters:
-            this_gen.append('(maybe more)')
-            output(fam_group[current_stage] + ' sims: ' +
-                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
-            gen += 1
-            output(f'\n ---- gen {gen} ---- ')
-            iters = 0
-            current_stage = min([sim_gen[2] for sim_gen in famX_list if sim_gen[1] == gen])
-            continue  # go to start of while loop
-        for sim_gen in famX_list:
-            if sim_gen[1] == gen:
-                this_gen.append(sim_gen[0])
-                famX_list.remove(sim_gen)
-        iters += 1
-        # make sure it prints the final bunch!
-        if this_gen and not famX_list:
-            output(fam_group[current_stage] + ' sims: ' +
-                   str(this_gen).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
+    stages = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other, unculled', 4: 'culled'}
+    max_gen = max([sim[1] for sim in famX_list])
+    max_stage = max(list(stages.keys()))
+    while gen < max_gen:
+        gen += 1
+        output(f'\n ---- gen {gen} ---- ')
+        stage = 0
+        while stage < max_stage:
+            this_block = [sim[0] for sim in famX_list if sim[1] == gen and sim[2] == stage]
+            if this_block:
+                output(stages[stage] + ' sims: '
+                       + str(this_block).replace('[', '').replace(']', '').replace('\'', '').replace('"', ''))
+            stage += 1
