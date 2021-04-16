@@ -1058,12 +1058,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                 yy.append(get_sim_from_rivsim(sim_yy))
 
         # remove nones
-        # ancestors of only x
+        # ancestors of only x, as sims
         xx = [sim for sim in xx if sim is not None]
-        # ancestors of only y
+        # ancestors of only y, as sims
         yy = [sim for sim in yy if sim is not None]
-        # ancestors of x and y
-        xy_ancestors = [sim for sim in xx if sim in yy]
 
         # x (has an ancestor who) is a close indirect relative of y('s ancestor), but these share no ancestor who is an
         # ancestor of x AND y changed from elifs bc some rels are gross af
