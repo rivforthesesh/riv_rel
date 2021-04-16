@@ -599,7 +599,7 @@ def get_parents(sim_x):
     if rivsim_x is None:
         rivsim_x = RivSim(sim_x)
         riv_sim_list.sims.append(RivSim(sim_x))
-        riv_log('get_parents added sim {} {} to riv_sim_list.sims'.format(sim_x.first_name, sim_x.last_name))
+        riv_log(f'get_parents added sim {sim_x.first_name} {sim_x.last_name} to riv_sim_list.sims')
         # not a rivsim => won't have a rel => need to set up
         riv_rel_dict.rels[str(rivsim_x.sim_id)] = [int(parent.sim_id) for parent in ingame_parents]
     x_id = rivsim_x.sim_id  # and this is the ID as a string
@@ -615,7 +615,7 @@ def get_parents(sim_x):
             sim_y = services.sim_info_manager().get(y_id).sim_info
             rivsim_y = RivSim(sim_y)
             riv_sim_list.sims.append(rivsim_y)
-            riv_log('get_parents added sim {} {} to riv_sim_list.sims'.format(sim_y.first_name, sim_y.last_name))
+            riv_log(f'get_parents added sim {sim_y.first_name} {sim_y.last_name} to riv_sim_list.sims')
             riv_rel_dict.rels[str(rivsim_y.sim_id)] = [int(parent.sim_id) for parent in get_parents(rivsim_y)]
         sim_parents.append(rivsim_y)  # then add rivsim_y to the list
 
@@ -628,10 +628,10 @@ def console_get_parents(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     sim_parents = get_parents(sim_x)
     if not sim_parents:
-        output('{}\'s parents not found'.format(sim_x.first_name))
+        output(f'{sim_x.first_name}\'s parents not found')
     else:
         for sim_y in sim_parents:
-            output('{} {} is {}\'s parent'.format(sim_y.first_name, sim_y.last_name, sim_x.first_name))
+            output(f'{sim_y.first_name} {sim_y.last_name} is {sim_x.first_name}\'s parent')
 
 
 # gets children, but only the sim infos in the game, going via child relbits
@@ -1080,10 +1080,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
             for sim_yy in yy:
                 try:
                     # sim_xx and sim_yy siblings, with no parent who is an ancestor of x and y
-                    if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, sibling_relbit):
+                    if sim_xx.relationship_tracker.has_bit(int(sim_yy.sim_id), sibling_relbit):
                         # get parents of sim_xx or sim_yy that are ancestors of x and y
-                        xx_parents = [p for p in get_parents(sim_xx) if get_rivsim_from_sim(p) in xy_ancestors]
-                        yy_parents = [p for p in get_parents(sim_yy) if get_rivsim_from_sim(p) in xy_ancestors]
+                        xx_parents = [p for p in get_parents(sim_xx) if p in xy_ancestors]
+                        yy_parents = [p for p in get_parents(sim_yy) if p in xy_ancestors]
 
                         # TODO: remove once this shit works
                         riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:')
@@ -1115,10 +1115,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
 
                 try:
                     # sim_yy pibling of sim_xx, and there are no siblings to check
-                    if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, pibling_relbit):
+                    if sim_xx.relationship_tracker.has_bit(int(sim_yy.sim_id), pibling_relbit):
                         for sim_xxx in get_parents(sim_xx):
                             sim_xxx = get_sim_from_rivsim(sim_xxx)
-                            if sim_xxx.relationship_tracker.has_bit(sim_yy.sim_id, sibling_relbit):
+                            if sim_xxx.relationship_tracker.has_bit(int(sim_yy.sim_id), sibling_relbit):
                                 # this case will already by covered by sib case, using yy's parent = xx's sib
                                 break
                         else:
@@ -1144,10 +1144,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
 
                 try:
                     # sim_yy nibling of sim_xx, and there are no siblings to check
-                    if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
+                    if sim_xx.relationship_tracker.has_bit(int(sim_yy.sim_id), nibling_relbit):
                         for sim_yyy in get_parents(sim_yy):
                             sim_yyy = get_sim_from_rivsim(sim_yyy)
-                            if sim_yyy.relationship_tracker.has_bit(sim_xx.sim_id, sibling_relbit):
+                            if sim_yyy.relationship_tracker.has_bit(int(sim_xx.sim_id), sibling_relbit):
                                 # this case will already by covered by sib case, using xx's parent = yy's sib
                                 break
                         else:
@@ -1175,7 +1175,7 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                     # sim_xx and sim_yy first cousins, and there are no siblings to check
                     # (between sim_xx+parents AND sim_yy+parents)
                     # spaghet bc i don't fkn remember which way round the pnibling rel goes, two of these are unneeded
-                    if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, cousin_relbit):
+                    if sim_xx.relationship_tracker.has_bit(int(sim_yy.sim_id), cousin_relbit):
                         xx_parents = get_parents(sim_xx)
                         yy_parents = get_parents(sim_yy)
                         for sim_xxx, sim_yyy in get_pairs_yield(xx_parents, yy_parents):
