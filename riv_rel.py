@@ -1086,6 +1086,7 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         yy_parents = [p for p in get_parents(sim_yy) if get_rivsim_from_sim(p) in xy_ancestors]
 
                         # TODO: remove once this shit works
+                        riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:')
                         riv_log(xx_parents, 3)
                         riv_log(yy_parents, 3)
                         riv_log([p for p in xx_parents if p in yy_parents], 3)
@@ -1115,7 +1116,8 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                 try:
                     # sim_yy pibling of sim_xx, and there are no siblings to check
                     if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, pibling_relbit):
-                        for sim_xxx in get_parents_ingame(sim_xx):
+                        for sim_xxx in get_parents(sim_xx):
+                            sim_xxx = get_sim_from_rivsim(sim_xxx)
                             if sim_xxx.relationship_tracker.has_bit(sim_yy.sim_id, sibling_relbit):
                                 # this case will already by covered by sib case, using yy's parent = xx's sib
                                 break
@@ -1143,7 +1145,8 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                 try:
                     # sim_yy nibling of sim_xx, and there are no siblings to check
                     if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, nibling_relbit):
-                        for sim_yyy in get_parents_ingame(sim_yy):
+                        for sim_yyy in get_parents(sim_yy):
+                            sim_yyy = get_sim_from_rivsim(sim_yyy)
                             if sim_yyy.relationship_tracker.has_bit(sim_xx.sim_id, sibling_relbit):
                                 # this case will already by covered by sib case, using xx's parent = yy's sib
                                 break
@@ -1173,9 +1176,11 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                     # (between sim_xx+parents AND sim_yy+parents)
                     # spaghet bc i don't fkn remember which way round the pnibling rel goes, two of these are unneeded
                     if sim_xx.relationship_tracker.has_bit(sim_yy.sim_id, cousin_relbit):
-                        xx_parents = get_parents_ingame(sim_xx)
-                        yy_parents = get_parents_ingame(sim_yy)
+                        xx_parents = get_parents(sim_xx)
+                        yy_parents = get_parents(sim_yy)
                         for sim_xxx, sim_yyy in get_pairs_yield(xx_parents, yy_parents):
+                            sim_xxx = get_sim_from_rivsim(sim_xxx)
+                            sim_yyy = get_sim_from_rivsim(sim_yyy)
                             if sim_xxx.relationship_tracker.has_bit(sim_yyy.sim_id, sibling_relbit):
                                 # handled by sibling case
                                 break
