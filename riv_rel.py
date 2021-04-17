@@ -1082,11 +1082,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         xx_parents = [p for p in get_parents(sim_xx) if p in xy_ancestors]
                         yy_parents = [p for p in get_parents(sim_yy) if p in xy_ancestors]
 
-                        # TODO: remove once this shit works
-                        riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:', 3)
-                        riv_log(xx_parents, 3)
-                        riv_log(yy_parents, 3)
-                        riv_log([p for p in xx_parents if p in yy_parents], 3)
+                        #riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:', 3)
+                        #riv_log(xx_parents, 3)
+                        #riv_log(yy_parents, 3)
+                        #riv_log([p for p in xx_parents if p in yy_parents], 3)
 
                         # get parents of sim_xx AND sim_yy that are ancestors of x and y
                         if not [p for p in xx_parents if p in yy_parents]:
