@@ -284,7 +284,7 @@ def include_in_family(X: str, sim_x: SimInfoParam, via=False, _connection=None):
 # above as a console command
 # e.g. riv_include_in_family Pihn Pine A
 @sims4.commands.Command('riv_include_in_family', command_type=sims4.commands.CommandType.Live)
-def console_add_inc(sim_x: SimInfoParam, X: str, _connection=None):
+def console_add_inc(sim_x: SimInfoParam, X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
     if not (sim_x.has_trait(trait_fam(X)) or sim_x.has_trait(trait_inc(X))):  # if they're not already in famX / incX
@@ -351,7 +351,7 @@ def add_to_family(X: str, sim_x: SimInfoParam, output=None, via=False):
 # above as a console command
 # e.g. riv_add_to_family Rhona "Pine I" A
 @sims4.commands.Command('riv_add_to_family', command_type=sims4.commands.CommandType.Live)
-def console_add_fam(sim_x: SimInfoParam, X: str, _connection=None):
+def console_add_fam(sim_x: SimInfoParam, X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
 
@@ -400,7 +400,7 @@ def exclude_from_family(X: str, sim_x: SimInfoParam, output=None):
 # above as a console command
 # e.g. riv_exclude_from_family Kerry Oschner A
 @sims4.commands.Command('riv_exclude_from_family', command_type=sims4.commands.CommandType.Live)
-def console_add_exc(sim_x: SimInfoParam, X: str, _connection=None):
+def console_add_exc(sim_x: SimInfoParam, X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
     exclude_from_family(X, sim_x, output)
@@ -453,7 +453,7 @@ def make_heir(X: str, sim_x: SimInfoParam, output=None):
 # above as a console command
 # e.g. riv_make_heir Avina Pine A
 @sims4.commands.Command('riv_make_heir', command_type=sims4.commands.CommandType.Live)
-def console_make_heir(sim_x: SimInfoParam, X: str, _connection=None):
+def console_make_heir(sim_x: SimInfoParam, X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
     make_heir(X, sim_x, output)
@@ -468,7 +468,7 @@ def make_heir_A(x_id: int):
 
 # function to check what traits sim_x has for family X
 # returns whether they have any traits for this family
-def rivtraits_name_fam(sim_x: SimInfoParam, X: str, _connection=None):
+def rivtraits_name_fam(sim_x: SimInfoParam, X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     if sim_x.has_trait(trait_exc(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is excluded from family ' + X)
@@ -534,7 +534,7 @@ def console_rivtraits_name(sim_x: SimInfoParam, _connection=None):
 
 # console command to find the traits
 @sims4.commands.Command('riv_traits_by_fam', command_type=sims4.commands.CommandType.Live)
-def console_rivtraits_fam(X: str, _connection=None):
+def console_rivtraits_fam(X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     num_sims = 0
     X = X.upper()  # makes sure it's uppercase
@@ -558,7 +558,7 @@ def console_rivtraits(_connection=None):
 
 # adds founder trait to sim named, e.g. riv_add_founder Zaaham Pine A
 @sims4.commands.Command('riv_add_founder', command_type=sims4.commands.CommandType.Live)
-def console_add_founder(sim_x: SimInfoParam, X: str, _connection=None):
+def console_add_founder(sim_x: SimInfoParam, X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
 
@@ -592,7 +592,7 @@ def console_add_founder(sim_x: SimInfoParam, X: str, _connection=None):
 
 # clears family X
 @sims4.commands.Command('riv_clear_fam', command_type=sims4.commands.CommandType.Live)
-def console_clear_fam(X: str, _connection=None):
+def console_clear_fam(X='A', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     X = X.upper()  # makes sure it's uppercase
     traits_count = 0

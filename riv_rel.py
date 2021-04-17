@@ -3628,8 +3628,14 @@ def riv_incest_prevention_test(original, self, sim_info_b):
         riv_log(f'error: didn\'t manage to influence incest settings because {e}')
 
     incest_prevention_toc = time.perf_counter()
-    riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name} took '
-            f'{incest_prevention_toc - incest_prevention_tic}')
+    iptime = incest_prevention_toc - incest_prevention_tic
+
+    if iptime > 0.5:
+        ip_loglevel = 2
+    else:
+        ip_loglevel = 3
+
+    riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name} took {iptime}s', ip_loglevel)
     return riv_result
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
