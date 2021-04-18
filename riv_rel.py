@@ -1695,6 +1695,9 @@ def format_step_rel(xy_step_rels: List, sim_x: SimInfoParam):
 # get drel% from two sims' drels
 @lru_cache(maxsize=None)
 def drel_percent(x_id, y_id):
+    if int(y_id) < int(x_id):
+        return drel_percent(y_id, x_id)
+
     drels = get_direct_relation(get_rivsim_from_id(x_id), get_rivsim_from_id(y_id))
     drel_ps = [0.5 ** abs(gen) for gen in drels]
     riv_log(drel_ps, 3)
@@ -1702,9 +1705,11 @@ def drel_percent(x_id, y_id):
 
 
 # get irel% from two sims' irels
-# TODO: why is this wrong lmao
 @lru_cache(maxsize=None)
 def irel_percent(x_id, y_id):
+    if int(y_id) < int(x_id):
+        return irel_percent(y_id, x_id)
+
     irels = get_indirect_relation(get_rivsim_from_id(x_id), get_rivsim_from_id(y_id))
     irel_ps = [2 * irel[4] * (0.5 ** (irel[2] + irel[3])) for irel in irels]
     riv_log(irel_ps, 3)
@@ -3524,13 +3529,24 @@ def riv_clear_log(_connection=None):
 # test if two sims are an eligible couple
 @lru_cache(maxsize=None)
 def is_eligible_couple(x_id, y_id):
+    # handle the funny case
+    if x_id == y_id:
+        return False, 'mate, that\'s just being single with extra steps'
+
     # make rivsims
     sim_x = get_rivsim_from_id(x_id)
     sim_y = get_rivsim_from_id(y_id)
 
-    # handle the funny case
-    if sim_x == sim_y:
-        return False, 'mate, that\'s just being single with extra steps'
+    # make sims
+    gsim_x = get_sim_from_rivsim(sim_x)
+    gsim_y = get_sim_from_rivsim(sim_y)
+
+    if gsim_x is not None and gsim_y is not None:
+        x_age = gsim_x.age
+        y_age = gsim_y.age
+        if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
+            return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                          f'are not an eligible couple: at least one is too young for romance'
 
     # check direct rel
     if drel_incest and get_direct_relation(sim_x, sim_y):
@@ -3543,27 +3559,6 @@ def is_eligible_couple(x_id, y_id):
         return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
                       f'are not an eligible couple: over the consanguinity limit'
     # (traits module will check if in same fam)
-
-    # now we're gonna check stuff that relies on the sim info
-    sim_x = get_sim_from_rivsim(sim_x)
-    sim_y = get_sim_from_rivsim(sim_y)
-
-    # TODO: throw in these settings
-    # one_apart = [{Age.TEEN, Age.YOUNGADULT}, {Age.YOUNGADULT, Age.ADULT}, {Age.ADULT, Age.ELDER}]
-    # two_apart = [{Age.TEEN, Age.ADULT}, {Age.YOUNGADULT, Age.ELDER}]
-    # three_apart = [{Age.TEEN, Age.ELDER}]
-
-    if sim_x is not None and sim_y is not None:
-        x_age = sim_x.age
-        y_age = sim_y.age
-        if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
-            return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-                          f'are not an eligible couple: at least one is too young for romance'
-        #elif x_age != y_age:
-        #    # both legal but different ages
-        #    if {x_age, y_age} not in one_apart:
-        #        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-        #                      f'are not an eligible couple: they\'re too far apart in age'
 
     # should be all good
     return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
@@ -3630,7 +3625,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
     incest_prevention_toc = time.perf_counter()
     iptime = incest_prevention_toc - incest_prevention_tic
 
-    if iptime > 0.5:
+    if iptime > 1:
         ip_loglevel = 2
     else:
         ip_loglevel = 3
