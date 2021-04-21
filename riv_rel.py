@@ -3026,6 +3026,17 @@ def auto_json_oahasil(original, self, client):
     except Exception as e:
         riv_log(f'error in auto_json in on_all_households_and_sim_infos_loaded: {e}')
         raise Exception(f'(riv) error in auto_json in on_all_households_and_sim_infos_loaded: {e}')
+
+    try:
+        instanced_sims = frozenset(services.sim_info_manager().instanced_sims_on_active_lot_gen(include_spawn_point=True))
+        for sim_x in instanced_sims:
+            for sim_y in instanced_sims:
+                if sim_x.sim_id < sim_y.sim_id:
+                    consang(sim_x, sim_y)
+        riv_log(f'pre-rolled consanguinities of instanced sims')
+    except Exception as e:
+        riv_log(f'error in pre-rolling consanguinities in on_all_households_and_sim_infos_loaded: {e}')
+
     return result
 
 
@@ -3801,8 +3812,8 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 
 # despawns added
 @inject_to(DeathTracker, 'set_death_type')
-def riv_set_death_type(original, self, death_type, is_off_lot_death):
-    result = original(self, death_type, is_off_lot_death)
+def riv_set_death_type(original, self, *args, **kwargs):
+    result = original(self, *args, **kwargs)
     try:
         riv_log(f'dead sim: {self._sim_info.first_name} {self._sim_info.last_name} despawned {format_sim_date()}')
     except Exception as e:
