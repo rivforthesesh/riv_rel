@@ -48,6 +48,9 @@ from interactions.utils.death import DeathTracker
 # for cache (used for consang and is_eligible_couple)
 from functools import lru_cache
 
+# for preroll on instanced sims
+from zone_modifier.zone_modifier_service import ZoneModifierService
+
 # get irl datetime
 from datetime import datetime
 
@@ -3027,16 +3030,24 @@ def auto_json_oahasil(original, self, client):
         riv_log(f'error in auto_json in on_all_households_and_sim_infos_loaded: {e}')
         raise Exception(f'(riv) error in auto_json in on_all_households_and_sim_infos_loaded: {e}')
 
+    return result
+
+
+# zone load part 2 (once sims are instanced)
+@inject_to(ZoneModifierService, 'check_for_and_apply_new_zone_modifiers')
+def auto_json_fam_osic(original, self, *args, **kwargs):
+    result = original(self, *args, **kwargs)
     try:
-        instanced_sims = frozenset(services.sim_info_manager().instanced_sims_on_active_lot_gen(include_spawn_point=True))
+        preroll_consang_tic = time.perf_counter()
+        instanced_sims = services.sim_info_manager().instanced_sims_on_active_lot_gen(include_spawn_point=True)
         for sim_x in instanced_sims:
             for sim_y in instanced_sims:
                 if sim_x.sim_id < sim_y.sim_id:
                     consang(sim_x, sim_y)
-        riv_log(f'pre-rolled consanguinities of instanced sims')
+        preroll_consang_toc = time.perf_counter()
+        riv_log(f'pre-rolled consanguinities of instanced sims - it took {preroll_consang_toc - preroll_consang_tic}s')
     except Exception as e:
         riv_log(f'error in pre-rolling consanguinities in on_all_households_and_sim_infos_loaded: {e}')
-
     return result
 
 
