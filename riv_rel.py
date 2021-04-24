@@ -3041,7 +3041,7 @@ def riv_get_sims_for_spin_up_action(original, self, action):
         for sim_x in instanced_sims:
             for sim_y in instanced_sims:
                 if sim_x.sim_id < sim_y.sim_id:
-                    is_eligible_couple(sim_x, sim_y)
+                    is_eligible_couple(sim_x.sim_id, sim_y.sim_id)
         preroll_consang_toc = time.perf_counter()
         riv_log(f'pre-rolled consanguinities of instanced sims - it took {preroll_consang_toc - preroll_consang_tic}s')
     except Exception as e:
