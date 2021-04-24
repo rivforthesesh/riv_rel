@@ -129,6 +129,8 @@ log_level = 2
 def riv_log(string, level=2):
     # make absolutely sure it's a string lol
     string = str(string)
+    global riv_auto_log
+    global log_level
     if riv_auto_log and level <= log_level:
         file_dir = Path(__file__).resolve().parent.parent
         file_name = 'riv_rel.log'
@@ -139,6 +141,8 @@ def riv_log(string, level=2):
             if string == riv_log_last_line:
                 num_reps += 1
             else:
+                if 'error' in string:
+                    log_level = 1
                 with open(file_path, 'a') as file:
                     if num_reps > 1:
                         file.write(f'    (repeated {num_reps} times)\n')
@@ -473,9 +477,6 @@ class RivRelDict:
 
     def clear_rels(self):
         self.rels = {}
-
-    def clear_rivreldict(self):
-        self.clear_rels()
 
 
 # this is within class Zone in simulation/zone.py
@@ -2537,7 +2538,7 @@ def console_clean_sims(file_name_extra: str, _connection=None):
 def console_clear_sims(_connection=None):
     output = sims4.commands.CheatOutput(_connection)
     riv_sim_list.clear_sims()
-    riv_rel_dict.clear_rivreldict()
+    riv_rel_dict.clear_rels()
 
     # clear tmp files
     # clear tmp files
@@ -2947,7 +2948,7 @@ def auto_json_oahasil(original, self, client):
             if old_hsi not in ['00000000'] + mccc_autosaves:
                 # riv_clear without the console
                 riv_sim_list.clear_sims()
-                riv_rel_dict.clear_rivreldict()
+                riv_rel_dict.clear_rels()
                 riv_log('cleared sims and rels (parents and spouses)')
             else:
                 # clear tmp files
@@ -3030,21 +3031,24 @@ def auto_json_oahasil(original, self, client):
     return result
 
 
-# zone load part 2 (once sims are instanced)
-@inject_to(SimInfoManager, 'instanced_sims_gen')
-def riv_instanced_sims_gen(original, self, *args, **kwargs):
-    result = original(self, *args, **kwargs)
+@inject_to(SimInfoManager, 'get_sims_for_spin_up_action')
+def riv_get_sims_for_spin_up_action(original, self, action):
+    result = original(self,action)
     try:
         preroll_consang_tic = time.perf_counter()
-        instanced_sims = result
+        instanced_sims = list(services.sim_info_manager().instanced_sims_gen())
+        riv_log(f'number of instanced sims found: {len(instanced_sims)}')
         for sim_x in instanced_sims:
             for sim_y in instanced_sims:
                 if sim_x.sim_id < sim_y.sim_id:
-                    consang(sim_x, sim_y)
+                    is_eligible_couple(sim_x, sim_y)
         preroll_consang_toc = time.perf_counter()
+        riv_log(f'pre-rolled consanguinities of instanced sims - it took {preroll_consang_toc - preroll_consang_tic}s')
     except Exception as e:
-        riv_log(f'error in pre-rolling consanguinities in instanced_sims_gen: {e}')
+        riv_log(f'error in pre-rolling consanguinities in get_sims_for_spin_up_action: {e}')
+
     return result
+
 
 
 # when creating a new sim

@@ -473,13 +473,17 @@ def rivtraits_name_fam(sim_x: SimInfoParam, X='A', _connection=None):
     if sim_x.has_trait(trait_exc(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is excluded from family ' + X)
         if sim_x.has_trait(trait_founder(X)):
-            output(f'    they also have the founder{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the founder{X} trait - please remove the wrong one with MCCC '
+                   f'or riv_clear_traits_sim {sim_x.first_name} {sim_x.last_name}')
         if sim_x.has_trait(trait_heir(X)):
-            output(f'    they also have the heir{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the heir{X} trait - please remove the wrong one with MCCC '
+                   f'or riv_clear_traits_sim {sim_x.first_name} {sim_x.last_name}')
         if sim_x.has_trait(trait_founder(X)):
-            output(f'    they also have the fam{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the fam{X} trait - please remove the wrong one with MCCC '
+                   f'or riv_clear_traits_sim {sim_x.first_name} {sim_x.last_name}')
         if sim_x.has_trait(trait_heir(X)):
-            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC '
+                   f'or riv_clear_traits_sim {sim_x.first_name} {sim_x.last_name}')
     elif sim_x.has_trait(trait_founder(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is the founder of family ' + X)
         if sim_x.has_trait(trait_heir(X)):
@@ -493,7 +497,8 @@ def rivtraits_name_fam(sim_x: SimInfoParam, X='A', _connection=None):
             output(f'    they don\'t have the fam{X} trait - you\'ll want to add this one with the command:')
             output('        riv_add_to_family {} {} {}'.format(sim_x.first_name, sim_x.last_name, X))
         if sim_x.has_trait(trait_inc(X)):
-            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC '
+                   f'or riv_clear_traits_sim {sim_x.first_name} {sim_x.last_name}')
     elif sim_x.has_trait(trait_heir(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is an heir of family ' + X)
         if sim_x.has_trait(trait_fam(X)):
@@ -508,7 +513,8 @@ def rivtraits_name_fam(sim_x: SimInfoParam, X='A', _connection=None):
     elif sim_x.has_trait(trait_fam(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is a member of family ' + X)
         if sim_x.has_trait(trait_inc(X)):
-            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC')
+            output(f'    they also have the inc{X} trait - please remove the wrong one with MCCC '
+                   f'or riv_clear_traits_sim {sim_x.first_name} {sim_x.last_name}')
     elif sim_x.has_trait(trait_inc(X)):
         output('sim ' + sim_x.first_name + ' ' + sim_x.last_name + ' is included in family ' + X)
     else:
