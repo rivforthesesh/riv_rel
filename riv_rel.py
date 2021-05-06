@@ -3212,7 +3212,6 @@ def riv_getrelation(sim_x: SimInfoParam, sim_y: SimInfoParam, show_if_not_relate
 
 
 # always has step rels enabled
-# TODO: add consang for each rel
 @sims4.commands.Command('riv_rel_more_info', command_type=sims4.commands.CommandType.Live)
 def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_step_rels=True, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
@@ -3545,6 +3544,10 @@ def riv_clear_log(_connection=None):
             with open(file_path, 'a') as log_file:
                 log_file.write(line + '\n')
 
+    # add new line
+    with open(file_path, 'a') as log_file:
+        log_file.write('\n')
+
     output(f'done: gone from {old_line_num} lines to {new_line_num}.')
 
 
@@ -3563,13 +3566,6 @@ def is_eligible_couple(x_id, y_id):
     gsim_x = get_sim_from_rivsim(sim_x)
     gsim_y = get_sim_from_rivsim(sim_y)
 
-    if gsim_x is not None and gsim_y is not None:
-        x_age = gsim_x.age
-        y_age = gsim_y.age
-        if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
-            return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-                          f'are not an eligible couple: at least one is too young for romance'
-
     # check direct rel
     if drel_incest and get_direct_relation(sim_x, sim_y):
         return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
@@ -3580,7 +3576,6 @@ def is_eligible_couple(x_id, y_id):
     if xy_consang >= consang_limit:
         return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
                       f'are not an eligible couple: over the consanguinity limit'
-    # (traits module will check if in same fam)
 
     # should be all good
     return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
@@ -3591,7 +3586,13 @@ def is_eligible_couple(x_id, y_id):
 def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     eligibility = is_eligible_couple(sim_x.sim_id, sim_y.sim_id)
-    output(eligibility[1])
+    x_age = sim_x.age
+    y_age = sim_y.age
+    if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
+        output(f'{sim_x.first_name} and {sim_y.first_name} are not an eligible couple: '
+               f'at least one is too young for romance')
+    else:
+        output(eligibility[1])
     try:
         eligibility2 = sim_x.incest_prevention_test(sim_y)
         if eligibility2:
