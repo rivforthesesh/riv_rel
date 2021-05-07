@@ -3145,7 +3145,7 @@ def riv_get_sims_for_spin_up_action(original, self, action):
 
 
 # this runs at the start of zone load
-@inject(Zone, 'load_zone')
+@inject_to(Zone, 'load_zone')
 def riv_load_zone(original, self, *args, **kwargs):
     result = original(self, *args, **kwargs)
     try:
