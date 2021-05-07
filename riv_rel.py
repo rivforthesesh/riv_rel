@@ -409,7 +409,6 @@ class RivSim:
 class RivSimList:
     sims = []
 
-    # TODO: check if works
     def __str__(self):
         return f'<RivSimList - len {len(self.sims)}>'
 
@@ -1068,7 +1067,6 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
 
         #   sim_x.relationship_tracker.has_bit(sim_y.sim_id, relname_relbit) <=> sim_y is the relname of sim_x
 
-        # todo: FOR FUCK SAKE
         manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
         sibling_relbit = manager.get(0x2262)
         cousin_relbit = manager.get(0x227A)
@@ -1083,10 +1081,10 @@ def get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, x_ancestors: Dict
                         xx_parents = [p for p in get_parents(sim_xx) if p in xy_ancestors]
                         yy_parents = [p for p in get_parents(sim_yy) if p in xy_ancestors]
 
-                        #riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:', 3)
-                        #riv_log(xx_parents, 3)
-                        #riv_log(yy_parents, 3)
-                        #riv_log([p for p in xx_parents if p in yy_parents], 3)
+                        # riv_log(f'relation stitching for siblings {sim_x.first_name} and {sim_y.first_name}:', 3)
+                        # riv_log(xx_parents, 3)
+                        # riv_log(yy_parents, 3)
+                        # riv_log([p for p in xx_parents if p in yy_parents], 3)
 
                         # get parents of sim_xx AND sim_yy that are ancestors of x and y
                         if not [p for p in xx_parents if p in yy_parents]:
@@ -1338,7 +1336,6 @@ def console_get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, _connecti
 
 # gets spouses ingame
 def get_spouses(sim_x: SimInfoParam):
-
     sim_x = get_sim_from_rivsim(sim_x)
     if sim_x is None:
         return []
@@ -1731,7 +1728,7 @@ def consang(sim_x: RivSim, sim_y: RivSim):
 def console_get_consanguinity(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     xy_consang = consang(sim_x, sim_y)
-    output(f'consanguinity between {sim_x.first_name} and {sim_y.first_name} is {round(100 * xy_consang,5)}%')
+    output(f'consanguinity between {sim_x.first_name} and {sim_y.first_name} is {round(100 * xy_consang, 5)}%')
 
 
 # riv_rel interactions below
@@ -2187,7 +2184,7 @@ def riv_get_notif(x_id: int, y_id: int, _connection=None):
 
     # add consanguinity
     if show_consang:
-        notif_text = notif_text + f'\n\n[consanguinity: {round(100 * consang(sim_x, sim_y),5)}%]'
+        notif_text = notif_text + f'\n\n[consanguinity: {round(100 * consang(sim_x, sim_y), 5)}%]'
 
     scumbumbo_show_notification(sim_x, sim_y, notif_text)
 
@@ -2758,7 +2755,7 @@ def auto_json(new_sim=None):
                 riv_sim_list.load_sims(file_name_extra)
                 riv_rel_dict.load_rels(file_name_extra)
 
-            if new_sim is None: # normal ver
+            if new_sim is None:  # normal ver
                 # rivsimlist and rivreldict are now loaded in
                 riv_log('running auto_json without currentsession files...')
                 # update riv_sim_list.sims
@@ -2807,6 +2804,7 @@ def auto_json(new_sim=None):
             else:  # just one sim
                 # TODO: inject to something different
                 #       SimInfoManager; add_sim_info_if_not_in_manager; self, sim_info; returns nothing
+                #       SimInfo; add_parent_relations; self, parent_a, parent_b; returns nothing
 
                 # setup
                 riv_log(f'running auto_json for just {new_sim.first_name} {new_sim.last_name}...')
@@ -2828,7 +2826,7 @@ def auto_json(new_sim=None):
                         file_parent = get_rivsim_from_sim(new_parent)
                         if file_parent is None:
                             # need to add parent to sims list
-                            riv_log(f'recalling auto_json for parent {new_parent.first_name} {new_parent.last_name}...')
+                            riv_log(f'calling auto_json for parent {new_parent.first_name} {new_parent.last_name}...')
                             auto_json(new_parent)
                             new_parents.append(get_rivsim_from_sim(new_parent))
                         else:
@@ -3086,20 +3084,47 @@ def riv_get_sims_for_spin_up_action(original, self, action):
     return result
 
 
+#       SimInfoManager; add_sim_info_if_not_in_manager; self, sim_info; returns nothing
+#       SimInfo; add_parent_relations; self, parent_a, parent_b; returns nothing
 
-# when creating a new sim
-# for births - this works for sim but not parent rel
-# works for generated npcs!
-# test for cloning
-@inject_to(SimInfoManager, 'on_sim_info_created')
-def auto_json_fam_osic(original, self):
-    result = original(self)
+
+# when creating a new sim - the below works but is slow
+
+# @inject_to(SimInfoManager, 'on_sim_info_created')
+# def auto_json_fam_osic(original, self):
+#    result = original(self)
+#    try:
+#        auto_json()
+#        riv_log('ran auto_json_osic')
+#    except Exception as e:
+#        riv_log(f'error in auto_json in on_sim_info_created: {e}')
+#        raise Exception(f'(riv) error in auto_json in on_sim_info_created: {e}')
+#    return result
+
+
+# TODO: check this works
+@inject_to(SimInfoManager, 'add_sim_info_if_not_in_manager')
+def auto_json_fam_asiinim(original, self, sim_info):
+    result = original(self, sim_info)
     try:
-        auto_json()
-        riv_log('ran auto_json_osic')
+        auto_json(sim_info)
+        riv_log('ran auto_json_asiinim')
     except Exception as e:
-        riv_log(f'error in auto_json in on_sim_info_created: {e}')
-        raise Exception(f'(riv) error in auto_json in on_sim_info_created: {e}')
+        riv_log(f'error in auto_json in add_sim_info_if_not_in_manager: {e}')
+        raise Exception(f'(riv) error in auto_json in add_sim_info_if_not_in_manager: {e}')
+    return result
+
+
+# TODO: check this works / if this is needed
+@inject_to(SimInfo, 'add_parent_relations')
+def auto_json_fam_apr(original, self, parent_a, parent_b):
+    result = original(self, parent_a, parent_b)
+    try:
+        auto_json(self)
+        riv_log('ran auto_json_apr')
+    except Exception as e:
+        riv_log(f'error in auto_json in add_parent_relations: {e}')
+        raise Exception(f'(riv) error in auto_json in add_parent_relations: {e}')
     return result
 
 
@@ -3116,7 +3141,8 @@ def auto_json_fam_oatr(original, self, sim, target_sim_info, relationship, from_
         #         return cls is bit_type
         if self.matches_bit(parent_relbit):  # if a parent relbit has been added
             riv_log('a parent relbit was identified in on_add_to_relationship')
-            auto_json()  # then update the json files
+            auto_json(sim)  # then update the json files
+            auto_json(target_sim_info)  # and again just in case
             # nb. should have already returned if it was an object rel
     except Exception as e:
         riv_log(f'error in auto_json in on_add_to_relationship: {e}')
@@ -3307,7 +3333,7 @@ def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_s
 
             # consanguinity
             xy_consang = consang(sim_x, sim_y)
-            output(f'consanguinity: {round(100 * xy_consang,5)}%')
+            output(f'consanguinity: {round(100 * xy_consang, 5)}%')
 
             # part 2: work with sims
             sim_x = get_sim_from_rivsim(sim_x)
@@ -3622,13 +3648,11 @@ def is_eligible_couple(x_id, y_id):
 def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     eligibility = is_eligible_couple(sim_x.sim_id, sim_y.sim_id)
-    x_age = sim_x.age
-    y_age = sim_y.age
-    if x_age in [Age.BABY, Age.TODDLER, Age.CHILD] or y_age in [Age.BABY, Age.TODDLER, Age.CHILD]:
+    if sim_x.is_teen_or_older and sim_y.is_teen_or_older:
+        output(eligibility[1])
+    else:
         output(f'{sim_x.first_name} and {sim_y.first_name} are not an eligible couple: '
                f'at least one is too young for romance')
-    else:
-        output(eligibility[1])
     try:
         eligibility2 = sim_x.incest_prevention_test(sim_y)
         if eligibility2:
@@ -3643,7 +3667,7 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
 @sims4.commands.Command('riv_get_suitors', command_type=sims4.commands.CommandType.Live)
 def console_get_suitors(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    incest_rules = f'consanguinity under {round(100*consang_limit, 5)}%'
+    incest_rules = f'consanguinity under {round(100 * consang_limit, 5)}%'
     if drel_incest:
         incest_rules = incest_rules + ', not directly related'
     output(f'all eligible partners for {sim_x.first_name}, i.e. different sims, same age, alive, '
@@ -3659,7 +3683,7 @@ def console_get_suitors(sim_x: SimInfoParam, _connection=None):
             if sim_x.age == sim_y.age:  # this couple is the same age
                 if not sim_y.is_ghost():  # sim_y isn't dead
                     output(f'{sim_y.first_name} {sim_y.last_name}, with '
-                           f'consanguinity {round(100 * consang(sim_x, sim_y),5)}%')
+                           f'consanguinity {round(100 * consang(sim_x, sim_y), 5)}%')
 
 
 # use my consanguinity in incest prevention test. n.b. True = not incest, so we want my result AND original
@@ -3691,6 +3715,7 @@ def riv_incest_prevention_test(original, self, sim_info_b):
 
     riv_log(f'incest test between {self.first_name} and {sim_info_b.first_name} took {iptime}s', ip_loglevel)
     return riv_result
+
 
 # rel bits (TARGET [TargetSim] is the XYZ of RECIPIENT [Actor])
 
