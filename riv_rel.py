@@ -83,7 +83,7 @@ def format_sim_date():
 
 # GLOBALS
 # mod gen/version
-rr_gen = 6
+rr_gen = 7
 # autosave
 riv_auto_enabled = False  # this can be set by the user for each save. KEEP this as default false!!!
 file_name_extra = ''
@@ -2838,6 +2838,7 @@ def auto_json(new_sim=None):
             # add new sims to end of the list
             for sim_n in new_sims:  # for sim that is in game and not in file
                 sims.append(sim_n)  # add to sims (list for file / riv_sim_list)
+            riv_sim_list.sims = sims.copy()
 
             # add new rels to dict
             if new_rels:
@@ -2847,10 +2848,11 @@ def auto_json(new_sim=None):
                         set(riv_rel_dict.rels.get(sim_id, [])) | set(new_rels.get(sim_id, [])))
 
             # riv_log it
-            riv_log('number of new sims = ' + str(len(new_sims)))
-            riv_log('len(sims) = ' + str(len(sims)))
-            riv_sim_list.sims = sims.copy()
-            riv_log('updated sim list in mem')
+            if new_sim is not None:
+                if new_sims:
+                    riv_log('number of new sims = ' + str(len(new_sims)))
+                riv_log('len(sims) = ' + str(len(sims)))
+                riv_log('updated sim list in mem')
 
         riv_log('ran auto_json')
     else:
@@ -3107,15 +3109,16 @@ def riv_get_sims_for_spin_up_action(original, self, action):
 def auto_json_fam_asiinim(original, self, sim_info):
     result = original(self, sim_info)
     try:
-        auto_json(sim_info)
-        riv_log('ran auto_json_asiinim')
+        if sim_info is not None:
+            auto_json(sim_info)
+            riv_log('ran auto_json_asiinim')
     except Exception as e:
         riv_log(f'error in auto_json in add_sim_info_if_not_in_manager: {e}')
         raise Exception(f'(riv) error in auto_json in add_sim_info_if_not_in_manager: {e}')
     return result
 
 
-# TODO: check this works / if this is needed
+# TODO: check this works
 @inject_to(SimInfo, 'add_parent_relations')
 def auto_json_fam_apr(original, self, parent_a, parent_b):
     result = original(self, parent_a, parent_b)

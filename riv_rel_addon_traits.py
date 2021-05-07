@@ -120,7 +120,7 @@ def riv_reltraits_AddMixer_163706(original, self):
 
 from server_commands.argument_helpers import SimInfoParam
 from relationships.relationship_bit import RelationshipBit
-from sims.sim_info_manager import SimInfoManager
+from sims.sim_info import SimInfo
 
 # for .cfg management
 import configparser
@@ -703,36 +703,66 @@ def console_propagate_heir_A(sim_x: SimInfoParam, _connection=None):
 
 
 # injections
-@inject_to(SimInfoManager, 'on_sim_info_created')
-def auto_json_fam_osic(original, self):
-    result = original(self)
+
+# old ver
+# @inject_to(SimInfoManager, 'on_sim_info_created')
+# def auto_json_fam_osic(original, self):
+#     result = original(self)
+#     try:
+#         # go through babies, get their parents
+#         for sim in services.sim_info_manager().get_all():
+#             if sim.is_baby:
+#                 # riv_log('tmp!! - auto_inc_parent, baby ' + sim.first_name + ' ' + sim.last_name)
+#                 # got to here on birth
+#                 #
+#                 parents = get_parents_ingame(sim)
+#                 for parent in parents:
+#                     # add bab to family
+#                     if riv_auto_fam_child:  # sim_y parent in fam X => sim_x in fam X
+#                         for X in fam_ids.keys():
+#                             if parent.has_trait(trait_fam(X)):
+#                                 add_to_family(X, sim)
+#                     # include parent in family
+#                     if riv_auto_inc_parent:  # sim_x in fam X => sim_y included in X
+#                         for X in inc_ids.keys():
+#                             if sim.has_trait(trait_fam(X)) and not parent.has_trait(trait_fam(X)):
+#                                 include_in_family(X, parent)
+#                     elif riv_auto_inc_heir_parent:  # sim_x heir of X => sim_y included in X
+#                         for X in heir_ids.keys():
+#                             if sim.has_trait(trait_heir(X)) and not not parent.has_trait(trait_fam(X)):
+#                                 include_in_family(X, parent)
+#                 riv_log('ran auto_fam_osic for sim ' + sim.first_name + ' ' + sim.last_name)
+#     except Exception as e:
+#         riv_log('error in auto_fam in on_sim_info_created: ' + str(e))
+#         raise Exception('(riv) error in auto_fam in on_sim_info_created: ' + str(e))
+#     return result
+
+
+# new ver
+# TODO: check this works
+@inject_to(SimInfo, 'add_parent_relations')
+def auto_json_fam_apr(original, self, parent_a, parent_b):
+    result = original(self, parent_a, parent_b)
     try:
-        # go through babies, get their parents
-        for sim in services.sim_info_manager().get_all():
-            if sim.is_baby:
-                # riv_log('tmp!! - auto_inc_parent, baby ' + sim.first_name + ' ' + sim.last_name)
-                # got to here on birth
-                #
-                parents = get_parents_ingame(sim)
-                for parent in parents:
-                    # add bab to family
-                    if riv_auto_fam_child:  # sim_y parent in fam X => sim_x in fam X
-                        for X in fam_ids.keys():
-                            if parent.has_trait(trait_fam(X)):
-                                add_to_family(X, sim)
-                    # include parent in family
-                    if riv_auto_inc_parent:  # sim_x in fam X => sim_y included in X
-                        for X in inc_ids.keys():
-                            if sim.has_trait(trait_fam(X)) and not parent.has_trait(trait_fam(X)):
-                                include_in_family(X, parent)
-                    elif riv_auto_inc_heir_parent:  # sim_x heir of X => sim_y included in X
-                        for X in heir_ids.keys():
-                            if sim.has_trait(trait_heir(X)) and not not parent.has_trait(trait_fam(X)):
-                                include_in_family(X, parent)
-                riv_log('ran auto_fam_osic for sim ' + sim.first_name + ' ' + sim.last_name)
+        for parent in [parent_a, parent_b]:
+            # add bab to family
+            if riv_auto_fam_child:  # sim_y parent in fam X => sim_x in fam X
+                for X in fam_ids.keys():
+                    if parent.has_trait(trait_fam(X)):
+                        add_to_family(X, self)
+            # include parent in family
+            if riv_auto_inc_parent:  # sim_x in fam X => sim_y included in X
+                for X in inc_ids.keys():
+                    if self.has_trait(trait_fam(X)) and not parent.has_trait(trait_fam(X)):
+                        include_in_family(X, parent)
+            elif riv_auto_inc_heir_parent:  # sim_x heir of X => sim_y included in X
+                for X in heir_ids.keys():
+                    if self.has_trait(trait_heir(X)) and not not parent.has_trait(trait_fam(X)):
+                        include_in_family(X, parent)
+        riv_log('ran auto_fam_apr for sim ' + self.first_name + ' ' + self.last_name)
     except Exception as e:
-        riv_log('error in auto_fam in on_sim_info_created: ' + str(e))
-        raise Exception('(riv) error in auto_fam in on_sim_info_created: ' + str(e))
+        riv_log('error in auto_fam in add_parent_relations: ' + str(e))
+        raise Exception('(riv) error in auto_fam in add_parent_relations: ' + str(e))
     return result
 
 
