@@ -2802,9 +2802,6 @@ def auto_json(new_sim=None):
                     new_rels[str(sim_x.sim_id)] = parents_id
 
             else:  # just one sim
-                # TODO: inject to something different
-                #       SimInfoManager; add_sim_info_if_not_in_manager; self, sim_info; returns nothing
-                #       SimInfo; add_parent_relations; self, parent_a, parent_b; returns nothing
 
                 # setup
                 riv_log(f'running auto_json for just {new_sim.first_name} {new_sim.last_name}...')
@@ -3104,21 +3101,22 @@ def riv_get_sims_for_spin_up_action(original, self, action):
 #    return result
 
 
-# TODO: check this works
 @inject_to(SimInfoManager, 'add_sim_info_if_not_in_manager')
 def auto_json_fam_asiinim(original, self, sim_info):
     result = original(self, sim_info)
     try:
-        if sim_info is not None:
+        if not services.current_zone().is_zone_loading:  # without this, we get spammed on zone load
             auto_json(sim_info)
-            riv_log('ran auto_json_asiinim')
+            if sim_info is not None:
+                riv_log(f'ran auto_json_asiinim with {sim_info.first_name} {sim_info.last_name}')
+            else:
+                riv_log(f'ran auto_json_asiinim with NoneSim WithLeftBeef')
     except Exception as e:
         riv_log(f'error in auto_json in add_sim_info_if_not_in_manager: {e}')
         raise Exception(f'(riv) error in auto_json in add_sim_info_if_not_in_manager: {e}')
     return result
 
 
-# TODO: check this works
 @inject_to(SimInfo, 'add_parent_relations')
 def auto_json_fam_apr(original, self, parent_a, parent_b):
     result = original(self, parent_a, parent_b)
@@ -3646,7 +3644,7 @@ def is_eligible_couple(x_id, y_id):
     return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
 
 
-# eligible couple console command
+# eligible couple console command TODO: TEST TEST TEST
 @sims4.commands.Command('riv_is_eligible_couple', command_type=sims4.commands.CommandType.Live)
 def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
