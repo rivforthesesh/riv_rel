@@ -48,6 +48,9 @@ from interactions.utils.death import DeathTracker
 # for cache (used for consang and is_eligible_couple)
 from functools import lru_cache
 
+# determining if zone is loading
+from zone import Zone
+
 # get irl datetime
 from datetime import datetime
 
@@ -116,6 +119,9 @@ cfg_default_vals = dict(
     # include_step_rels='False',
     # gen ?
 )
+# whether to allow auto_json for one sim (false during loading screen)
+riv_allow_auto_json_simi = False
+
 # logging stuff for testing (true <=> riv_rel.log is in the folder)
 riv_auto_log = os.path.isfile(os.path.join(Path(__file__).resolve().parent.parent, 'riv_rel.log'))
 riv_log_last_line = ''
@@ -2954,6 +2960,14 @@ def get_slot_olsaf(original, self, *args, **kwargs):
 @inject_to(SimInfoManager, 'on_all_households_and_sim_infos_loaded')
 def auto_json_oahasil(original, self, client):
     result = original(self, client)
+
+    # allow auto_json on one sim info
+    try:
+        global riv_allow_auto_json_simi
+        riv_allow_auto_json_simi = True
+    except Exception as e:
+        riv_log(f'error in setting auto_json for one sim info in on_all_households_and_sim_infos_loaded: {e}')
+
     # set slot id
     try:
         global jsyk_ownfolder
@@ -3000,11 +3014,14 @@ def auto_json_oahasil(original, self, client):
     except Exception as e:
         riv_log(f'error in getting the slot ID in on_all_households_and_sim_infos_loaded: {e}')
         raise Exception(f'(riv) error in getting the slot ID in on_all_households_and_sim_infos_loaded: {e}')
+
+    # load cfg settings
     try:
         load_cfg_settings()
     except Exception as e:
         riv_log(f'error in load_cfg_settings in on_all_households_and_sim_infos_loaded: {e}')
         raise Exception(f'(riv) error in load_cfg_settings in on_all_households_and_sim_infos_loaded: {e}')
+
     # automatically update .json files
     try:
         auto_json()
@@ -3101,11 +3118,24 @@ def riv_get_sims_for_spin_up_action(original, self, action):
 #    return result
 
 
+# this runs at the start of zone load
+@inject(Zone, 'load_zone')
+def riv_load_zone(original, self, *args, **kwargs):
+    result = original(self, *args, **kwargs)
+    try:
+        global riv_allow_auto_json_simi
+        riv_allow_auto_json_simi = False
+    except Exception as e:
+        riv_log(f'error in riv_load_zone: {e}')
+
+    return result
+
+
 @inject_to(SimInfoManager, 'add_sim_info_if_not_in_manager')
 def auto_json_fam_asiinim(original, self, sim_info):
     result = original(self, sim_info)
     try:
-        if not services.current_zone().is_zone_loading:  # without this, we get spammed on zone load
+        if riv_allow_auto_json_simi: # lets you do it for one sim info
             auto_json(sim_info)
             if sim_info is not None:
                 riv_log(f'ran auto_json_asiinim with {sim_info.first_name} {sim_info.last_name}')
