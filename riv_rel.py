@@ -3081,6 +3081,32 @@ def auto_json_oahasil(original, self, client):
     return result
 
 
+# test if two sims are an eligible couple (thrown in above first usage)
+@lru_cache(maxsize=None)
+def is_eligible_couple(x_id, y_id):
+    # handle the funny case
+    if x_id == y_id:
+        return False, 'mate, that\'s just being single with extra steps'
+
+    # make rivsims
+    sim_x = get_rivsim_from_id(x_id)
+    sim_y = get_rivsim_from_id(y_id)
+
+    # check direct rel
+    if drel_incest and get_direct_relation(sim_x, sim_y):
+        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                      f'are not an eligible couple: they are directly related'
+
+    # check consanguinity
+    xy_consang = consang(sim_x, sim_y)
+    if xy_consang >= consang_limit:
+        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
+                      f'are not an eligible couple: over the consanguinity limit'
+
+    # should be all good
+    return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
+
+
 @inject_to(SimInfoManager, 'get_sims_for_spin_up_action')
 def riv_get_sims_for_spin_up_action(original, self, action):
     result = original(self, action)
@@ -3632,7 +3658,7 @@ def riv_clear_log(_connection=None):
     new_line_num = 0
     while old_text:
         line = old_text.pop(0)
-        if 'error' in line or 'spawned' in line or 'game loaded' in line or 'save ID' in line:
+        if 'error' in line or 'spawned' in line or 'game loaded' in line:
             new_line_num += 1
             with open(file_path, 'a') as log_file:
                 log_file.write(line + '\n')
@@ -3642,36 +3668,6 @@ def riv_clear_log(_connection=None):
         log_file.write('\n')
 
     output(f'done: gone from {old_line_num} lines to {new_line_num}.')
-
-
-# test if two sims are an eligible couple
-@lru_cache(maxsize=None)
-def is_eligible_couple(x_id, y_id):
-    # handle the funny case
-    if x_id == y_id:
-        return False, 'mate, that\'s just being single with extra steps'
-
-    # make rivsims
-    sim_x = get_rivsim_from_id(x_id)
-    sim_y = get_rivsim_from_id(y_id)
-
-    # make sims
-    gsim_x = get_sim_from_rivsim(sim_x)
-    gsim_y = get_sim_from_rivsim(sim_y)
-
-    # check direct rel
-    if drel_incest and get_direct_relation(sim_x, sim_y):
-        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-                      f'are not an eligible couple: they are directly related'
-
-    # check consanguinity
-    xy_consang = consang(sim_x, sim_y)
-    if xy_consang >= consang_limit:
-        return False, f'{sim_x.first_name} and {sim_y.first_name} ' \
-                      f'are not an eligible couple: over the consanguinity limit'
-
-    # should be all good
-    return True, f'{sim_x.first_name} and {sim_y.first_name} are an eligible couple with your settings!'
 
 
 # eligible couple console command TODO: TEST TEST TEST
