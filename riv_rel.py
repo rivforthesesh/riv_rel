@@ -2733,7 +2733,8 @@ def console_load_cfg_manually(_connection=None):
 
 # automatically updates json files, with/out current session files
 # if riv_auto is not enabled or file_name_extra is empty, this just makes/updates dict of sims/rels
-def auto_json():
+# new_sim will be entered if this is running on a new sim. MUST BE AN INGAME SIM
+def auto_json(new_sim=None):
     # update list in mem and in temporary .json file if needed
     if riv_auto_enabled and not file_name_extra == '':
         sim_time = services.time_service().sim_now.absolute_ticks()
@@ -2757,66 +2758,101 @@ def auto_json():
                 riv_sim_list.load_sims(file_name_extra)
                 riv_rel_dict.load_rels(file_name_extra)
 
-            # rivsimlist and rivreldict are now loaded in
-            riv_log('running auto_json without currentsession files...')
-            # update riv_sim_list.sims
-            game_sims = [RivSim(sim) for sim in services.sim_info_manager().get_all()]
-            # game_sims is now a list of ingame sims as RivSims
-            riv_log(f'number of sims in game = {len(game_sims)}')
-            # get sims from riv_sim_list (file_sims is now the riv sim list)
-            file_sims = [RivSim(sim) for sim in riv_sim_list.sims]
-            new_sims = []  # sims from the game that are NOT in riv_sim_list
-            # list for output
-            sims = []
-            # put sims that are in game and not in file in new sims list
-            for sim_g in game_sims:
-                sim_fg = None
-                # try to find sim in file
-                for sim_f in file_sims:
-                    if str(sim_g.sim_id) == str(sim_f.sim_id):
-                        sim_fg = sim_f
-                        break
-                if sim_fg is None:  # sim_g is in game and not in file
-                    new_sims.append(sim_g)
-                    riv_log(f'new sim: {sim_g.first_name} {sim_g.last_name} spawned {format_sim_date()}')
-            # put sims in file in new file
-            # update to show if sims are culled (sim in file and not in game)
-            # update name and gender
-            for sim_f in file_sims:  # sim is in file
-                sim_g = get_sim_from_rivsim(sim_f)
-                if sim_f.time <= sim_time:  # if the current time is LATER than when the sim was last updated
-                    if sim_g is None:  # sim is in file and not in game
-                        if not sim_f.is_culled:  # and if sim isn't registered as culled
-                            sim_f.cull()  # then register sim as culled
-                    else:  # might need updating
-                        sim_f.update_info(sim_g.first_name, sim_g.last_name, sim_g.is_female, sim_time)
-                sims.append(sim_f)  # put each sim_f in the output WHETHER CULLED OR NOT
+            if new_sim is None: # normal ver
+                # rivsimlist and rivreldict are now loaded in
+                riv_log('running auto_json without currentsession files...')
+                # update riv_sim_list.sims
+                game_sims = [RivSim(sim) for sim in services.sim_info_manager().get_all()]
+                # game_sims is now a list of ingame sims as RivSims
+                riv_log(f'number of sims in game = {len(game_sims)}')
+                # get sims from riv_sim_list (file_sims is now the riv sim list)
+                file_sims = [RivSim(sim) for sim in riv_sim_list.sims]
+                new_sims = []  # sims from the game that are NOT in riv_sim_list
+                # list for output
+                sims = []
+                # put sims that are in game and not in file in new sims list
+                for sim_g in game_sims:
+                    sim_fg = None
+                    # try to find sim in file
+                    for sim_f in file_sims:
+                        if str(sim_g.sim_id) == str(sim_f.sim_id):
+                            sim_fg = sim_f
+                            break
+                    if sim_fg is None:  # sim_g is in game and not in file
+                        new_sims.append(sim_g)
+                        riv_log(f'new sim: {sim_g.first_name} {sim_g.last_name} spawned {format_sim_date()}')
+                # put sims in file in new file
+                # update to show if sims are culled (sim in file and not in game)
+                # update name and gender
+                for sim_f in file_sims:  # sim is in file
+                    sim_g = get_sim_from_rivsim(sim_f)
+                    if sim_f.time <= sim_time:  # if the current time is LATER than when the sim was last updated
+                        if sim_g is None:  # sim is in file and not in game
+                            if not sim_f.is_culled:  # and if sim isn't registered as culled
+                                sim_f.cull()  # then register sim as culled
+                        else:  # might need updating
+                            sim_f.update_info(sim_g.first_name, sim_g.last_name, sim_g.is_female, sim_time)
+                    sims.append(sim_f)  # put each sim_f in the output WHETHER CULLED OR NOT
+                # update riv_rel_dict.rels
+                new_rels = {}  # contains rels from the game
+                # makes a list of parent rels in the game (using game_sims from above)
+                for sim_x in game_sims:
+                    # get list of parents
+                    parents = get_parents_ingame(sim_x)
+                    # get list of parent IDs
+                    parents_id = [parent.sim_id for parent in parents]
+                    # add to dict
+                    new_rels[str(sim_x.sim_id)] = parents_id
+
+            else:  # just one sim
+                # TODO: inject to something different
+                #       SimInfoManager; add_sim_info_if_not_in_manager; self, sim_info; returns nothing
+
+                # setup
+                riv_log(f'running auto_json for just {new_sim.first_name} {new_sim.last_name}...')
+                sims = riv_sim_list.sims
+                file_sim = get_rivsim_from_sim(new_sim)
+                new_rels = {}
+                new_sims = []
+
+                # add sim to sims list if needed
+                if file_sim is None:
+                    riv_log(f'auto_json created rivsim for {new_sim.first_name} {new_sim.last_name}')
+                    new_sims.append(RivSim(new_sim))
+
+                # add parents if not in riv_rel_dict rels keys
+                if str(new_sim.sim_id) not in riv_rel_dict.rels.keys():
+                    new_parents = []
+                    for new_parent in get_parents_ingame(file_sim):
+                        # get parent as a rivsim
+                        file_parent = get_rivsim_from_sim(new_parent)
+                        if file_parent is None:
+                            # need to add parent to sims list
+                            riv_log(f'recalling auto_json for parent {new_parent.first_name} {new_parent.last_name}...')
+                            auto_json(new_parent)
+                            new_parents.append(get_rivsim_from_sim(new_parent))
+                        else:
+                            new_parents.append(file_parent)
+                    new_rels[str(new_sim.sim_id)] = [int(p.sim_id) for p in new_parents]
+
+            # update sims and rels whether it's just one or multiple
+
             # add new sims to end of the list
             for sim_n in new_sims:  # for sim that is in game and not in file
-                sims.append(sim_n)  # add to sims (list for file)
-            # riv_log it
-            riv_log('number of new sims = ' + str(len(new_sims)))
-            riv_log('len(sims) = ' + str(len(sims)))
-            riv_sim_list.sims = sims.copy()
-            riv_log('updated sim list in mem')
+                sims.append(sim_n)  # add to sims (list for file / riv_sim_list)
 
-            # update riv_rel_dict.rels
-            new_rels = {}  # contains rels from the game
-            # makes a list of parent rels in the game (using game_sims from above)
-            for sim_x in game_sims:
-                # get list of parents
-                parents = get_parents_ingame(sim_x)
-                # get list of parent IDs
-                parents_id = []
-                for parent in parents:
-                    parents_id.append(parent.sim_id)
-                # add to dict
-                new_rels[str(sim_x.sim_id)] = parents_id
+            # add new rels to dict
             if new_rels:
                 for sim_id in list(set(new_rels.keys()) | set(riv_rel_dict.rels.keys())):
                     # add union of parent lists to new file. either gets list if exists, or uses empty list
                     riv_rel_dict.rels[sim_id] = list(
                         set(riv_rel_dict.rels.get(sim_id, [])) | set(new_rels.get(sim_id, [])))
+
+            # riv_log it
+            riv_log('number of new sims = ' + str(len(new_sims)))
+            riv_log('len(sims) = ' + str(len(sims)))
+            riv_sim_list.sims = sims.copy()
+            riv_log('updated sim list in mem')
 
         riv_log('ran auto_json')
     else:
@@ -3033,7 +3069,7 @@ def auto_json_oahasil(original, self, client):
 
 @inject_to(SimInfoManager, 'get_sims_for_spin_up_action')
 def riv_get_sims_for_spin_up_action(original, self, action):
-    result = original(self,action)
+    result = original(self, action)
     try:
         preroll_consang_tic = time.perf_counter()
         instanced_sims = list(services.sim_info_manager().instanced_sims_gen())
