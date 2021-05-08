@@ -11,7 +11,6 @@ from relationships.relationship_bit import RelationshipBit
 from typing import List, Dict
 from functools import wraps
 import sims4.resources
-from sims.sim_info_types import Age
 from sims4.resources import Types, get_resource_key
 from sims4.tuning.instance_manager import InstanceManager
 import random
@@ -2937,10 +2936,19 @@ def console_auto_json(file_name_extra: str, _connection=None):
         output('please manually save your game to another slot and try again')
 
 
-# automatically get slot
+# allow auto json for one sim info, and automatically get slot
 @inject_to(SimInfoManager, 'on_loading_screen_animation_finished')
 def get_slot_olsaf(original, self, *args, **kwargs):
     result = original(self, *args, **kwargs)
+
+    # allow auto_json on one sim info
+    try:
+        global riv_allow_auto_json_simi
+        riv_allow_auto_json_simi = True
+        riv_log(f'riv_allow_auto_json_simi = True', 3)
+    except Exception as e:
+        riv_log(f'error in setting auto_json for one sim info in on_all_households_and_sim_infos_loaded: {e}')
+
     # get slot
     try:
         hsi = get_slot()
@@ -2960,13 +2968,6 @@ def get_slot_olsaf(original, self, *args, **kwargs):
 @inject_to(SimInfoManager, 'on_all_households_and_sim_infos_loaded')
 def auto_json_oahasil(original, self, client):
     result = original(self, client)
-
-    # allow auto_json on one sim info
-    try:
-        global riv_allow_auto_json_simi
-        riv_allow_auto_json_simi = True
-    except Exception as e:
-        riv_log(f'error in setting auto_json for one sim info in on_all_households_and_sim_infos_loaded: {e}')
 
     # set slot id
     try:
@@ -3033,6 +3034,7 @@ def auto_json_oahasil(original, self, client):
                      f'{hex_slot_id} and keyword {file_name_extra}.\n\nsim mini-infos: {len(riv_sim_list.sims)}'
         elif riv_auto_enabled and hex_slot_id in mccc_autosaves:
             riv_log('   with riv_auto_enabled = true, slot ID is an autosave (ERROR)')
+            opener = ''
             scumbumbo_show_notif_texttitle('you\'ve created settings for an MCCC autosave - this won\'t work '
                                            'properly!\n\nplease save your game to another slot and set up '
                                            'riv_auto again.', 'riv_rel: auto json issue')
@@ -3151,6 +3153,7 @@ def riv_load_zone(original, self):
     try:
         global riv_allow_auto_json_simi
         riv_allow_auto_json_simi = False
+        riv_log(f'riv_allow_auto_json_simi = False', 3)
     except Exception as e:
         riv_log(f'error in riv_load_zone: {e}')
 
@@ -3161,7 +3164,7 @@ def riv_load_zone(original, self):
 def auto_json_fam_asiinim(original, self, sim_info):
     result = original(self, sim_info)
     try:
-        if riv_allow_auto_json_simi: # lets you do it for one sim info
+        if riv_allow_auto_json_simi:  # lets you do it for one sim info
             auto_json(sim_info)
             if sim_info is not None:
                 riv_log(f'ran auto_json_asiinim with {sim_info.first_name} {sim_info.last_name}')
