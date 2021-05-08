@@ -3169,10 +3169,9 @@ def auto_json_fam_asiinim(original, self, sim_info):
     try:
         if riv_allow_auto_json_simi:  # lets you do it for one sim info
             auto_json(sim_info)
-            if sim_info is not None:
-                riv_log(f'ran auto_json_asiinim with {sim_info.first_name} {sim_info.last_name}')
-            else:
-                riv_log(f'ran auto_json_asiinim with NoneSim WithLeftBeef')
+            riv_log('ran auto_json_asiinim')
+            if sim_info is None:
+                riv_log(f'  NoneSim WithLeftBeef')
     except Exception as e:
         riv_log(f'error in auto_json in add_sim_info_if_not_in_manager: {e}')
         raise Exception(f'(riv) error in auto_json in add_sim_info_if_not_in_manager: {e}')
@@ -3184,7 +3183,16 @@ def auto_json_fam_apr(original, self, parent_a, parent_b):
     result = original(self, parent_a, parent_b)
     try:
         auto_json(self)
-        riv_log('ran auto_json_apr')
+
+        # add parents if needed
+        new_parents = [parent_a.sim_id, parent_b.sim_id]
+        sim_id = str(self.sim_id)
+        if new_parents:
+            # update parent list
+            riv_rel_dict.rels[sim_id] = list(set(riv_rel_dict.rels.get(sim_id, [])) | set(new_parents))
+
+        riv_log(f'ran auto_json_apr with sim {self.first_name} '
+                f'and parents {parent_a.first_name} and {parent_b.first_name}')
     except Exception as e:
         riv_log(f'error in auto_json in add_parent_relations: {e}')
         raise Exception(f'(riv) error in auto_json in add_parent_relations: {e}')

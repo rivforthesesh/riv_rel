@@ -122,13 +122,20 @@ def write_gedcom(keyword: str, _connection=None):
                 '1 LANG English\n'
     output('[3/10] constructed header')
 
+    # TODO: see what caused unhashable type list error
+
     # get each fam unit (unique set of parent lists)
     parents = list(set(gedcom_rel_dict.rels.values()))
     # turn into pairs
     parent_pairs = [p for p in parents if len(p) == 2] + \
                    [p + p for p in parents if len(p) == 1]
     # turn into fam units
-    gedcom_fam_units = [RivFamUnit(x, y, gedcom_rel_dict) for [x, y] in parent_pairs]
+    gedcom_fam_units = []
+    for xy in parent_pairs:
+        x = xy[0]
+        y = xy[1]
+        gedcom_fam_units.append(RivFamUnit(x, y, gedcom_rel_dict))
+    # gedcom_fam_units = [RivFamUnit(x, y, gedcom_rel_dict) for [x, y] in parent_pairs
     output('[4/10] got family units (parents + children)')
 
     # maps sim ID to their gedcom entry
