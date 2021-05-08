@@ -4,7 +4,6 @@
 from datetime import datetime
 
 # commands
-import services
 import sims4.commands
 
 # grab .json files
@@ -65,18 +64,19 @@ class RivFamUnit:
         # parents
         self.parents = [sim_x.sim_id, sim_y.sim_id]
         # kids (every rivsim that has these two as parents)
-        self.children = [RivSim(sim_id) for sim_id in rel_dict.rels.keys()
+        self.children = [sim_id for sim_id in rel_dict.rels.keys()
                          if set(rel_dict.rels[sim_id]) == {int(sim_x.sim_id), int(sim_y.sim_id)}]
+        # id
+        if self.q is not None:
+            self.fam_id = str(self.p.sim_id) + '000' + str(self.q.sim_id)
+        else:
+            self.fam_id = str(self.p.sim_id)
 
     def __str__(self):
         return f'<RivFamUnit {self.p} {self.q}>'
 
     def __repr__(self):
         return str(self)
-
-    # gets family id for gedcom
-    def gedcom_id(self):
-        return '@' + str(self.p.sim_id) + '000' + str(self.q.sim_id) + '@'
 
 
 # write to gedcom file
@@ -94,11 +94,16 @@ def write_gedcom(keyword: str, _connection=None):
     gedcom_sim_list = RivSimList()
     with open(sim_file_path, 'r') as json_file:
         gedcom_sim_list.sims = [RivSim(sim) for sim in json.load(json_file)]
+    output('[1/10] got sims')
 
     # grab rels
     gedcom_rel_dict = RivRelDict()
     with open(rel_file_path, 'r') as json_file:
         gedcom_rel_dict.rels = json.load(json_file)
+    output('[2/10] got rels')
+
+    dt = datetime.now()
+    file_name = 'riv_' + keyword + '_' + dt.strftime('%Y-%m-%d-%H-%M-%S') + '.ged'
 
     # construct header
     header = '0 HEAD\n' \
@@ -111,10 +116,11 @@ def write_gedcom(keyword: str, _connection=None):
                     '2 NAME ' + keyword + '\n' \
                     '2 VERS 5.5.5\n' \
                         '3 WWW rivforthesesh.itch.io/riv-rel\n' \
-                '1 DATE ' + datetime.now().strftime('%d %b %Y') + '\n' \
-                    '2 TIME ' + datetime.now().strftime('%H:%M:%S') + '\n' \
-                '1 FILE riv_' + keyword + '.ged\n' \
+                '1 DATE ' + dt.strftime('%d %b %Y') + '\n' \
+                    '2 TIME ' + dt.strftime('%H:%M:%S') + '\n' \
+                '1 FILE ' + file_name + '\n' \
                 '1 LANG English\n'
+    output('[3/10] constructed header')
 
     # get each fam unit (unique set of parent lists)
     parents = list(set(gedcom_rel_dict.rels.values()))
@@ -122,12 +128,104 @@ def write_gedcom(keyword: str, _connection=None):
     parent_pairs = [p for p in parents if len(p) == 2] + \
                    [p + p for p in parents if len(p) == 1]
     # turn into fam units
-    fam_units = [RivFamUnit(x, y, gedcom_rel_dict) for [x, y] in parent_pairs]
+    gedcom_fam_units = [RivFamUnit(x, y, gedcom_rel_dict) for [x, y] in parent_pairs]
+    output('[4/10] got family units (parents + children)')
 
-    # add one fam unit at a time
-    # TODO
+    # maps sim ID to their gedcom entry
+    gedcom_sim_dict = {}
 
-    # go through any other ones
+    # add one sim at a time (main info)
+    for sim in gedcom_sim_list.sims:
+        # get gender marker TODO: destroy gender binary
+        if sim.is_female:
+            gender = 'F'
+        else:
+            gender = 'M'
+
+        gedsim = f'0 @{sim.sim_id}@ INDI\n' \
+                     f'1 NAME {sim.first_name} /{sim.last_name}/\n' \
+                         f'2 GIVN {sim.first_name}\n' \
+                         f'2 SURN {sim.last_name}\n' \
+                     f'1 SEX {gender}\n'
+
+        # add to dict
+        gedcom_sim_dict[sim.sim_id] = gedsim
+
+    output(f'[5/10] written gedcom entries for {len(gedcom_sim_list.sims)} sims')
+
+    # maps fam ID to its gedcom entry
+    gedcom_fam_dict = {}
+
+    # add one fam at a time
+    for fam in gedcom_fam_units:
+
+        # parents segment
+        if fam.q is None:
+            # add parent to fam
+            if fam.p.is_female:
+                ged_parents = f'1 WIFE @{fam.p.sim_id}@\n'
+            else:
+                ged_parents = f'1 HUSB @{fam.p.sim_id}@\n'
+            # add link to fam in sim record
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS @{fam.p.sim_id}@\n'
+        else:
+            # add two parents to fam
+            ged_parents = f'1 HUSB @{fam.q.sim_id}@\n' \
+                          f'1 WIFE @{fam.p.sim_id}@\n'
+            # add link to fam in sim records
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS @{fam.p.sim_id}@\n'
+            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS @{fam.q.sim_id}@\n'
+
+        # kids
+        ged_children = ''
+        for child_id in fam.children:
+            # add child to fam
+            ged_children = ged_children + f'1 CHIL @{child_id}@\n'
+            # add link to fam in sim record
+            gedcom_sim_dict[child_id] = gedcom_sim_dict[child_id] + f'1 FAMS @{child_id}@\n'
+
+        gedfam = f'@{fam.fam_id}@ FAM\n' \
+                    + ged_parents \
+                    + ged_children
+
+        # add to dict
+        gedcom_fam_dict[fam.fam_id] = gedfam
+
+    output(f'[6/10] written gedcom entries for {len(gedcom_fam_dict)} fams')
 
     # construct trailer
     trailer = '0 TRLR'
+
+    # sort lists
+    sim_ids = list(gedcom_sim_dict.keys())
+    sim_ids.sort()
+    fam_ids = list(gedcom_fam_dict.keys())
+    fam_ids.sort()
+
+    # get file
+    file_dir = Path(__file__).resolve().parent.parent
+    file_path = os.path.join(file_dir, file_name)
+
+    # add header
+    with open(file_path, 'w') as file:
+        file.write(header)
+    output(f'[7/10] added header to {file_name}')
+
+    # add sims
+    for sim_id in sim_ids:
+        with open(file_path, 'a') as file:
+            file.write(gedcom_sim_dict[sim_id])
+    output(f'[8/10] added sims to {file_name}')
+            
+    # add fams
+    for fam_id in fam_ids:
+        with open(file_path, 'a') as file:
+            file.write(gedcom_fam_dict[fam_id])
+    output(f'[9/10] added fams to {file_name}')
+
+    # add trailer
+    with open(file_path, 'a') as file:
+        file.write(trailer)
+    output(f'[10/10] added trailer to {file_name}')
+
+    output('[riv_gedcom: all done!]')
