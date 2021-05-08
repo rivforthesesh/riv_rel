@@ -551,6 +551,9 @@ def get_rivsim_from_sim(sim_z):
             if rivsim_z is None:
                 rivsim_z = RivSim(sim_z)
                 riv_sim_list.sims.append(rivsim_z)
+                riv_log(f'get_rivsim_from_sim created a rivsim for {sim_z.first_name} {sim_z.last_name}')
+                # fill in parent list
+                riv_rel_dict.rels[str(rivsim_z.sim_id)] = [parent.sim_id for parent in get_parents_ingame(sim_z)]
             else:
                 rivsim_z.update_info(sim_z.first_name, sim_z.last_name, sim_z.is_female, sim_time)
 
@@ -600,7 +603,7 @@ def get_parents(sim_x):
 
     # sort out sim_x as a rivsim
     rivsim_x = get_rivsim_from_sim(sim_x)  # rivsim_x is the entry for sim_x in riv_sim_list.sims
-    if rivsim_x is None:
+    if rivsim_x is None:  # TODO: remove this section
         rivsim_x = RivSim(sim_x)
         riv_sim_list.sims.append(RivSim(sim_x))
         riv_log(f'get_parents added sim {sim_x.first_name} {sim_x.last_name} to riv_sim_list.sims')
@@ -667,7 +670,7 @@ def get_children(sim_x):
 
     # sort out sim_x as a rivsim
     rivsim_x = get_rivsim_from_sim(sim_x)  # rivsim_x is the entry for sim_x in riv_sim_list.sims
-    if rivsim_x is None:
+    if rivsim_x is None:  # TODO: remove this section
         rivsim_x = RivSim(sim_x)
         riv_sim_list.sims.append(RivSim(sim_x))
         riv_log('get_children added sim {} {} to riv_sim_list.sims'.format(sim_x.first_name, sim_x.last_name))
@@ -2816,7 +2819,7 @@ def auto_json(new_sim=None):
                 new_sims = []
 
                 # add sim to sims list if needed
-                if file_sim is None:
+                if file_sim is None:  # TODO: remove this section
                     riv_log(f'auto_json created rivsim for {new_sim.first_name} {new_sim.last_name}')
                     new_sims.append(RivSim(new_sim))
 
@@ -2826,7 +2829,7 @@ def auto_json(new_sim=None):
                     for new_parent in get_parents_ingame(file_sim):
                         # get parent as a rivsim
                         file_parent = get_rivsim_from_sim(new_parent)
-                        if file_parent is None:
+                        if file_parent is None:  # TODO: remove this section
                             # need to add parent to sims list
                             riv_log(f'calling auto_json for parent {new_parent.first_name} {new_parent.last_name}...')
                             auto_json(new_parent)
@@ -2853,8 +2856,8 @@ def auto_json(new_sim=None):
             if new_sim is not None:
                 if new_sims:
                     riv_log('number of new sims = ' + str(len(new_sims)))
-                riv_log('len(sims) = ' + str(len(sims)))
-                riv_log('updated sim list in mem')
+                    riv_log('len(sims) = ' + str(len(sims)))
+                    riv_log('updated sim list in mem')
 
         riv_log('ran auto_json')
     else:
