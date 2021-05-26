@@ -120,6 +120,11 @@ cfg_default_vals = dict(
 )
 # whether to allow auto_json for one sim (false during loading screen)
 riv_allow_auto_json_simi = False
+# previous notif text
+ex_opener = ''
+ex_mccc_autosaves_str = ''
+ex_hex_slot_id = ''
+ex_file_name_extra = ''
 
 # logging stuff for testing (true <=> riv_rel.log is in the folder)
 riv_auto_log = os.path.isfile(os.path.join(Path(__file__).resolve().parent.parent, 'riv_rel.log'))
@@ -2950,7 +2955,7 @@ def get_slot_olsaf(original, self, *args, **kwargs):
         riv_allow_auto_json_simi = True
         riv_log(f'riv_allow_auto_json_simi = True', 3)
     except Exception as e:
-        riv_log(f'error in setting auto_json for one sim info in on_all_households_and_sim_infos_loaded: {e}')
+        riv_log(f'error in setting auto_json for one sim info in on_loading_screen_animation_finished: {e}')
 
     # get slot
     try:
@@ -3031,10 +3036,16 @@ def auto_json_oahasil(original, self, client):
         auto_json()
         riv_log('ran auto_json_oahasil')
 
+        # show notif if needed
+        global ex_opener
+        global ex_mccc_autosaves_str
+        global ex_hex_slot_id
+        global ex_file_name_extra
+
         if riv_auto_enabled and hex_slot_id not in mccc_autosaves:
             riv_log('   with riv_auto_enabled = true, slot ID is not an autosave')
             opener = f'loaded in settings from riv_rel - individual save settings.cfg for save ID ' \
-                     f'{hex_slot_id} and keyword {file_name_extra}.\n\nsim mini-infos: {len(riv_sim_list.sims)}'
+                     f'{hex_slot_id} and keyword {file_name_extra}.\n\nsim mini-infos: '
         elif riv_auto_enabled and hex_slot_id in mccc_autosaves:
             riv_log('   with riv_auto_enabled = true, slot ID is an autosave (ERROR)')
             opener = ''
@@ -3045,12 +3056,12 @@ def auto_json_oahasil(original, self, client):
             riv_log('   with riv_auto_enabled = false, slot ID is an autosave')
             opener = f'you\'ve loaded up an autosave slot! to use riv_auto backups, please save the game to another ' \
                      f'slot first (if you don\'t want to use riv_auto, you don\'t need to do this)' \
-                     f'\n\nnumber of sims: {len(riv_sim_list.sims)}'
+                     f'\n\nnumber of sims: '
         else:
             riv_log('   with riv_auto_enabled = false, slot ID is not an autosave')
             opener = f'no sim/rel backups were found for this save - if you\'re expecting to see json file' \
                      f' backups or want to set them up, enter riv_auto xyz into the cheat console for a' \
-                     f' keyword xyz!\n\nnumber of sims: {len(riv_sim_list.sims)}'
+                     f' keyword xyz!\n\nnumber of sims: '
 
         if jsyk_ownfolder:
             ownfolder_warning = 'you have other files in the same folder as my mod - i would recommend ' \
@@ -3074,10 +3085,26 @@ def auto_json_oahasil(original, self, client):
                                  'please either download riv_rel_addon_traits or remove riv_rel_addon_GT ' \
                                  'or you may face glitches with clubs being unable to find my family traits!'
 
-        scumbumbo_show_notif_texttitle(
-            f'{opener} {mccc_autosaves_str}\n\nif this is the wrong file, run riv_clear, save your game, '
-            f'and run riv_load_cfg_manually.{ownfolder_warning}{computer_str}\n\nthank you for using my mod! '
-            , f'riv_rel gen {rr_gen}')
+        # number of sims
+        if opener:
+            num_sims = str(len(riv_sim_list.sims))
+        else:
+            num_sims = ''
+
+        # if notif is different...
+        if [ex_opener, ex_mccc_autosaves_str, ex_hex_slot_id, ex_file_name_extra] != \
+                [opener, mccc_autosaves_str, hex_slot_id, file_name_extra]:
+
+            # previous things that could feasibly change during gameplay
+            ex_opener = opener
+            ex_mccc_autosaves_str = mccc_autosaves_str
+            ex_hex_slot_id = hex_slot_id
+            ex_file_name_extra = file_name_extra
+
+            scumbumbo_show_notif_texttitle(
+                f'{opener}{num_sims} {mccc_autosaves_str}\n\nif this is the wrong file, run riv_clear, save your game, '
+                f'and run riv_load_cfg_manually.{ownfolder_warning}{computer_str}\n\nthank you for using my mod! '
+                , f'riv_rel gen {rr_gen}')
 
     except Exception as e:
         riv_log(f'error in auto_json in on_all_households_and_sim_infos_loaded: {e}')
