@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\services\__init__.py
-# Compiled at: 2020-07-16 22:54:32
-# Size of source mod 2**32: 33612 bytes
+# Compiled at: 2021-04-02 23:01:34
+# Size of source mod 2**32: 34120 bytes
 import argparse, functools, gc, time
 from services.tuning_managers import InstanceTuningManagers
 from sims4.resources import INSTANCE_TUNING_DEFINITIONS
@@ -695,6 +695,12 @@ def conditional_layer_service():
     return current_zone().conditional_layer_service
 
 
+def dust_service():
+    zone = current_zone()
+    if hasattr(zone, 'dust_service'):
+        return zone.dust_service
+
+
 def get_sickness_service():
     return game_services.service_manager.sickness_service
 
@@ -774,6 +780,14 @@ def region_service():
 
 def lifestyle_service():
     return game_services.service_manager.lifestyle_service
+
+
+def get_ab_test_service():
+    return getattr(game_services.service_manager, 'a_b_test_service', None)
+
+
+def get_zone_reservation_service():
+    return game_services.service_manager.zone_reservation_service
 
 
 def c_api_gsi_dump():

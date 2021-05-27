@@ -2,15 +2,16 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\sims\sim_info_manager.py
-# Compiled at: 2020-04-27 22:55:54
-# Size of source mod 2**32: 40673 bytes
-import itertools
+# Compiled at: 2021-01-29 00:09:07
+# Size of source mod 2**32: 44222 bytes
+import itertools, caches, clubs, game_services, interactions.utils.routing, persistence_error_types, services, sims.household, sims.sim_info_types, sims4.log
 from fame.fame_tuning import FameTunables
 from filters.sim_filter_service import SimFilterGlobalBlacklistReason
 from interactions.si_restore import SuperInteractionRestorer
 from interactions.social.greeting_socials import greetings
 from objects import ALL_HIDDEN_REASONS
 from objects.object_manager import DistributableObjectManager
+from server_commands.household_commands import HouseholdCommandTuning
 from services.relgraph_service import RelgraphService
 from sims.genealogy_tracker import genealogy_caching
 from sims.outfits.outfit_enums import OutfitCategory
@@ -21,15 +22,17 @@ from sims.sim_info_telemetry import SimInfoTelemetryManager
 from sims.sim_info_types import SimZoneSpinUpAction
 from sims4.callback_utils import CallableList
 from sims4.collections import enumdict
+from sims4.tuning.tunable import TunablePackSafeReference
 from sims4.utils import classproperty
 from ui import ui_tuning
-import caches, clubs, game_services, interactions.utils.routing, persistence_error_types, services, sims.household, sims.sim_info_types, sims4.log
 with sims4.reload.protected(globals()):
     SIM_INFO_CAP_PER_LOD = None
 logger = sims4.log.Logger('SimInfoManager', default_owner='manus')
 relationship_setup_logger = sims4.log.Logger('DefaultRelSetup', default_owner='manus')
 
 class SimInfoManager(DistributableObjectManager):
+    FATHER_WINTER_TRAIT = TunablePackSafeReference(description='\n        Father winter trait to search hidden households for to delete.  \n        ',
+      manager=(services.get_instance_manager(sims4.resources.Types.TRAIT)))
     SIM_INFO_CAP = 0
 
     def __init__(self, *args, **kwargs):
@@ -118,8 +121,45 @@ class SimInfoManager(DistributableObjectManager):
                             self._sim_infos_saved_in_open_street.append(sim_info)
 
     def on_all_households_and_sim_infos_loaded(self, client):
+        father_winters = []
         for sim_info in tuple(self.values()):
             sim_info.on_all_households_and_sim_infos_loaded()
+            if sim_info.has_trait(SimInfoManager.FATHER_WINTER_TRAIT):
+                father_winters.append(sim_info)
+
+        if len(father_winters) > 1:
+            played_sim_ids = set()
+            for sim_info in father_winters:
+                self._remove_father_winter(sim_info, played_sim_ids)
+
+    def _remove_father_winter(self, sim_info, played_sim_ids):
+        if sim_info.id in played_sim_ids:
+            return
+        household = sim_info.household
+        if household:
+            if household.is_played_household:
+                played_sim_ids.add(sim_info.id)
+                return
+            if not household.hidden:
+                return
+        if sim_info.is_instanced(allow_hidden_flags=ALL_HIDDEN_REASONS):
+            return
+        for relationship in sim_info.relationship_tracker:
+            if relationship.is_object_rel():
+                continue
+            if relationship.sim_id_b in played_sim_ids:
+                return
+                sim_info_b = self.get(relationship.sim_id_b)
+                if sim_info_b is None:
+                    continue
+                sim_info_b_household = sim_info_b.household
+                if sim_info_b_household is None:
+                    continue
+                if sim_info_b_household.is_played_household:
+                    played_sim_ids.add(sim_info_b.id)
+                    return
+
+        sim_info.remove_permanently()
 
     def add_sims_to_zone(self, sim_list):
         self._sims_traveled_to_zone.extend(sim_list)

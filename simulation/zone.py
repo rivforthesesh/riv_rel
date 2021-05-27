@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\zone.py
-# Compiled at: 2020-10-05 20:01:54
-# Size of source mod 2**32: 88255 bytes
+# Compiled at: 2020-12-16 22:08:40
+# Size of source mod 2**32: 91783 bytes
 import collections, gc, math, random, weakref
 from protocolbuffers import FileSerialization_pb2 as serialization
 from protocolbuffers.Consts_pb2 import MGR_OBJECT, MGR_SITUATION, MGR_PARTY, MGR_SOCIAL_GROUP, MGR_TRAVEL_GROUP
@@ -27,6 +27,7 @@ from situations.npc_hosted_situations import NPCHostedSituationService
 from travel_group.travel_group_manager import TravelGroupManager
 from world import region, street
 from world.lot import Lot
+from world.lot_level import LotLevel
 from world.spawn_point import SpawnPointOption, SpawnPoint
 from world.spawn_point_enums import SpawnPointRequestReason
 from world.world_spawn_point import WorldSpawnPoint
@@ -70,6 +71,7 @@ class Zone:
         self._dynamic_spawn_points = {}
         self.zone_architectural_stat_effects = collections.defaultdict(int)
         self._spawn_points_changed_callbacks = CallableList()
+        self._lot_level_instance_added_callbacks = None
         self._zone_state = zone_types.ZoneState.ZONE_INIT
         self._zone_state_callbacks = {}
         self.all_transition_controllers = weakref.WeakSet()
@@ -180,6 +182,7 @@ class Zone:
         from broadcasters.broadcaster_service import BroadcasterService, BroadcasterRealTimeService
         from conditional_layers.conditional_layer_service import ConditionalLayerService
         from drama_scheduler.drama_scheduler import DramaScheduleService
+        from dust.dust_service import DustService
         from ensemble.ensemble_service import EnsembleService
         from filters.demographics_service import DemographicsService
         from filters.neighborhood_population_service import NeighborhoodPopulationService
@@ -259,6 +262,7 @@ class Zone:
          CullingService(),
          GardeningService(),
          ObjectRoutingService(),
+         DustService(),
          MasterController()]
         from sims4.service_manager import ServiceManager
         self.service_manager = ServiceManager()
@@ -494,6 +498,8 @@ class Zone:
         self.ensure_callable_list_is_empty(self.wall_contour_update_callbacks)
         self.ensure_callable_list_is_empty(self.foundation_and_level_height_update_callbacks)
         self._zone_state_callbacks.clear()
+        if self._lot_level_instance_added_callbacks:
+            self._lot_level_instance_added_callbacks.clear()
         caches.clear_all_caches(force=True)
         get_throwaway_animation_context()
         self._stop_gc_tracking()
@@ -568,6 +574,7 @@ class Zone:
     def on_client_connect(self, client):
         self._client = client
         self._set_zone_state(zone_types.ZoneState.CLIENT_CONNECTED)
+        self._add_or_remove_lot_level_instances()
 
     def on_households_and_sim_infos_loaded(self):
         self._set_zone_state(zone_types.ZoneState.HOUSEHOLDS_AND_SIM_INFOS_LOADED)
@@ -807,6 +814,18 @@ class Zone:
     def unregister_spawn_points_changed_callback(self, callback):
         self._spawn_points_changed_callbacks.remove(callback)
 
+    def register_lot_level_instance_added_callback(self, callback):
+        if self._lot_level_instance_added_callbacks is None:
+            self._lot_level_instance_added_callbacks = CallableList()
+        self._lot_level_instance_added_callbacks.append(callback)
+
+    def unregister_lot_level_instance_added_callback(self, callback):
+        if self._lot_level_instance_added_callbacks is None:
+            return
+        if callback not in self._lot_level_instance_added_callbacks:
+            return
+        self._lot_level_instance_added_callbacks.remove(callback)
+
     def _on_spawn_points_changed(self):
         self._spawn_points_changed_callbacks()
 
@@ -847,6 +866,18 @@ class Zone:
         except:
             logger.exception('Exception thrown while processing navmesh update callbacks. Eating this exception to prevent the alarm from self-destructing.', owner='tastle')
 
+    def _add_or_remove_lot_level_instances(self):
+        for level_index in tuple(self.lot.lot_levels.keys()):
+            if not self.lot.min_level <= level_index < self.lot.max_level:
+                self.lot.lot_levels[level_index].on_teardown()
+                del self.lot.lot_levels[level_index]
+
+        for level_index in range(self.lot.min_level, self.lot.max_level):
+            if level_index not in self.lot.lot_levels:
+                lot_level = self.lot.lot_levels[level_index] = LotLevel(level_index)
+                if self._lot_level_instance_added_callbacks:
+                    self._lot_level_instance_added_callbacks(lot_level)
+
     def on_build_buy_enter(self):
         self.is_in_build_buy = True
         laundry_service = services.get_laundry_service()
@@ -867,12 +898,17 @@ class Zone:
         laundry_service = services.get_laundry_service()
         if laundry_service is not None:
             laundry_service.on_build_buy_exit()
+        self._add_or_remove_lot_level_instances()
+        dust_service = services.dust_service()
+        if dust_service is not None:
+            dust_service.on_build_buy_exit()
 
     def on_active_lot_clearing_begin(self):
         self.is_active_lot_clearing = True
 
     def on_active_lot_clearing_end(self):
         self.is_active_lot_clearing = False
+        self._add_or_remove_lot_level_instances()
 
     def set_to_fixup_on_build_buy_exit(self, obj):
         if self.objects_to_fixup_post_bb is None:
@@ -925,6 +961,10 @@ class Zone:
         else:
             gameplay_zone_data.clock_speed_mode = ClockSpeedMode.NORMAL
         self.lot.save(gameplay_zone_data)
+        for lot_level in self.lot.lot_levels.values():
+            with ProtocolBufferRollback(gameplay_zone_data.lot_level_data) as (lot_level_data):
+                lot_level.save(lot_level_data)
+
         for stat_id, value in self.zone_architectural_stat_effects.items():
             with ProtocolBufferRollback(gameplay_zone_data.architectural_statistics) as (entry):
                 entry.name_hash = stat_id
@@ -996,6 +1036,13 @@ class Zone:
 
         self._world_spawn_point_locators = None
         self.lot.load(gameplay_zone_data)
+        for lot_level_data in gameplay_zone_data.lot_level_data:
+            level_index = lot_level_data.level_index
+            if self.lot.min_level <= level_index < self.lot.max_level:
+                lot_level = LotLevel(level_index)
+                lot_level.load(lot_level_data)
+                self.lot.lot_levels[level_index] = lot_level
+
         for stat in gameplay_zone_data.architectural_statistics:
             self.zone_architectural_stat_effects[stat.name_hash] = stat.value
 
@@ -1046,26 +1093,26 @@ class Zone:
 
     def update_household_objects_ownership--- This code section failed: ---
 
- L.1704         0  LOAD_FAST                'self'
+ L.1780         0  LOAD_FAST                'self'
                 2  LOAD_METHOD              _get_zone_proto
                 4  CALL_METHOD_0         0  '0 positional arguments'
                 6  STORE_FAST               'zone_data_proto'
 
- L.1705         8  LOAD_FAST                'zone_data_proto'
+ L.1781         8  LOAD_FAST                'zone_data_proto'
                10  LOAD_CONST               None
                12  COMPARE_OP               is
                14  POP_JUMP_IF_FALSE    20  'to 20'
 
- L.1706        16  LOAD_CONST               None
+ L.1782        16  LOAD_CONST               None
                18  RETURN_VALUE     
              20_0  COME_FROM            14  '14'
 
- L.1708        20  LOAD_FAST                'self'
+ L.1784        20  LOAD_FAST                'self'
                22  LOAD_ATTR                venue_service
                24  LOAD_ATTR                active_venue
                26  STORE_FAST               'venue_instance'
 
- L.1709        28  LOAD_FAST                'venue_instance'
+ L.1785        28  LOAD_FAST                'venue_instance'
                30  LOAD_CONST               None
                32  COMPARE_OP               is
                34  POP_JUMP_IF_TRUE     42  'to 42'
@@ -1074,22 +1121,22 @@ class Zone:
                40  POP_JUMP_IF_TRUE     46  'to 46'
              42_0  COME_FROM            34  '34'
 
- L.1716        42  LOAD_CONST               None
+ L.1792        42  LOAD_CONST               None
                44  RETURN_VALUE     
              46_0  COME_FROM            40  '40'
 
- L.1718        46  LOAD_FAST                'zone_data_proto'
+ L.1794        46  LOAD_FAST                'zone_data_proto'
                48  LOAD_ATTR                gameplay_zone_data
                50  STORE_FAST               'gameplay_zone_data'
 
- L.1719        52  LOAD_FAST                'self'
+ L.1795        52  LOAD_FAST                'self'
                54  LOAD_ATTR                lot
                56  LOAD_ATTR                owner_household_id
                58  LOAD_CONST               0
                60  COMPARE_OP               ==
                62  POP_JUMP_IF_FALSE   122  'to 122'
 
- L.1720        64  LOAD_FAST                'self'
+ L.1796        64  LOAD_FAST                'self'
                66  LOAD_ATTR                travel_group_manager
                68  LOAD_METHOD              get_travel_group_by_zone_id
                70  LOAD_FAST                'self'
@@ -1097,19 +1144,19 @@ class Zone:
                74  CALL_METHOD_1         1  '1 positional argument'
                76  STORE_FAST               'travel_group'
 
- L.1722        78  LOAD_FAST                'travel_group'
+ L.1798        78  LOAD_FAST                'travel_group'
                80  LOAD_CONST               None
                82  COMPARE_OP               is
                84  POP_JUMP_IF_TRUE    110  'to 110'
 
- L.1723        86  LOAD_GLOBAL              protocol_buffer_utils
+ L.1799        86  LOAD_GLOBAL              protocol_buffer_utils
                88  LOAD_METHOD              has_field
                90  LOAD_FAST                'gameplay_zone_data'
                92  LOAD_STR                 'active_travel_group_id_on_save'
                94  CALL_METHOD_2         2  '2 positional arguments'
                96  POP_JUMP_IF_FALSE   110  'to 110'
 
- L.1724        98  LOAD_FAST                'gameplay_zone_data'
+ L.1800        98  LOAD_FAST                'gameplay_zone_data'
               100  LOAD_ATTR                active_travel_group_id_on_save
               102  LOAD_FAST                'travel_group'
               104  LOAD_ATTR                id
@@ -1118,7 +1165,7 @@ class Zone:
             110_0  COME_FROM            96  '96'
             110_1  COME_FROM            84  '84'
 
- L.1727       110  LOAD_FAST                'self'
+ L.1803       110  LOAD_FAST                'self'
               112  LOAD_METHOD              _set_zone_objects_household_owner_id
               114  LOAD_CONST               None
               116  CALL_METHOD_1         1  '1 positional argument'
@@ -1126,7 +1173,7 @@ class Zone:
               120  JUMP_FORWARD        178  'to 178'
             122_0  COME_FROM            62  '62'
 
- L.1729       122  LOAD_FAST                'self'
+ L.1805       122  LOAD_FAST                'self'
               124  LOAD_ATTR                lot
               126  LOAD_ATTR                owner_household_id
               128  LOAD_GLOBAL              services
@@ -1135,14 +1182,14 @@ class Zone:
               134  COMPARE_OP               ==
               136  POP_JUMP_IF_FALSE   178  'to 178'
 
- L.1734       138  LOAD_GLOBAL              protocol_buffer_utils
+ L.1810       138  LOAD_GLOBAL              protocol_buffer_utils
               140  LOAD_METHOD              has_field
               142  LOAD_FAST                'gameplay_zone_data'
               144  LOAD_STR                 'active_household_id_on_save'
               146  CALL_METHOD_2         2  '2 positional arguments'
               148  POP_JUMP_IF_FALSE   164  'to 164'
 
- L.1735       150  LOAD_FAST                'gameplay_zone_data'
+ L.1811       150  LOAD_FAST                'gameplay_zone_data'
               152  LOAD_ATTR                lot_owner_household_id_on_save
               154  LOAD_GLOBAL              services
               156  LOAD_METHOD              active_household_id
@@ -1151,7 +1198,7 @@ class Zone:
               162  POP_JUMP_IF_FALSE   178  'to 178'
             164_0  COME_FROM           148  '148'
 
- L.1736       164  LOAD_FAST                'self'
+ L.1812       164  LOAD_FAST                'self'
               166  LOAD_METHOD              _set_zone_objects_household_owner_id
               168  LOAD_GLOBAL              services
               170  LOAD_METHOD              active_household_id
@@ -1192,27 +1239,27 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
 
     def should_restore_sis--- This code section failed: ---
 
- L.1776         0  LOAD_FAST                'self'
+ L.1852         0  LOAD_FAST                'self'
                 2  LOAD_METHOD              time_has_passed_in_world_since_zone_save
                 4  CALL_METHOD_0         0  '0 positional arguments'
                 6  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1777         8  LOAD_FAST                'self'
+ L.1853         8  LOAD_FAST                'self'
                10  LOAD_METHOD              venue_changed_between_save_and_load
                12  CALL_METHOD_0         0  '0 positional arguments'
                14  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1778        16  LOAD_FAST                'self'
+ L.1854        16  LOAD_FAST                'self'
                18  LOAD_METHOD              lot_owner_household_changed_between_save_and_load
                20  CALL_METHOD_0         0  '0 positional arguments'
                22  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1779        24  LOAD_FAST                'self'
+ L.1855        24  LOAD_FAST                'self'
                26  LOAD_METHOD              active_household_changed_between_save_and_load
                28  CALL_METHOD_0         0  '0 positional arguments'
                30  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1780        32  LOAD_FAST                'self'
+ L.1856        32  LOAD_FAST                'self'
                34  LOAD_ATTR                is_first_visit_to_zone
                36  POP_JUMP_IF_FALSE    42  'to 42'
              38_0  COME_FROM            30  '30'
@@ -1220,11 +1267,11 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
              38_2  COME_FROM            14  '14'
              38_3  COME_FROM             6  '6'
 
- L.1781        38  LOAD_CONST               False
+ L.1857        38  LOAD_CONST               False
                40  RETURN_VALUE     
              42_0  COME_FROM            36  '36'
 
- L.1782        42  LOAD_CONST               True
+ L.1858        42  LOAD_CONST               True
                44  RETURN_VALUE     
                -1  RETURN_LAST      
 

@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Core\sims4\tuning\instance_manager.py
-# Compiled at: 2020-07-21 23:31:18
-# Size of source mod 2**32: 34387 bytes
+# Compiled at: 2021-01-08 18:55:51
+# Size of source mod 2**32: 34886 bytes
 from collections import Counter
 from collections import defaultdict, namedtuple
 from sims4.callback_utils import CallableList
@@ -22,6 +22,7 @@ with sims4.reload.protected(globals()):
 TUNING_CALLBACK_YIELD_TIME_INTERVAL = 0.25
 TUNING_LOADED_CALLBACK = '_tuning_loaded_callback'
 VERIFY_TUNING_CALLBACK = '_verify_tuning_callback'
+GET_TUNING_SUGGESTIONS = '_get_tuning_suggestions'
 TuningCallbackHelper = namedtuple('TuningCallbackHelper', ('template', 'name', 'source',
                                                            'value'))
 COMMAND_LINE_ARG_CALCULATE_STATS = 'calculate_stats'
@@ -129,6 +130,11 @@ class TuningInstanceManager(Service):
             self._execute_func_and_calculate_time(instance_manager, instance_manager.on_start)
 
         status_logger.always((self.get_status_logger_text()), owner='manus', color=50)
+        if paths.TRACEMALLOC_TUNING_SNAPSHOT:
+            from server_commands.memory_commands import tracemalloc_save_snapshot
+            tracemalloc_save_snapshot(_connection=(sims4.commands.NO_CONTEXT))
+            from server_commands.memory_commands import tracemalloc_dump_saved_snapshot
+            tracemalloc_dump_saved_snapshot(_connection=(sims4.commands.NO_CONTEXT))
         yield True
 
     def _execute_func_and_calculate_time(self, instance_manager, execute_function):

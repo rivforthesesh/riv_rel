@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Core\sims4\resources.py
-# Compiled at: 2020-07-29 02:02:18
-# Size of source mod 2**32: 40383 bytes
+# Compiled at: 2021-01-28 03:02:01
+# Size of source mod 2**32: 40909 bytes
 from _resourceman import *
 import _resourceman, io, os, protocolbuffers
 from caches import cached
@@ -292,6 +292,10 @@ class Types(enum.Int, export=False):
     UNIVERSITY_COURSE_SCHEDULE = _add_inst_tuning('university_course_schedule', resource_type=2559322869,
       require_reference=True)
     SIM_INFO_FIXUP = _add_inst_tuning('sim_info_fixup', resource_type=3797424274,
+      require_reference=True)
+    CAS_PREFERENCE_CATEGORY = _add_inst_tuning('cas_preference_category', resource_type=3456433227,
+      require_reference=True)
+    CAS_PREFERENCE_ITEM = _add_inst_tuning('cas_preference_item', resource_type=3966303522,
       require_reference=True)
     TDESC_DEBUG = _add_inst_tuning('tdesc_debug')
     TUNING_DESCRIPTION = 2519486516
