@@ -125,7 +125,7 @@ def write_gedcom(keyword: str, _connection=None):
     # TODO: see what caused unhashable type list error
 
     # get each fam unit (unique set of parent lists)
-    parents = list(set(gedcom_rel_dict.rels.values()))
+    parents = set(gedcom_rel_dict.rels.values())
     # turn into pairs
     parent_pairs = [p for p in parents if len(p) == 2] + \
                    [p + p for p in parents if len(p) == 1]
