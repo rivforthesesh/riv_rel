@@ -1,7 +1,8 @@
-import enum
-
 # notes:
 #   the things that you want to replace are between ''
+#       if you see something like x = 'some text here '\
+#                                     'then more text here'
+#       then x will show up as 'some text here then more text here'
 #   if you have an apostrophe ('), you need to write it as \'
 #   variables (names, numbers, relations) will be inserted into sentences wherever {} is
 #   some of these need a space at the start and/or end (if so, there'll be a comment next to it)
@@ -14,10 +15,10 @@ import enum
 #       you need more context
 #       the variables added in with {} will be in a different order than they are in English
 
-# ==== often used (HIGH PRIORITY) ====
-and_ = ' and '  # space at start and end
+# ==== often used (high priority) ====
+and_0 = ' and '  # space at start and end
 
-# ==== command outputs (MEDIUM PRIORITY) ====
+# ==== command outputs (high priority) ====
 
 # the variable name relates to the command, e.g. get_parents_0 is a string for riv_get_parents
 get_parents_0 = '{}\'s parents not found'
@@ -68,17 +69,21 @@ get_indirect_rel_1 = '{} {} is {} {}\'s {} (relation found via {} {} and {} {})'
 get_indirect_rel_2 = 'no indirect rel found between {} and {}'
 #       no indirect rel(ation) found between Maple and Syrup
 
-consang_0 = 'consanguinity between {} and {} is {}%'
+consang_0 = 'consanguinity'
+consang_1 = 'consanguinity between {} and {} is {}%'
 #       consanguinity between Bob and Iggy is 50%
-consang_1 = 'consanguinity: {}%'
 
-is_eligible_couple_0 = 'mate, that\'s just being single with extra steps'
-#       appears if you try to check if a sim could be in a relationship with themself
-#       doesn't need to be exact, just something like "this is the same sim"
-is_eligible_couple_1 = '{} and {} are not an eligible couple: they are directly related'
-is_eligible_couple_2 = '{} and {} are not an eligible couple: over the consanguinity limit'
+is_eligible_couple_0 = '{} and {} are not an eligible couple: '
+is_eligible_couple_1 = 'they are directly related'
+is_eligible_couple_2 = 'over the consanguinity limit'
 #       or "they are too closely related"
 is_eligible_couple_3 = '{} and {} are an eligible couple with your settings!'
+is_eligible_couple_4 = 'at least one is too young for romance'
+is_eligible_couple_5 = 'the game considers this as incest'
+is_eligible_couple_6 = 'the game does not consider this as incest'
+is_eligible_couple_7 = 'mate, that\'s just being single with extra steps'
+#       appears if you try to check if a sim could be in a relationship with themself
+#       doesn't need to be exact, just something like "this is the same sim"
 
 # for the main riv_rel command
 rel_0 = '{} {} is {} {}'
@@ -98,9 +103,51 @@ rel_rand_rand_0 = 'sims: {} {} and {} {}'
 rel_all_0 = 'relatives found for {}: {}'
 #       relatives found for Bob Pancakes: 3
 
-# TODO: riv_help line 3545 onwards
+# ==== help commands (high priority) ====
 
-# ==== json command outputs (LOW PRIORITY) ====
+help_0 = ' (fam and inc can be used as club requirements)'  # space at start
+#       this text shows up if someone has the trait and GT addons
+#       change fam and inc to whatever you've named the traits
+help_1 = 'biological, in-law, and (optional) step relations, console commands, social interaction, ' \
+         'auto .json files, optional computer help menu, optional traits'
+#       a list of features (help_0 is added to the end of this; consanguinity is already translated)
+help_2 = 'all settings can be edited by opening the .cfg files (in the same folder as riv_rel) in notepad++'
+help_3 = 'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, ' \
+         'e.g. J "Huntington III") or as the sim ID'
+help_4 = 'if you find an error, please send me (rivforthesesh / riv#4381) the error text and any relevant rels/files!'
+
+help_5 = 'commands taking two sims:'
+#       this comes before a list of commands that you type two sims after, e.g. riv_consang Bob Pancakes Iggy Pancakes
+help_6 = 'commands taking one sim:'
+#       this comes before a list of commands with one sim after, e.g. riv_get_children Bob Pancakes
+help_7 = 'using .json files ' \
+        '[replace xyz by whatever you want to create/use the files riv_rel_xyz.json and riv_relparents_xyz.json]:'
+
+help_8 = 'runs riv_update xyz on every zone load or sim birth or save'  # description for riv_auto
+help_9 = 'save sim info to .json files'  # description for riv_save
+help_10 = 'load sim info from .json files'  # description for riv_load
+help_11 = 'removes duplicates from .json file'  # description for riv_clean
+help_12 = 'shows no. mini sim-infos in memory'  # description for riv_mem; 'no.' = 'number'
+help_13 = 'clears memory'  # description for riv_clear
+help_14 = 'runs save, clear, then load'  # desciption for riv_update
+help_15 = 'shows current save ID'  # description for riv_save_slot_id
+
+help_16 = 'trait commands taking one sim, and a letter from A to H:'
+help_17 = 'trait commands taking one sim:'
+help_18 = 'trait commands taking a letter from A to H:'
+help_19 = 'trait commands taking no arguments:'  # for commands like riv_traits, where you just type the command name
+
+help_20 = 'check the computer for a menu called "Research on riv_rel.sim..." for explanations and help.'
+help_21 = 'the help menu is a little long, please scroll up!'
+
+gen_diff_0 = 'as a list: '  # space at the end; followed by a list of numbers with generational differences
+gen_diff_1 = 'the average generational difference is '  # space at the end; average of the numbers above
+gen_diff_2 = '(negative means sim_x is higher up in the family tree than sim_y)'
+#       i.e. if the generational difference is a negative number, then sim_x is an ancestor of sim_y
+
+save_slot_id_0 = 'riv_rel is currently using save slot id '  # space at end; will be followed by a save slot number
+
+# ==== json / misc command outputs (low priority) ====
 
 # things used across multiple commands
 all_done = 'all done'
@@ -166,6 +213,7 @@ auto_8 = 'blocked riv_auto (autosave slots aren\'t specific to saves so this cou
 auto_9 = 'please manually save your game to another slot and try again'
 
 # ==== starting notif (MEDIUM PRIORITY [there's a lot of text!]) ====
+
 notif_0 = 'failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, ' \
           'you quit a different save without saving and then loaded this one, or you moved/deleted the ' \
           '.json files. \nif you have not (or aren\'t about to) set up auto .json file updates for this ' \
@@ -356,3 +404,6 @@ its_very_complicated = 'This relationship is already SUPER complicated! '  # spa
 flirted = 'We\'ve already been flirting... it\'s a little late to ask. '  # space at end
 coworkers = 'We work together. '  # space at end
 acquaintances = 'Oh, right, you barely know me. '  # space at end
+
+# TODO: ==== traits ====
+

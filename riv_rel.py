@@ -1303,7 +1303,13 @@ def format_indirect_rel_gender(xy_indirect_rels: List, gender: int):
             elif nth == 3:
                 rel_str += 'third '
             else:
-                rel_str += str(nth) + 'th '
+                # nth
+                if nth % 10 == 1 and nth != 11:
+                    rel_str += str(nth) + 'st '
+                elif nth % 10 == 2 and nth != 12:
+                    rel_str += str(nth) + 'nd '
+                else:
+                    rel_str += str(nth) + 'th '
             rel_str += 'cousin'
             if nce > 0:
                 if nce == 1:
@@ -3550,8 +3556,11 @@ def console_help(_connection=None):
     else:
         addon_GT_text = ''
     output(
-        f'riv_rel gen {rr_gen} - biological, in-law, and (optional) step relations, console commands, social '
-        f'interaction, auto .json files, optional computer help menu, optional traits{addon_GT_text}, consanguinity')
+        f'riv_rel gen {rr_gen} - '
+        'biological, in-law, and (optional) step relations, console commands, '
+        'social interaction, auto .json files, optional computer help menu, optional traits'
+        f'{addon_GT_text}, '
+        'consanguinity')
     output('all settings can be edited by opening the .cfg files (in the same folder as riv_rel) in notepad++')
     output(
         'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, '
@@ -3729,8 +3738,8 @@ def console_is_eligible_couple(sim_x: SimInfoParam, sim_y: SimInfoParam, _connec
     if sim_x.is_teen_or_older and sim_y.is_teen_or_older:
         output(eligibility[1])
     else:
-        output(f'{sim_x.first_name} and {sim_y.first_name} are not an eligible couple: '
-               f'at least one is too young for romance')
+        output('{} and {} are not an eligible couple: '.format(sim_x.first_name, sim_y.first_name) +\
+               'at least one is too young for romance')
     try:
         eligibility2 = sim_x.incest_prevention_test(sim_y)
         if eligibility2:
