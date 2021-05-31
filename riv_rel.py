@@ -163,17 +163,29 @@ def riv_log(string, level=2):
     else:
         pass
 
+
 # new line before session
 riv_log(f'[game loaded at {format(dt_string)}]', 1)
 riv_log('', 1)
 
-
 # get strings
 try:
-    import riv_rel_strings as s
-    riv_log(f'riv_rel successfully imported riv_rel_strings for language {s.lang}')
+    import riv_rel_strings as rrs
+
+    riv_log(f'riv_rel successfully imported riv_rel_strings for language {rrs.lang}')
 except Exception as e:
     riv_log('error - riv_rel failed to import riv_rel_strings because ' + str(e))
+
+
+# set up parsing
+def p(st: str or tuple, is_female=False):
+    if isinstance(st, str):
+        return st
+    elif isinstance(st, tuple):
+        # False = male = 0, True = female = 1
+        return st[is_female]
+    else:
+        raise Exception
 
 
 # find addons and MCCC
@@ -322,9 +334,9 @@ except Exception as e2:
 
 # true and false
 def true_false(x):
-    if x in [True, 'True', 'true', 'TRUE']:
+    if x in [True, 'True', 'true', 'TRUE', 1]:
         return True
-    elif x in [False, 'False', 'false', 'FALSE']:
+    elif x in [False, 'False', 'false', 'FALSE', 0]:
         return False
     else:
         return None
@@ -649,10 +661,10 @@ def console_get_parents(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     sim_parents = get_parents(sim_x)
     if not sim_parents:
-        output('{x_firstname}\'s parents not found'.format(x_firstname=sim_x.first_name))
+        output(p(rrs.get_parents_0).format(x_firstname=sim_x.first_name))
     else:
         for sim_y in sim_parents:
-            output('{y_firstname} {y_lastname} is {x_firstname}\'s parent'
+            output(p(rrs.get_parents_1, sim_y.is_female)
                    .format(y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, x_firstname=sim_x.first_name))
 
 
@@ -723,10 +735,10 @@ def console_get_children(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     sim_children = get_children(sim_x)
     if not sim_children:
-        output('{x_firstname}\'s children not found'.format(x_firstname=sim_x.first_name))
+        output(p(rrs.get_children_0).format(x_firstname=sim_x.first_name))
     else:
         for sim_y in sim_children:
-            output('{y_firstname} {y_lastname} is {x_firstname}\'s child'
+            output(p(rrs.get_children_1, sim_y.is_female)
                    .format(y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, x_firstname=sim_x.first_name))
 
 
@@ -808,16 +820,16 @@ def console_get_ancestors(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     x_ancestors = get_ancestors(sim_x)
     if not x_ancestors:
-        output('{x_firstname}\'s ancestors not found'.format(x_firstname=sim_x.first_name))
+        output(p(rrs.get_ancestors_0).format(x_firstname=sim_x.first_name))
     else:
         for sim_y in x_ancestors.keys():
             for sim_z in x_ancestors[sim_y]:
                 if sim_z[0] == 1:
-                    output('{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s ancestor, {n} generation back'
+                    output(p(rrs.get_ancestors_1, sim_y.is_female)
                            .format(y_firstname=sim_y.first_name, y_lastname=sim_y.last_name,
                                    x_firstname=sim_x.first_name, x_lastname=sim_x.last_name, n=sim_z[0]))
                 else:
-                    output('{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s ancestor, {n} generations back'
+                    output(p(rrs.get_ancestors_1, sim_y.is_female)
                            .format(y_firstname=sim_y.first_name, y_lastname=sim_y.last_name,
                                    x_firstname=sim_x.first_name, x_lastname=sim_x.last_name, n=sim_z[0]))
 
@@ -862,16 +874,16 @@ def console_get_descendants(sim_x: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     x_descendants = get_descendants(sim_x)
     if not x_descendants:
-        output('{x_firstname}\'s descendants not found'.format(x_firstname=sim_x.first_name))
+        output(p(rrs.get_descendants_0).format(x_firstname=sim_x.first_name))
     else:
         for sim_y in x_descendants.keys():
             for sim_z in x_descendants[sim_y]:
                 if sim_z[0] == 1:
-                    output('{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s descendant, {n} generation forward'
+                    output(p(rrs.get_descendants_1, sim_y.is_female)
                            .format(y_firstname=sim_y.first_name, y_lastname=sim_y.last_name,
                                    x_firstname=sim_x.first_name, x_lastname=sim_x.last_name, n=sim_z[0]))
                 else:
-                    output('{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s descendant, {n} generations forward'
+                    output(p(rrs.get_descendants_2, sim_y.is_female)
                            .format(y_firstname=sim_y.first_name, y_lastname=sim_y.last_name,
                                    x_firstname=sim_x.first_name, x_lastname=sim_x.last_name, n=sim_z[0]))
 
@@ -955,12 +967,12 @@ def console_get_direct_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection
         if sim_y is not None:
             xy_direct_rels = get_direct_relation(sim_x, sim_y)
             if not xy_direct_rels:  # there is no direct relation, list is empty
-                output('no direct rel found between {x_firstname} and {y_firstname}'
+                output(p(rrs.get_direct_rel_0)
                        .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name))
             else:
                 xy_direct_rel_str = format_direct_rel(xy_direct_rels, sim_x)
                 for xy_rel in xy_direct_rel_str:
-                    output('{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel}.'
+                    output(p(rrs.get_direct_rel_1, sim_x.is_female)
                            .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
                                    y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=xy_rel))
 
@@ -1007,19 +1019,19 @@ def console_get_sib_strength(sim_x: SimInfoParam, sim_y: SimInfoParam, _connecti
     output = sims4.commands.CheatOutput(_connection)
     sib_strength = get_sib_strength(sim_x, sim_y)
     if sim_x == sim_y:
-        output('{x_firstname} is {y_firstname}.'
+        output(p(rrs.get_sib_strength_self)
                .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name))
     elif sib_strength == 1:
-        output('{x_firstname} and {y_firstname} are full siblings.'
+        output(p(rrs.get_sib_strength_full, sim_x.is_female and sim_y.is_female)
                .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name))
     elif sib_strength == 0.5:
-        output('{x_firstname} and {y_firstname} are half siblings.'
+        output(p(rrs.get_sib_strength_half, sim_x.is_female and sim_y.is_female)
                .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name))
     elif sib_strength == 0:
-        output('{x_firstname} and {y_firstname} are not siblings.'
+        output(p(rrs.get_sib_strength_none, sim_x.is_female and sim_y.is_female)
                .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name))
     else:
-        output('something went wrong: sib_strength is {num} when it should be 0, 0.5, or 1'.format(num=sib_strength))
+        output(p(rrs.get_sib_strength_error).format(num=sib_strength))
 
 
 # input: two sims and ancestors. output: None if there is no indirect relation, list if there is
@@ -1361,21 +1373,20 @@ def console_get_indirect_rel(sim_x: SimInfoParam, sim_y: SimInfoParam, _connecti
             if rels_via:
                 for rel_via in rels_via:
                     if rel_via[1] == rel_via[2]:  # via one sim
-                        output(
-                            '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname})'
-                                .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
-                                        y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel_via[0],
-                                        z_firstname=rel_via[1].first_name, z_lastname=rel_via[1].last_name))
+                        output(p(rrs.get_indirect_rel_1, sim_x.is_female)
+                               .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
+                                       y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel_via[0],
+                                       z_firstname=rel_via[1].first_name, z_lastname=rel_via[1].last_name))
                     else:
                         sim_z = rel_via[1]
                         sim_w = rel_via[2]  # via two sims
-                        output('{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname} and {w_firstname} {w_lastname})'
+                        output(p(rrs.get_indirect_rel_2, sim_x.is_female)
                                .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
                                        y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel_via[0],
                                        z_firstname=sim_z.first_name, z_lastname=sim_z.last_name,
                                        w_firstname=sim_w.first_name, w_lastname=sim_w.last_name))
             else:
-                output('no indirect rel found between {x_firstname} and {y_firstname}'
+                output(p(rrs.get_indirect_rel_0)
                        .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name))
 
 
@@ -1773,7 +1784,7 @@ def consang(sim_x: RivSim, sim_y: RivSim):
 def console_get_consanguinity(sim_x: SimInfoParam, sim_y: SimInfoParam, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
     xy_consang = consang(sim_x, sim_y)
-    output('consanguinity between {x_firstname} and {y_firstname} is {num}%'
+    output(p(rrs.consang_1)
            .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name, num=round(100 * xy_consang, 5)))
 
 
@@ -2480,13 +2491,14 @@ def console_save_sims(file_name_extra: str, _connection=None):
 
     sim_time = services.time_service().sim_now
     abs_tick = sim_time.absolute_ticks()
-    output('the current sim time is {num}, formatted as {datetime}'.format(num=sim_time, datetime=format_sim_date()))
-    output('[this number appears with any sims that were added/updated this time] abs_tick = {abs_tick}')
+    output(p(rrs.save_time).format(num=sim_time, datetime=format_sim_date()))
+    output(p(rrs.save_abs_tick) + f'abs_tick = {abs_tick}')
 
     save_sims(services.sim_info_manager().get_all(), file_name_extra)
-    output('saved sims.')  # add debug info later
+    output(p(rrs.save_sims_done))  # add debug info later
     save_rels(services.sim_info_manager().get_all(), file_name_extra)
-    output('saved parent rels. \nif you\'re not using riv_auto, then to use these relations in riv_rel, type the following: riv_load {file_name_extra}\n[riv_save: all done]')  # add debug info later
+    output(p(rrs.save_rels_done))
+    output(p(rrs.save_cmd) + f'riv_load {file_name_extra}\n[riv_save: {p(rrs.all_done)}]')
     # output('added details from ' + str(len(sims)) + ' sims to file ' + 'riv_rel_' + file_name_extra + '.json')
 
 
@@ -2499,8 +2511,7 @@ def console_load_sims(file_name_extra: str, _connection=None):
         riv_sim_list.load_sims(file_name_extra)
         riv_rel_dict.load_rels(file_name_extra)
         # sims = load_sims(file_name_extra)
-        output('loaded in parent rels and {num} sim mini-infos. '.format(num=len(riv_sim_list.sims))
-               + '\nshowing a random sim and their parents:')
+        output(p(rrs.load_done).format(num=len(riv_sim_list.sims)) + '\n' + p(rrs.load_random))
         # gets random sim and outputs them
         randsim = random.choice(riv_sim_list.sims)
         output(str(randsim.to_dict()))
@@ -2514,12 +2525,12 @@ def console_load_sims(file_name_extra: str, _connection=None):
                     output(sim.first_name + ' ' + sim.last_name)
                     break
     except Exception as e:
-        output('an error occurred: ' + str(e))
-        output('something went wrong while loading these sims and rels; please check that these files exist in the same folder as riv_rel.ts4script:')
+        output(rrs.load_error_0 + ': ' + str(e))
+        output(rrs.load_error_1)
         output(f'riv_rel_{file_name_extra}.json and riv_relparents_{file_name_extra}.json')
-        output('if these files exist then please let me (rivforthesesh / riv#4381) know, and send over any relevant files')
+        output(rrs.load_error_2)
 
-    output('[riv_load: all done]')
+    output(f'[riv_load: {rrs.all_done}]')
 
 
 # shows which RivSims are in mem
@@ -2530,24 +2541,24 @@ def console_mem_sims(_connection=None):
     output(f'riv_sim_list = {riv_sim_list}')
     sims = riv_sim_list.sims
     if sims:
-        output('showing a random sim:')
+        output(rrs.mem_randsim)
         randsim = random.choice(sims)
         output(str(randsim))
         output(str(randsim.to_dict()))
     else:
-        output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
+        output(rrs.mem_load)
 
     output(f'riv_rel_dict = {riv_rel_dict}')
     rels = riv_rel_dict.rels
     if rels:
-        output('showing a random sim\'s parents:')
+        output(rrs.mem_randrel)
         randsim = random.choice(sims)
         output(str(randsim))
         output(str(riv_rel_dict.rels[randsim.sim_id]))
     else:
-        output('use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json')
+        output(rrs.mem_load)
 
-    output('[riv_mem: all done]')
+    output(f'[riv_mem: {rrs.all_done}]')
 
 
 # cleans riv_rel_pine.json
@@ -2557,17 +2568,17 @@ def console_clean_sims(file_name_extra: str, _connection=None):
     sims = load_sims(file_name_extra)
     old_n = len(sims)
     old_c = len([rsim for rsim in sims if rsim['is_culled']])  # ones that are culled
-    output('this file contains {n} sim mini-infos, {c} of which are culled. cleaning...'.format(n=old_n, c=old_c))
+    output(rrs.clean_start.format(n=old_n, c=old_c))
     clean_sims(file_name_extra)
     sims = load_sims(file_name_extra)
     new_n = len(sims)
     new_c = len([rsim for rsim in sims if rsim['is_culled']])  # ones that are culled
-    output('after removing duplicates, this file contains {n} sim mini-infos.'.format(n=new_n))
+    output(rrs.clean_end.format(n=new_n))
     if old_c > new_c:
-        output('unculled {m} sims'.format(m=old_c - new_c))
+        output(rrs.clean_uncull.format(m=old_c - new_c))
     if old_n < new_n:
-        output('if you\'re currently using this file, please run riv_update ' + file_name_extra)
-    output('[riv_clean: all done]')
+        output(rrs.clean_update + ' ' + file_name_extra)
+    output(f'[riv_clean: {rrs.all_done}]')
 
 
 # clears sims and rels from mem
@@ -2586,9 +2597,9 @@ def console_clear_sims(_connection=None):
         if file.name.startswith('riv_currentsession_tmp') and file.name.endswith('.json'):
             os.remove(os.path.join(file_dir, file))
             riv_log('deleted ' + file.name)
-            output('removed temporary file ' + file.name)
+            output(rrs.clear_0 + ' ' + file.name)
 
-    output('[riv_clear: all done]')
+    output(f'[riv_clear: {rrs.all_done}]')
 
 
 # updates json files
@@ -2599,13 +2610,13 @@ def console_update_sims(file_name_extra: str, _connection=None):
     file_name = f'riv_rel_{file_name_extra}.json'  # e.g. riv_rel_pine.json
     file_path = os.path.join(file_dir, file_name)
     if os.path.isfile(file_path):
-        output('this file exists! loading this in')
+        output(rrs.update_exists)
         console_load_sims(file_name_extra, _connection)
-    output('running save, clear, then load (updates sim/rel info in mem and .json file)...')
+    output(rrs.update_desc)
     console_save_sims(file_name_extra, _connection)
     console_clear_sims(_connection)
     console_load_sims(file_name_extra, _connection)
-    output('[riv_update: all done]')
+    output(f'[riv_update: {rrs.all_done}]')
 
 
 # CFG fixing to defaults:
@@ -2645,7 +2656,7 @@ def fix_cfg_settings():
         config.write(cfg_file)
 
 
-# AUTOMATIC JSON UPDATES - zone load, save, birth, cull
+# AUTOMATIC JSON UPDATES - zone load, save, birth, cull TODO: rr strings
 
 # load in settings for this save
 def load_cfg_settings(attempt_number=1):
@@ -2751,7 +2762,8 @@ def console_load_cfg_manually(_connection=None):
             load_cfg_settings()
             output('loaded in cfg settings for save {slot_id}'.format(slot_id=hex_slot_id))
         else:
-            output('currently the game thinks your save ID is 0, or your last save was an MCCC autosave - this can be fixed by saving the game and then running this command again.')
+            output(
+                'currently the game thinks your save ID is 0, or your last save was an MCCC autosave - this can be fixed by saving the game and then running this command again.')
             output('[riv_load_cfg_manually: finished with no changes made]')
             return
     except Exception as e:
@@ -2762,7 +2774,8 @@ def console_load_cfg_manually(_connection=None):
         output('running riv_update {keyword}...'.format(keyword=file_name_extra))
         console_update_sims(file_name_extra, _connection)
     else:
-        output('there are no cfg settings for this save ID. run "riv_auto xyz" with whatever keyword you want in place of xyz to set this up for this save ID.')
+        output(
+            'there are no cfg settings for this save ID. run "riv_auto xyz" with whatever keyword you want in place of xyz to set this up for this save ID.')
     output('[riv_load_cfg_manually: all done]')
 
 
@@ -3067,12 +3080,14 @@ def auto_json_oahasil(original, self, client):
 
         if riv_auto_enabled and hex_slot_id not in mccc_autosaves:
             riv_log('   with riv_auto_enabled = true, slot ID is not an autosave')
-            opener = 'loaded in settings from riv_rel - individual save settings.cfg for save ID {save_id} and keyword {keyword}.\n\nsim mini-infos: '\
+            opener = 'loaded in settings from riv_rel - individual save settings.cfg for save ID {save_id} and keyword {keyword}.\n\nsim mini-infos: ' \
                 .format(save_id=hex_slot_id, keyword=file_name_extra)
         elif riv_auto_enabled and hex_slot_id in mccc_autosaves:
             riv_log('   with riv_auto_enabled = true, slot ID is an autosave (ERROR)')
             opener = ''
-            scumbumbo_show_notif_texttitle('you\'ve created settings for an MCCC autosave - this won\'t work properly!\n\nplease save your game to another slot and set up riv_auto again.', 'riv_rel: auto json issue')
+            scumbumbo_show_notif_texttitle(
+                'you\'ve created settings for an MCCC autosave - this won\'t work properly!\n\nplease save your game to another slot and set up riv_auto again.',
+                'riv_rel: auto json issue')
         elif hex_slot_id in mccc_autosaves:
             riv_log('   with riv_auto_enabled = false, slot ID is an autosave')
             opener = 'you\'ve loaded up an autosave slot! to use riv_auto backups, please save the game to another slot first (if you don\'t want to use riv_auto, you don\'t need to do this)\n\nnumber of sims: '
@@ -3085,7 +3100,7 @@ def auto_json_oahasil(original, self, client):
         else:
             ownfolder_warning = ''
         if mccc_autosaves and riv_auto_enabled:
-            mccc_autosaves_str = '\n\nfound MCCC autosave slots (my mod will continue to see the save slot as {slot_id} if the actual save slot changes to one of these): {autosave_list}'\
+            mccc_autosaves_str = '\n\nfound MCCC autosave slots (my mod will continue to see the save slot as {slot_id} if the actual save slot changes to one of these): {autosave_list}' \
                 .format(slot_id=hex_slot_id, autosave_list=mccc_autosaves)
         else:
             mccc_autosaves_str = ''
@@ -3105,7 +3120,6 @@ def auto_json_oahasil(original, self, client):
         # if notif is different, show the notif
         if [ex_opener, ex_mccc_autosaves_str, ex_hex_slot_id, ex_file_name_extra] != \
                 [opener, mccc_autosaves_str, hex_slot_id, file_name_extra]:
-
             # previous things that could feasibly change during gameplay
             ex_opener = opener
             ex_mccc_autosaves_str = mccc_autosaves_str
@@ -3136,17 +3150,17 @@ def is_eligible_couple(x_id, y_id):
 
     # check direct rel
     if drel_incest and get_direct_relation(sim_x, sim_y):
-        return False, '{x_firstname} and {y_firstname} are not an eligible couple: they are directly related'\
+        return False, '{x_firstname} and {y_firstname} are not an eligible couple: they are directly related' \
             .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name)
 
     # check consanguinity
     xy_consang = consang(sim_x, sim_y)
     if xy_consang >= consang_limit:
-        return False, '{x_firstname} and {y_firstname} are not an eligible couple: over the consanguinity limit'\
+        return False, '{x_firstname} and {y_firstname} are not an eligible couple: over the consanguinity limit' \
             .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name)
 
     # should be all good
-    return True, '{x_firstname} and {y_firstname} are an eligible couple with your settings!'\
+    return True, '{x_firstname} and {y_firstname} are an eligible couple with your settings!' \
         .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name)
 
 
@@ -3229,7 +3243,8 @@ def auto_json_fam_apr(original, self, parent_a, parent_b):
             # update parent list
             riv_rel_dict.rels[sim_id] = list(set(riv_rel_dict.rels.get(sim_id, [])) | set(new_parents))
 
-        riv_log(f'ran auto_json_apr with sim {self.first_name} and parents {parent_a.first_name} and {parent_b.first_name}')
+        riv_log(
+            f'ran auto_json_apr with sim {self.first_name} and parents {parent_a.first_name} and {parent_b.first_name}')
     except Exception as e:
         riv_log(f'error in auto_json in add_parent_relations: {e}')
         raise Exception(f'(riv) error in auto_json in add_parent_relations: {e}')
@@ -3337,7 +3352,7 @@ def riv_getrelation(sim_x: SimInfoParam, sim_y: SimInfoParam, show_if_not_relate
     output = sims4.commands.CheatOutput(_connection)
     if sim_x is not None and sim_y is not None:
         if sim_x == sim_y:
-            main_text = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}'\
+            main_text = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}' \
                 .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
                         y_firstname=sim_y.first_name, y_lastname=sim_y.last_name)
             output(main_text)
@@ -3363,7 +3378,7 @@ def riv_getrelation(sim_x: SimInfoParam, sim_y: SimInfoParam, show_if_not_relate
             rel_list = rel_lists[0] + rel_lists[1] + rel_lists[2]
             # and then this list gets formatted
             if len(rel_list) > 0:
-                main_text = '{x_firstname} is {y_firstname}\'s {rel}'\
+                main_text = '{x_firstname} is {y_firstname}\'s {rel}' \
                     .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name, rel=rel_list[0])
                 if len(rel_list) == 2:  # a and b
                     main_text += ' and ' + rel_list[1]
@@ -3375,7 +3390,7 @@ def riv_getrelation(sim_x: SimInfoParam, sim_y: SimInfoParam, show_if_not_relate
                 output(main_text)
                 riv_log(main_text, 3)
             else:
-                main_text = '{x_firstname} and {y_firstname} are not related.'\
+                main_text = '{x_firstname} and {y_firstname} are not related.' \
                     .format(x_firstname=sim_x.first_name, y_firstname=sim_y.first_name)
                 if show_if_not_related:
                     output(main_text)
@@ -3422,10 +3437,11 @@ def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_s
                 for rel_via in rels_via:
                     try:
                         if rel_via[1] == rel_via[2]:  # via one sim
-                            output('{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname})'
-                                   .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
-                                           y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel_via[0],
-                                           z_firstname=rel_via[1].first_name, z_lastname=rel_via[1].last_name))
+                            output(
+                                '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname})'
+                                    .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
+                                            y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel_via[0],
+                                            z_firstname=rel_via[1].first_name, z_lastname=rel_via[1].last_name))
                         else:
                             sim_z = rel_via[1]
                             sim_w = rel_via[2]  # via two sims
@@ -3461,10 +3477,11 @@ def riv_getrelation_moreinfo(sim_x: SimInfoParam, sim_y: SimInfoParam, include_s
                             elif rel[1] == 1:  # error
                                 output(rel[0])
                             else:  # rel = (string, sim)
-                                output('{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname})'
-                                       .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
-                                               y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel[0],
-                                               z_firstname=rel[1].first_name, z_lastname=rel[1].last_name))
+                                output(
+                                    '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname})'
+                                        .format(x_firstname=sim_x.first_name, x_lastname=sim_x.last_name,
+                                                y_firstname=sim_y.first_name, y_lastname=sim_y.last_name, rel=rel[0],
+                                                z_firstname=rel[1].first_name, z_lastname=rel[1].last_name))
                         except Exception as e:
                             output('error in riv_rel, inlaw section: ' + str(e))
 
@@ -3563,11 +3580,13 @@ def console_help(_connection=None):
     output(
         'using .json files [replace xyz by whatever you want to create/use the files riv_rel_xyz.json and riv_relparents_xyz.json]:')
     output('riv_auto xyz (sets up save to run riv_update xyz on every zone load or sim birth or save)')
-    output('.json files debug commands: riv_save xyz (save sim info to .json files), riv_load xyz (load sim info from .json files), riv_clean xyz (removes duplicates from .json file), riv_mem (shows no. mini sim-infos in memory), riv_clear (clears memory), riv_update xyz (runs save, clear, then load), riv_save_slot_id (shows current save ID)')
+    output(
+        '.json files debug commands: riv_save xyz (save sim info to .json files), riv_load xyz (load sim info from .json files), riv_clean xyz (removes duplicates from .json file), riv_mem (shows no. mini sim-infos in memory), riv_clear (clears memory), riv_update xyz (runs save, clear, then load), riv_save_slot_id (shows current save ID)')
     if addons['traits']:
         output('')
 
-        output('trait commands taking one sim, and a letter from A to H: riv_include_in_family, riv_add_to_family, riv_exclude_from_family, riv_make_heir, riv_add_founder')
+        output(
+            'trait commands taking one sim, and a letter from A to H: riv_include_in_family, riv_add_to_family, riv_exclude_from_family, riv_make_heir, riv_add_founder')
         output('trait commands taking one sim: riv_traits_by_name, riv_clear_fam_sim (removes fam traits)')
         output('trait commands taking a letter from A to H: riv_traits_by_fam, riv_clear_fam, riv_show_family')
         output('trait commands taking no arguments: riv_traits, riv_clear_fam_all')

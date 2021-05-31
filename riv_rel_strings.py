@@ -79,16 +79,16 @@ get_direct_rel_0 = 'no direct rel found between {x_firstname} and {y_firstname}'
 get_direct_rel_1 = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel}.'
 #       Bob Pancakes is Iggy Pancakes's father.
 
-get_sib_strength_0 = '{x_firstname} is {y_firstname}.'
+get_sib_strength_self = '{x_firstname} is {y_firstname}.'
 #       Bob is Bob.
 #       appears if you use riv_get_sib_strength and enter the same name twice
-get_sib_strength_1 = '{x_firstname} and {y_firstname} are full siblings.'
+get_sib_strength_full = '{x_firstname} and {y_firstname} are full siblings.'
 #       Maple and Syrup are full siblings. [two shared parents]
-get_sib_strength_2 = '{x_firstname} and {y_firstname} are half siblings.'
+get_sib_strength_half = '{x_firstname} and {y_firstname} are half siblings.'
 #       Maple and Syrup are half siblings. [one shared parent]
-get_sib_strength_3 = '{x_firstname} and {y_firstname} are not siblings.'
+get_sib_strength_none = '{x_firstname} and {y_firstname} are not siblings.'
 #       Maple and Syrup are not siblings. [no shared parents]
-get_sib_strength_4 = 'something went wrong: sib_strength is {num} when it should be 0, 0.5, or 1'
+get_sib_strength_error = 'something went wrong: sib_strength is {num} when it should be 0, 0.5, or 1'
 #       you don't need to translate "sib_strength", and the value in {num} will be an unexpected number
 
 get_indirect_rel_0 = 'no indirect rel found between {x_firstname} and {y_firstname}'
@@ -187,15 +187,16 @@ all_done = 'all done'
 #       appears when a command is done running
 
 save_time = 'the current sim time is {num}, formatted as {datetime}'
-save_abstick = '[this number appears with any sims that were added/updated this time]'
+save_abs_tick = '[this number appears with any sims that were added/updated this time]'
+#       after this there'll be a number
 save_sims_done = 'saved sims.'
-save_rels_done = 'saved parent rels. '  # space at end
-save_cmd = '\nif you\'re not using riv_auto, then to use these relations in riv_rel, type the following: '
-#               \n at start, space at end; after this it says the command needed, e.g. "riv_load xyz"
+save_rels_done = 'saved parent rels.'
+save_cmd = 'if you\'re not using riv_auto, then to use these relations in riv_rel, type the following: '
+#               space at end; after this it says the command needed, e.g. "riv_load xyz"
 
-load_done = 'loaded in parent rels and {num} sim mini-infos. '  # space at end
-load_random = '\nshowing a random sim and their parents:'  # \n at start
-load_error_0 = 'an error occurred: '  # space at end
+load_done = 'loaded in parent rels and {num} sim mini-infos.'
+load_random = 'showing a random sim and their parents:'
+load_error_0 = 'an error occurred'  # space at end
 load_error_1 = 'something went wrong while loading these sims and rels; ' \
          'please check that these files exist in the same folder as riv_rel.ts4script:'
 load_error_2 = 'if these files exist then please let me (rivforthesesh / riv#4381) know, and send over any relevant files'
@@ -209,7 +210,7 @@ clean_start = 'this file contains {n} sim mini-infos, {c} of which are culled. c
 clean_end = 'after removing duplicates, this file contains {n} sim mini-infos.'
 clean_uncull = 'unculled {m} sims'
 #       this gives the number of sims that were previously marked as culled, but are no longer marked as culled
-clean_update = 'if you\'re currently using this file, please run riv_update '  # space at end
+clean_update = 'if you\'re currently using this file, please run riv_update'  # space at end
 #       leave in "riv_update "
 
 clear_0 = 'removed temporary file '
