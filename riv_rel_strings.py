@@ -1,151 +1,183 @@
-# notes:
+# don't rename this file!
+
+# notes before you start translating:
+
 #   the things that you want to replace are between ''
 #       if you see something like x = 'some text here '\
 #                                     'then more text here'
 #       then x will show up as 'some text here then more text here'
 #   if you have an apostrophe ('), you need to write it as \'
-#   variables (names, numbers, relations) will be inserted into sentences wherever {} is
+#   variables (names, numbers, relations) will be inserted into sentences between {}
+#       the variable name is here, e.g. '{x_firstname} is {y_firstname}\'s parent'
+#   any line starting with # is a comment
 #   some of these need a space at the start and/or end (if so, there'll be a comment next to it)
 #   some of these need a line break - shown by \n - at the start and/or end (will also be in comments)
-#   don't translate command or file names (basically anything starting with "riv_")
+#   don't translate
+#       command names (basically anything starting with "riv_")
+#       file names
+#       anything between {}
+
+#   if you're translating something that is gendered, put it in a tuple with (male ver, female ver)
+#   an example with one sim:
+#       cousin = 'cousin'               # EN
+#       cousin = ('primo', 'prima')     # ES
+#   an example with multiple sims, where only one sim's gender matters (please make a note of which in the comments)
+#       get_parents_1 = '{y_firstname} {y_lastname} is {x_firstname}\'s parent'
+#       get_parents_1 = ('{y_firstname} {y_lastname} es el padre de {x_firstname}', '{y_firstname} {y_lastname} es la madre de {x_firstname}')     # use gender: sim_y
+#   an example with multiple sims
+#       get_sib_strength_1 = '{x_firstname} and {y_firstname} are full siblings.'
+#       get_sib_strength_1 = ('{x_firstname} y {y_firstname} son hermanos completos', '{x_firstname} y {y_firstname} son hermanas completas')       # first version is used if one is male, and the second if both female
+
 #   please let me know if
 #       something doesn't quite work in your language
 #           e.g. "step-parent" is a completely different word and not just "step" + "parent"
-#           something is gendered in your language that isn't gendered in English
 #       you need more context
-#       the variables added in with {} will be in a different order than they are in English
+#       there are more than two gendered versions
+#           it depends on both sims' genders separately
+#           your language has three+ grammatical genders
+
+# ==== your details ====
+
+# if there are any translations that need more complex logic, this is the value i'll test for before running other code
+lang = 'EN'
+# name(s) of translators. "a, b, and c" will appear in the starting notif as "translated by: a, b, and c"
+name = 'riv'
 
 # ==== often used (high priority) ====
+
 and_0 = ' and '  # space at start and end
 
 # ==== command outputs (high priority) ====
 
 # the variable name relates to the command, e.g. get_parents_0 is a string for riv_get_parents
-get_parents_0 = '{}\'s parents not found'
+get_parents_0 = '{x_firstname}\'s parents not found'
 # 		Bob's parents not found
-get_parents_1 = '{} {} is {}\'s parent'
+get_parents_1 = '{y_firstname} {y_lastname} is {x_firstname}\'s parent'
 # 		Bob Pancakes is Iggy's parent
 
-get_children_0 = '{}\'s children not found'
+get_children_0 = '{x_firstname}\'s children not found'
 # 		Maple's children not found
-get_children_1 = '{} {} is {}\'s child'
+get_children_1 = '{y_firstname} {y_lastname} is {x_firstname}\'s child'
 # 		Iggy Pancakes is Bob's child
 
-get_ancestors_0 = '{}\'s ancestors not found'
+get_ancestors_0 = '{x_firstname}\'s ancestors not found'
 # 		Bob's ancestors not found
-get_ancestors_1 = '{} {} is {} {}\'s ancestor, {} generation back'
+get_ancestors_1 = '{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s ancestor, {n} generation back'
 # 		Bob Pancakes is Iggy Pancakes's ancestor, 1 generation back
-get_ancestors_2 = '{} {} is {} {}\'s ancestor, {} generations back'
+get_ancestors_2 = '{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s ancestor, {n} generations back'
 # 		Bob Pancakes is Maple Pancakes's ancestor, 2 generations back
 
-get_descendants_0 = '{}\'s descendants not found'
+get_descendants_0 = '{x_firstname}\'s descendants not found'
 # 		Maple's descendants not found
-get_descendants_1 = '{} {} is {} {}\'s descendant, {} generation forward'
+get_descendants_1 = '{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s descendant, {n} generation forward'
 # 		Iggy Pancakes is Bob Pancakes's descendant, 1 generation forward
-get_descendants_2 = '{} {} is {} {}\'s descendant, {} generations forward'
+get_descendants_2 = '{y_firstname} {y_lastname} is {x_firstname} {x_lastname}\'s descendant, {n} generations forward'
 # 		Maple Pancakes is Bob Pancakes's descendant, 2 generations forward
 
-get_direct_rel_0 = 'no direct rel found between {} and {}'
+get_direct_rel_0 = 'no direct rel found between {x_firstname} and {y_firstname}'
 #       no direct rel(ationship) found between Bob and Bella
-get_direct_rel_1 = '{} {} is {} {}\'s {}.'
+get_direct_rel_1 = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel}.'
 #       Bob Pancakes is Iggy Pancakes's father.
 
-get_sib_strength_0 = '{} is {}.'
+get_sib_strength_0 = '{x_firstname} is {y_firstname}.'
 #       Bob is Bob.
 #       appears if you use riv_get_sib_strength and enter the same name twice
-get_sib_strength_1 = '{} and {} are full siblings.'
+get_sib_strength_1 = '{x_firstname} and {y_firstname} are full siblings.'
 #       Maple and Syrup are full siblings. [two shared parents]
-get_sib_strength_2 = '{} and {} are half siblings.'
+get_sib_strength_2 = '{x_firstname} and {y_firstname} are half siblings.'
 #       Maple and Syrup are half siblings. [one shared parent]
-get_sib_strength_3 = '{} and {} are not siblings.'
+get_sib_strength_3 = '{x_firstname} and {y_firstname} are not siblings.'
 #       Maple and Syrup are not siblings. [no shared parents]
-get_sib_strength_4 = 'something went wrong: sib_strength is {} when it should be 0, 0.5, or 1'
-#       you don't need to translate "sib_strength", and the value in {} will be an unexpected number
+get_sib_strength_4 = 'something went wrong: sib_strength is {num} when it should be 0, 0.5, or 1'
+#       you don't need to translate "sib_strength", and the value in {num} will be an unexpected number
 
-get_indirect_rel_0 = '{} {} is {} {}\'s {} (relation found via {} {})'
-#       Maple Pancakes is Syrup Pancake's half sister (relation found via Iggy Pancakes)
-get_indirect_rel_1 = '{} {} is {} {}\'s {} (relation found via {} {} and {} {})'
-#       Maple Pancakes is Syrup Pancake's sister (relation found via Iggy Pancakes and Orange Pancakes)
-get_indirect_rel_2 = 'no indirect rel found between {} and {}'
+get_indirect_rel_0 = 'no indirect rel found between {x_firstname} and {y_firstname}'
 #       no indirect rel(ation) found between Maple and Syrup
+get_indirect_rel_1 = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname})'
+#       Maple Pancakes is Syrup Pancake's half sister (relation found via Iggy Pancakes)
+get_indirect_rel_2 = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}\'s {rel} (relation found via {z_firstname} {z_lastname} and {w_firstname} {w_lastname})'
+#       Maple Pancakes is Syrup Pancake's sister (relation found via Iggy Pancakes and Orange Pancakes)
 
 consang_0 = 'consanguinity'
-consang_1 = 'consanguinity between {} and {} is {}%'
+consang_1 = 'consanguinity between {x_firstname} and {y_firstname} is {num}%'
 #       consanguinity between Bob and Iggy is 50%
 
-is_eligible_couple_0 = '{} and {} are not an eligible couple: '
-is_eligible_couple_1 = 'they are directly related'
-is_eligible_couple_2 = 'over the consanguinity limit'
+isc_not_elig = '{x_firstname} and {y_firstname} are not an eligible couple: '  # space at end
+isc_directly_related = 'they are directly related'
+isc_consang = 'over the consanguinity limit'
 #       or "they are too closely related"
-is_eligible_couple_3 = '{} and {} are an eligible couple with your settings!'
-is_eligible_couple_4 = 'at least one is too young for romance'
-is_eligible_couple_5 = 'the game considers this as incest'
-is_eligible_couple_6 = 'the game does not consider this as incest'
-is_eligible_couple_7 = 'mate, that\'s just being single with extra steps'
+isc_elig = '{x_firstname} and {y_firstname} are an eligible couple with your settings!'
+isc_age = 'at least one is too young for romance'
+isc_incest = 'the game considers this as incest'
+isc_not_incest = 'the game does not consider this as incest'
+isc_same_sim = 'mate, that\'s just being single with extra steps'
 #       appears if you try to check if a sim could be in a relationship with themself
 #       doesn't need to be exact, just something like "this is the same sim"
 
 # for the main riv_rel command
-rel_0 = '{} {} is {} {}'
+rel_same_sim = '{x_firstname} {x_lastname} is {y_firstname} {y_lastname}'
 #       Bob Pancakes is Bob Pancakes
 #       entered the same sim twice
-rel_1 = '{} is {}\'s {}'
-#       Iggy is Bob's son
-rel_2 = '{} and {} are not related.'
+rel_exists = '{x_firstname} is {y_firstname}\'s {rel}'
+#       Iggy is Bob's son and fourth cousin.
+rel_nexists = '{x_firstname} and {y_firstname} are not related.'
 #       Bob and Bella are not related.
 
-rel_rand_0 = 'relation with: {} {}'
+rel_rand_0 = 'relation with: {y_firstname} {y_lastname}'
 #       relation with: Bob Pancakes
 
-rel_rand_rand_0 = 'sims: {} {} and {} {}'
+rel_rand_rand_0 = 'sims: {x_firstname} {x_lastname} and {y_firstname} {y_lastname}'
 #       sims: Bob Pancakes and Bella Goth
 
-rel_all_0 = 'relatives found for {}: {}'
+rel_all_0 = 'relatives found for {y_firstname}: {num_rels}'
 #       relatives found for Bob Pancakes: 3
 
 # ==== help commands (high priority) ====
 
-help_0 = ' (fam and inc can be used as club requirements)'  # space at start
+help_GT = ' (fam and inc can be used as club requirements)'  # space at start
 #       this text shows up if someone has the trait and GT addons
 #       change fam and inc to whatever you've named the traits
-help_1 = 'biological, in-law, and (optional) step relations, console commands, social interaction, ' \
+help_features = 'biological, in-law, and (optional) step relations, console commands, social interaction, ' \
          'auto .json files, optional computer help menu, optional traits'
 #       a list of features (help_0 is added to the end of this; consanguinity is already translated)
-help_2 = 'all settings can be edited by opening the .cfg files (in the same folder as riv_rel) in notepad++'
-help_3 = 'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, ' \
+help_settings = 'all settings can be edited by opening the .cfg files (in the same folder as riv_rel) in notepad++'
+help_siminfoparam = 'sims can be typed as firstname lastname (use "" if there is a space in the first/last name, ' \
          'e.g. J "Huntington III") or as the sim ID'
-help_4 = 'if you find an error, please send me (rivforthesesh / riv#4381) the error text and any relevant rels/files!'
+help_contact = 'if you find an error, please send me (rivforthesesh / riv#4381) the error text and any relevant rels/files!'
 
-help_5 = 'commands taking two sims:'
+help_twosims = 'commands taking two sims:'
 #       this comes before a list of commands that you type two sims after, e.g. riv_consang Bob Pancakes Iggy Pancakes
-help_6 = 'commands taking one sim:'
+help_onesim = 'commands taking one sim:'
 #       this comes before a list of commands with one sim after, e.g. riv_get_children Bob Pancakes
-help_7 = 'using .json files ' \
+
+help_json = 'using .json files ' \
         '[replace xyz by whatever you want to create/use the files riv_rel_xyz.json and riv_relparents_xyz.json]:'
+help_auto = 'sets up save to run riv_update xyz on every zone load or sim birth or save'  # description for riv_auto
 
-help_8 = 'runs riv_update xyz on every zone load or sim birth or save'  # description for riv_auto
-help_9 = 'save sim info to .json files'  # description for riv_save
-help_10 = 'load sim info from .json files'  # description for riv_load
-help_11 = 'removes duplicates from .json file'  # description for riv_clean
-help_12 = 'shows no. mini sim-infos in memory'  # description for riv_mem; 'no.' = 'number'
-help_13 = 'clears memory'  # description for riv_clear
-help_14 = 'runs save, clear, then load'  # desciption for riv_update
-help_15 = 'shows current save ID'  # description for riv_save_slot_id
+help_json_debug = '.json files debug commands: '  # space at end
+help_save = 'save sim info to .json files'  # description for riv_save
+help_load = 'load sim info from .json files'  # description for riv_load
+help_clean = 'removes duplicates from .json file'  # description for riv_clean
+help_mem = 'shows no. mini sim-infos in memory'  # description for riv_mem; 'no.' = 'number'
+help_clear = 'clears memory'  # description for riv_clear
+help_update = 'runs save, clear, then load'  # desciption for riv_update
+help_ssi = 'shows current save ID'  # description for riv_save_slot_id
 
-help_16 = 'trait commands taking one sim, and a letter from A to H:'
-help_17 = 'trait commands taking one sim:'
-help_18 = 'trait commands taking a letter from A to H:'
-help_19 = 'trait commands taking no arguments:'  # for commands like riv_traits, where you just type the command name
+help_trait_simletter = 'trait commands taking one sim, and a letter from A to H:'
+help_trait_sim = 'trait commands taking one sim:'
+help_trait_letter = 'trait commands taking a letter from A to H:'
+help_trait_none = 'trait commands taking no arguments:'
+#       for commands like riv_traits, where you just type the command name
 
-help_20 = 'check the computer for a menu called "Research on riv_rel.sim..." for explanations and help.'
-help_21 = 'the help menu is a little long, please scroll up!'
+help_computer = 'check the computer for a menu called "Research on riv_rel.sim..." for explanations and help.'
+help_scrollup = 'the help menu is a little long, please scroll up!'
 
-gen_diff_0 = 'as a list: '  # space at the end; followed by a list of numbers with generational differences
-gen_diff_1 = 'the average generational difference is '  # space at the end; average of the numbers above
-gen_diff_2 = '(negative means sim_x is higher up in the family tree than sim_y)'
+gen_diff_list = 'as a list: '  # space at the end; followed by a list of numbers with generational differences
+gen_diff_avg = 'the average generational difference is '  # space at the end; average of the numbers above
+gen_diff_sign = '(negative means sim_x is higher up in the family tree than sim_y)'
 #       i.e. if the generational difference is a negative number, then sim_x is an ancestor of sim_y
 
-save_slot_id_0 = 'riv_rel is currently using save slot id '  # space at end; will be followed by a save slot number
+save_slot_id_used = 'riv_rel is currently using save slot id '  # space at end; will be followed by a save slot number
 
 # ==== json / misc command outputs (low priority) ====
 
@@ -154,65 +186,66 @@ all_done = 'all done'
 #       [riv_save: all done]
 #       appears when a command is done running
 
-save_0 = 'the current sim time is {}, formatted as {}'
-save_1 = '[this number appears with any sims that were added/updated this time]'
-save_2 = 'saved sims.'
-save_3 = 'saved parent rels. '  # space at end
-save_4 = '\nif you\'re not using riv_auto, then to use these relations in riv_rel, type the following: '
+save_time = 'the current sim time is {num}, formatted as {datetime}'
+save_abstick = '[this number appears with any sims that were added/updated this time]'
+save_sims_done = 'saved sims.'
+save_rels_done = 'saved parent rels. '  # space at end
+save_cmd = '\nif you\'re not using riv_auto, then to use these relations in riv_rel, type the following: '
 #               \n at start, space at end; after this it says the command needed, e.g. "riv_load xyz"
 
-load_0 = 'loaded in parent rels and {} sim mini-infos. '  # space at end
-load_1 = '\nshowing a random sim and their parents:'  # \n at start
-load_2 = 'an error occurred: '  # space at end
-load_3 = 'something went wrong while loading these sims and rels; ' \
+load_done = 'loaded in parent rels and {num} sim mini-infos. '  # space at end
+load_random = '\nshowing a random sim and their parents:'  # \n at start
+load_error_0 = 'an error occurred: '  # space at end
+load_error_1 = 'something went wrong while loading these sims and rels; ' \
          'please check that these files exist in the same folder as riv_rel.ts4script:'
-load_4 = 'if these files exist then please let me (rivforthesesh / riv#4381) know, and send over any relevant files'
+load_error_2 = 'if these files exist then please let me (rivforthesesh / riv#4381) know, and send over any relevant files'
 
-mem_0 = 'showing a random sim:'
-mem_1 = 'use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json'
+mem_randsim = 'showing a random sim:'
+mem_load = 'use riv_load xyz to load in sim info from riv_rel_xyz.json and riv_relparents_xyz.json'
 #       leave in "riv_load xyz", "riv_rel_xyz.json", and "riv_relparents_xyz.json" as they are
-mem_2 = 'showing a random sim\'s parents:'
+mem_randrel = 'showing a random sim\'s parents:'
 
-clean_0 = 'this file contains {} sim mini-infos, {} of which are culled. cleaning...'
-clean_1 = 'after removing duplicates, this file contains {} sim mini-infos.'
-clean_2 = 'unculled {} sims'
+clean_start = 'this file contains {n} sim mini-infos, {c} of which are culled. cleaning...'
+clean_end = 'after removing duplicates, this file contains {n} sim mini-infos.'
+clean_uncull = 'unculled {m} sims'
 #       this gives the number of sims that were previously marked as culled, but are no longer marked as culled
-clean_3 = 'if you\'re currently using this file, please run riv_update '  # space at end
+clean_update = 'if you\'re currently using this file, please run riv_update '  # space at end
 #       leave in "riv_update "
 
 clear_0 = 'removed temporary file '
 #       this only shows up when people use currentsession files, which is off by default
 #       you could probably skip translating this and nobody would notice
 
-update_0 = 'this file exists! loading this in'
-update_1 = 'running save, clear, then load (updates sim/rel info in mem and .json file)...'
+update_exists = 'this file exists! loading this in'
+update_desc = 'running save, clear, then load (updates sim/rel info in mem and .json file)...'
 
-load_cfg_manually_0 = 'loaded in cfg settings for save {}'
-#       the value in {} is a save ID as it appears in the save file name, e.g. 00000005
+load_cfg_save = 'loaded in cfg settings for save {slot_id}'
+#       the value in {slot_id} is a save ID as it appears in the save file name, e.g. 00000005
 #       leave 'cfg' as is; it refers to the file extension (filename.cfg)
-load_cfg_manually_1 = 'currently the game thinks your save ID is 0, or your last save was an MCCC autosave - ' \
+load_cfg_save0 = 'currently the game thinks your save ID is 0, or your last save was an MCCC autosave - ' \
                       'this can be fixed by saving the game and then running this command again.'
-load_cfg_manually_2 = 'failed to load in cfg settings because of the below exception:'
+load_cfg_error = 'failed to load in cfg settings because of the below exception:'
 #       exception = error in code
-load_cfg_manually_3 = 'running riv_update {}...'
-#       the value in {} is a keyword used for this save
-load_cfg_manually_4 = 'there are no cfg settings for this save ID. run "riv_auto xyz" ' \
+load_cfg_update = 'running riv_update {keyword}...'
+#       the value in {keyword} is the keyword used for this save in riv_auto
+load_cfg_nexists = 'there are no cfg settings for this save ID. run "riv_auto xyz" ' \
                       'with whatever keyword you want in place of xyz to set this up for this save ID.'
 
-auto_0 = 'no .cfg file found. creating one...'
-auto_1 = 'updating settings for Slot_{}.save to riv_rel - individual save settings.cfg...'
-#       do not translate "Slot_{}.save" or "riv_rel - individual save settings.cfg"
-auto_2 = 'adding settings for Slot_{}.save to riv_rel - individual save settings.cfg...'
-#       do not translate "Slot_{}.save" or "riv_rel - individual save settings.cfg"
-auto_3 = 'loading in new .cfg settings...'
-auto_4 = 'loading in sims from file...'
-auto_5 = 'loading in rels from file...'
+auto_makecfg = 'no .cfg file found. creating one...'
+auto_update = 'updating settings for Slot_{num}.save to riv_rel - individual save settings.cfg...'
+#       do not translate "Slot_{num}.save" or "riv_rel - individual save settings.cfg"
+auto_add = 'adding settings for Slot_{num}.save to riv_rel - individual save settings.cfg...'
+#       do not translate "Slot_{num}.save" or "riv_rel - individual save settings.cfg"
+auto_load_cfg = 'loading in new .cfg settings...'
+auto_load_sim = 'loading in sims from file...'
+auto_load_rel = 'loading in rels from file...'
 auto_6 = 'running save, clear, clean, then load...'
 auto_7 = 'the current game slot is an MCCC autosave slot'
 auto_8 = 'blocked riv_auto (autosave slots aren\'t specific to saves so this could cause issues)'
 auto_9 = 'please manually save your game to another slot and try again'
 
-# ==== starting notif (MEDIUM PRIORITY [there's a lot of text!]) ====
+# ==== starting notif (medium [there's a lot of text, but everyone using .json files will see this]) ====
+# TODO: rename variables
 
 notif_0 = 'failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, ' \
           'you quit a different save without saving and then loaded this one, or you moved/deleted the ' \
@@ -222,7 +255,7 @@ notif_0 = 'failed to load in sims for this save ID: this usually happens when yo
 notif_1 = 'riv_rel issue'
 #       notif_1 is the title
 notif_2 = 'loaded in settings from riv_rel - individual save settings.cfg ' \
-          'for save ID {} and keyword {}.\n\nsim mini-infos: '  # ends with space, followed by a number
+          'for save ID {save_id} and keyword {keyword}.\n\nsim mini-infos: '  # ends with space, followed by a number
 notif_3 = 'you\'ve created settings for an MCCC autosave - this won\'t work properly!\n\n' \
           'please save your game to another slot and set up riv_auto again.'
 notif_4 = 'riv_rel: auto json issue'
@@ -232,8 +265,8 @@ notif_6 = 'no sim/rel backups were found for this save - if you\'re expecting to
           'set them up, enter riv_auto xyz into the cheat console for a keyword xyz!\n\nnumber of sims: '  # space end
 notif_7 = 'you have other files in the same folder as my mod - i would recommend putting all files starting riv_rel ' \
           'in their own subfolder (i.e. in Mods/riv_rel/) if you encounter any additional lag on save/load. '
-notif_8 = '\n\nfound MCCC autosave slots (my mod will continue to see the save slot as {} if the actual save slot ' \
-          'changes to one of these): {}'
+notif_8 = '\n\nfound MCCC autosave slots (my mod will continue to see the save slot as {slot_id} if the actual save slot ' \
+          'changes to one of these): {autosave_list}'
 notif_9 = '\n\nyou can see more information and help in the "Research on riv_rel.sim" menu on the computer'
 notif_10 = '\n\nyou\'ve downloaded the GT addon without the traits addon - ' \
            'please either download riv_rel_addon_traits or remove riv_rel_addon_GT ' \
@@ -243,17 +276,15 @@ notif_12 = '\n\nthank you for using my mod! '
 notif_13 = '\n\ntranslated into [language] by [username]'
 #       e.g. translated into English by riv; traducido al castellano por riv
 
-# ==== relationships (HIGH PRIORITY) ====
+# ==== relationships (high priority) ====
 # examples used:
 # Bob Pancakes, Iggy Pancakes, Maple Pancakes (Iggy's future kid), Syrup Pancakes (maybe Maple's sibling)
 
 # == direct ==
 d_great = 'great'
 d_grand = 'grand'
-mother = 'mother'
-father = 'father'
-daughter = 'daughter'
-son = 'son'
+parent = ('father', 'mother')
+child = ('son', 'daughter')
 #       father, grandmother, great-granddaughter, great(x2)-grandson [great-great-grandson]
 
 self = 'self'
@@ -263,30 +294,28 @@ self = 'self'
 half = 'half '  # keep a space at the end
 i_great = 'great'
 i_grand = 'grand'
-aunt = 'aunt'
-uncle = 'uncle'
-sister = 'sister'
-brother = 'brother'
-niece = 'niece'
-nephew = 'nephew'
+pibling = ('uncle', 'aunt')
+sibling = ('brother', 'sister')
+nibling = ('nephew', 'niece')
 #       sister, brother, aunt, granduncle, great-grandniece, great(x2)-grandnephew
 
-# == indirect (cousins) ==
+# == cousins ==
 first = 'first '  # keep a space at the end
 second = 'second '  # keep a space at the end
 third = 'third '  # keep a space at the end
-th = 'th '  # keep a space at the end
 cousin = 'cousin'
-#       first cousin, second cousin, third cousin, 4th cousin, 5th cousin, ...
+#       first cousin, second cousin, third cousin
+th = ['st ', 'nd ', 'rd ', 'th ']
+#   keep spaces at the end, commas between strings, and please let me know when each of these is used
+#       4th, 5th, ..., 11th, ..., 21st, 22nd, 23rd cousin...
 once = ' once '  # space at start and end
 twice = ' twice '  # space at start and end
-n_times = ' {} times '  # space at start and end
+n_times = ' {num} times '  # space at start and end
 removed = 'removed'
 #       first cousin once removed, first cousin twice removed, first cousin 3 times removed, ...
 
 # == inlaw ==
-wife = 'wife'
-husband = 'husband'
+spouse = ('husband', 'wife')
 in_law = ' in law'  # space at start
 #       added to the end of the relation, e.g. brother in law, grandmother in law
 
@@ -294,8 +323,7 @@ in_law = ' in law'  # space at start
 step = 'step '  # space at end
 #       added to the start of the relation, e.g. step sister, step uncle
 
-
-# ==== tuples (HIGH PRIORITY, but you can set max_n to a low number to have most show up as "n-tuple") ====
+# ==== tuples (high priority, but you can set max_n to a low number to have most show up as "n-tuple") ====
 #   used to show a relation is repeated
 #   I've done this in English up to 100, and above that it just says something like "101-tuple"
 #       when you go above 10, you add a prefix for the ones bit, e.g. "12 times" is duo(2) + decuple(10)
@@ -323,15 +351,20 @@ prefix_tuple = {0: '', 1: 'un', 2: 'duo', 3: 'tre', 4: 'quattuor',
                 5: 'quin', 6: 'sex', 7: 'septen', 8: 'octo', 9: 'novem'}
 
 # if the number is too high (above max_n), just give up
-n_tuple = '{}-tuple '  # space at the end
+n_tuple = '{n}-tuple '  # space at the end
 
-# ==== notification text (LOW PRIORITY; if you don't want to translate it, just change it to '') ====
+# ==== notification text (low priority) ====
 
 # start of the notification
 #   you can add or remove strings from each list if you want!
 #   this is just flavour text, so it doesn't need to be exact
+#   if you want to skip a case, change the list to the below (where n is whatever number is previously there):
+#       n: [''],
 
 strings_dict = {
+
+    # example of an empty list
+    -1: [''],
 
     #  no relations
     0: ['Nope, we aren\'t related.',
@@ -375,6 +408,7 @@ strings_dict = {
 }
 
 # middle of the notification
+#   if this is gendered, let me know if it depends on the speaker's gender ("I") or the listener's ("you")
 im_your = 'I\'m your '  # space at the end
 im_also_your = 'I\'m also your '  # space at the end
 #       I'm your second cousin and third cousin once removed. I'm also your brother in law.
