@@ -122,19 +122,35 @@ def write_gedcom(keyword: str, _connection=None):
                 '1 LANG English\n'
     output('[3/10] constructed header')
 
-    # TODO: see what caused unhashable type list error
+    # get each fam unit
+    # get all parent lists
+    parents_tmp = list(gedcom_rel_dict.rels.values())
+    # get unique ones
+    parents = []
+    for p in parents_tmp:
+        # ensure smallest first if there are two
+        if len(p) == 2:
+            if p[1] < p[0]:
+                p = [p[1], p[0]]
+        # ensure it's the same repeated if only one
+        elif len(p) == 1:
+            p = p + p
 
-    # get each fam unit (unique set of parent lists)
-    parents = set(gedcom_rel_dict.rels.values())
-    # turn into pairs
-    parent_pairs = [p for p in parents if len(p) == 2] + \
-                   [p + p for p in parents if len(p) == 1]
+        # add to parents if not added
+        if p not in parents:
+            parents.append(p)
+    # cleanup
+    del parents_tmp
     # turn into fam units
     gedcom_fam_units = []
-    for xy in parent_pairs:
+    for xy in parents:
         x = xy[0]
         y = xy[1]
-        gedcom_fam_units.append(RivFamUnit(x, y, gedcom_rel_dict))
+        gedcom_fam_units.append(RivFamUnit(
+            riv_rel.get_rivsim_from_id(x),
+            riv_rel.get_rivsim_from_id(y),
+            gedcom_rel_dict
+        ))
     # gedcom_fam_units = [RivFamUnit(x, y, gedcom_rel_dict) for [x, y] in parent_pairs
     output('[4/10] got family units (parents + children)')
 
@@ -143,7 +159,7 @@ def write_gedcom(keyword: str, _connection=None):
 
     # add one sim at a time (main info)
     for sim in gedcom_sim_list.sims:
-        # get gender marker TODO: destroy gender binary
+        # get gender marker
         if sim.is_female:
             gender = 'F'
         else:

@@ -21,12 +21,17 @@
 #   an example with one sim:
 #       cousin = 'cousin'               # EN
 #       cousin = ('primo', 'prima')     # ES
+
+#   there is also this shortcut to use 'o' if male and 'a' if female:
+#       cousin = 'prim@'
+
+#   more gendering
 #   an example with multiple sims, where only one sim's gender matters (please make a note of which in the comments)
 #       get_parents_1 = '{y_firstname} {y_lastname} is {x_firstname}\'s parent'
 #       get_parents_1 = ('{y_firstname} {y_lastname} es el padre de {x_firstname}', '{y_firstname} {y_lastname} es la madre de {x_firstname}')     # use gender: sim_y
 #   an example with multiple sims
 #       get_sib_strength_1 = '{x_firstname} and {y_firstname} are full siblings.'
-#       get_sib_strength_1 = ('{x_firstname} y {y_firstname} son hermanos completos', '{x_firstname} y {y_firstname} son hermanas completas')       # first version is used if one is male, and the second if both female
+#       get_sib_strength_1 = '{x_firstname} y {y_firstname} son herman@s complet@s' # first version is used if one is male, and the second if both female
 
 #   please let me know if
 #       something doesn't quite work in your language
@@ -40,12 +45,14 @@
 
 # if there are any translations that need more complex logic, this is the value i'll test for before running other code
 lang = 'EN'
+# the name of your language, in that language
+lang_name = 'English'
 # name(s) of translators. "a, b, and c" will appear in the starting notif as "translated by: a, b, and c"
 name = 'riv'
 
 # ==== often used (high priority) ====
 
-and_0 = ' and '  # space at start and end
+and_ = 'and'
 
 # ==== command outputs (high priority) ====
 
@@ -240,80 +247,89 @@ auto_add = 'adding settings for Slot_{num}.save to riv_rel - individual save set
 auto_load_cfg = 'loading in new .cfg settings...'
 auto_load_sim = 'loading in sims from file...'
 auto_load_rel = 'loading in rels from file...'
-auto_6 = 'running save, clear, clean, then load...'
-auto_7 = 'the current game slot is an MCCC autosave slot'
-auto_8 = 'blocked riv_auto (autosave slots aren\'t specific to saves so this could cause issues)'
-auto_9 = 'please manually save your game to another slot and try again'
+auto_sccl = 'running save, clear, clean, then load...'
+auto_blocked0 = 'the current game slot is an MCCC autosave slot'
+auto_blocked1 = 'blocked riv_auto (autosave slots aren\'t specific to saves so this could cause issues)'
+auto_blocked2 = 'please manually save your game to another slot and try again'
 
 # ==== starting notif (medium [there's a lot of text, but everyone using .json files will see this]) ====
 # TODO: rename variables
 
-notif_0 = 'failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, ' \
+notif_notfound = 'failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, ' \
           'you quit a different save without saving and then loaded this one, or you moved/deleted the ' \
           '.json files. \nif you have not (or aren\'t about to) set up auto .json file updates for this ' \
           'save ID please ignore this notification. \notherwise, please save your game and then enter the ' \
           'following into the command line (CTRL+SHIFT+C): \n\nriv_load_cfg_manually'
-notif_1 = 'riv_rel issue'
+notif_notfound_title = 'riv_rel issue'
 #       notif_1 is the title
-notif_2 = 'loaded in settings from riv_rel - individual save settings.cfg ' \
+notif_found = 'loaded in settings from riv_rel - individual save settings.cfg ' \
           'for save ID {save_id} and keyword {keyword}.\n\nsim mini-infos: '  # ends with space, followed by a number
-notif_3 = 'you\'ve created settings for an MCCC autosave - this won\'t work properly!\n\n' \
+notif_autosave_error = 'you\'ve created settings for an MCCC autosave - this won\'t work properly!\n\n' \
           'please save your game to another slot and set up riv_auto again.'
-notif_4 = 'riv_rel: auto json issue'
-notif_5 = 'you\'ve loaded up an autosave slot! to use riv_auto backups, please save the game to another ' \
+notif_autosave_error_title = 'riv_rel: auto json issue'
+notif_autosave = 'you\'ve loaded up an autosave slot! to use riv_auto backups, please save the game to another ' \
           'slot first (if you don\'t want to use riv_auto, you don\'t need to do this)\n\nnumber of sims: '  # space end
-notif_6 = 'no sim/rel backups were found for this save - if you\'re expecting to see json file backups or want to ' \
+notif_nobackup = 'no sim/rel backups were found for this save - if you\'re expecting to see json file backups or want to ' \
           'set them up, enter riv_auto xyz into the cheat console for a keyword xyz!\n\nnumber of sims: '  # space end
-notif_7 = 'you have other files in the same folder as my mod - i would recommend putting all files starting riv_rel ' \
+notif_otherfiles = 'you have other files in the same folder as my mod - i would recommend putting all files starting riv_rel ' \
           'in their own subfolder (i.e. in Mods/riv_rel/) if you encounter any additional lag on save/load. '
-notif_8 = '\n\nfound MCCC autosave slots (my mod will continue to see the save slot as {slot_id} if the actual save slot ' \
+notif_autosaves = '\n\nfound MCCC autosave slots (my mod will continue to see the save slot as {slot_id} if the actual save slot ' \
           'changes to one of these): {autosave_list}'
-notif_9 = '\n\nyou can see more information and help in the "Research on riv_rel.sim" menu on the computer'
-notif_10 = '\n\nyou\'ve downloaded the GT addon without the traits addon - ' \
+notif_computer = '\n\nyou can see more information and help in the "Research on riv_rel.sim" menu on the computer'
+notif_GT_error = '\n\nyou\'ve downloaded the GT addon without the traits addon - ' \
            'please either download riv_rel_addon_traits or remove riv_rel_addon_GT ' \
            'or you may face glitches with clubs being unable to find my family traits!'
-notif_11 = '\n\nif this is the wrong file, run riv_clear, save your game, and run riv_load_cfg_manually.'
-notif_12 = '\n\nthank you for using my mod! '
-notif_13 = '\n\ntranslated into [language] by [username]'
-#       e.g. translated into English by riv; traducido al castellano por riv
+notif_debug = '\n\nif this is the wrong file, run riv_clear, save your game, and run riv_load_cfg_manually.'
+notif_thank = '\n\nthank you for using my mod! '
+notif_credit = '\n\ntranslated into {rrs.lang_name} by {rrs.name}'
+#       this uses the values at the top of the file
 
 # ==== relationships (high priority) ====
 # examples used:
 # Bob Pancakes, Iggy Pancakes, Maple Pancakes (Iggy's future kid), Syrup Pancakes (maybe Maple's sibling)
 
 # == direct ==
-d_great = 'great'
-d_grand = 'grand'
-parent = ('father', 'mother')
-child = ('son', 'daughter')
-#       father, grandmother, great-granddaughter, great(x2)-grandson [great-great-grandson]
-
-self = 'self'
-#   this one is rarely going to come up, but it'll appear as "Bob Pancakes is Bob Pancakes's self"
+# main bit works off of the number of generations away from the self
+# add numbers as you need them
+direct_rels = {
+    -2: ('grandfather', 'grandmother'),
+    -1: ('father', 'mother'),
+    0: 'self',  # this one is very rarely going to come up, but it'll appear as "Bob Pancakes is Bob Pancakes's self"
+    1: ('son', 'daughter'),
+    2: ('grandson', 'granddaughter'),
+}
+# prefixes used to continue patterns - put the rules for it in comments
+d_great = 'great'   # moves one generation away from self, e.g. great-grandson, great(x2)-grandson...
 
 # == indirect (non-cousins) ==
-half = 'half '  # keep a space at the end
+half = 'half'
 i_great = 'great'
 i_grand = 'grand'
 pibling = ('uncle', 'aunt')
 sibling = ('brother', 'sister')
 nibling = ('nephew', 'niece')
-#       sister, brother, aunt, granduncle, great-grandniece, great(x2)-grandnephew
+#       sister, half brother, aunt, granduncle, great-grandniece, great(x2)-grandnephew
 
 # == cousins ==
-first = 'first '  # keep a space at the end
-second = 'second '  # keep a space at the end
-third = 'third '  # keep a space at the end
 cousin = 'cousin'
-#       first cousin, second cousin, third cousin
-th = ['st ', 'nd ', 'rd ', 'th ']
-#   keep spaces at the end, commas between strings, and please let me know when each of these is used
-#       4th, 5th, ..., 11th, ..., 21st, 22nd, 23rd cousin...
-once = ' once '  # space at start and end
-twice = ' twice '  # space at start and end
-n_times = ' {num} times '  # space at start and end
+
+first = 'first'
+second = 'second'
+third = 'third'
+th = ['st', 'nd', 'rd', 'th']
+#       keep commas between strings, and please let me know when each of these is used
+#           first cousin, second cousin, third cousin
+#           4th, 5th, ..., 11th, ..., 21st, 22nd, 23rd cousin...
+nth_cousin = '{rrs.nth} {rrs.cousin}'   # use for word order
+
+once = 'once'
+twice = 'twice'
+m_times = '{num} times'
 removed = 'removed'
+m_times_removed = '{rrs.m_times} {rrs.removed}'  # use for word order
 #       first cousin once removed, first cousin twice removed, first cousin 3 times removed, ...
+
+nth_cousin_m_times_removed = '{rrs.nth_cousin} {rrs.m_times_removed}'  # use for word order
 
 # == inlaw ==
 spouse = ('husband', 'wife')

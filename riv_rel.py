@@ -180,6 +180,14 @@ except Exception as e:
 # set up parsing
 def p(st: str or tuple, is_female=False):
     if isinstance(st, str):
+        # language specific customisations - used for Spanish
+        if '@' in st:
+            if is_female:
+                return st.replace('@', 'a')
+            else:
+                return st.replace('@', 'o')
+
+        # if none of the above, then
         return st
     elif isinstance(st, tuple):
         # False = male = 0, True = female = 1
@@ -2760,23 +2768,21 @@ def console_load_cfg_manually(_connection=None):
             global hex_slot_id
             hex_slot_id = hsi
             load_cfg_settings()
-            output('loaded in cfg settings for save {slot_id}'.format(slot_id=hex_slot_id))
+            output(rrs.load_cfg_save.format(slot_id=hex_slot_id))
         else:
-            output(
-                'currently the game thinks your save ID is 0, or your last save was an MCCC autosave - this can be fixed by saving the game and then running this command again.')
-            output('[riv_load_cfg_manually: finished with no changes made]')
+            output(rrs.load_cfg_save0)
+            output(f'[riv_load_cfg_manually: {rrs.all_done}]')
             return
     except Exception as e:
-        output('failed to load in cfg settings because of the below exception:')
+        output(rrs.load_cfg_error)
         output(str(e))
         return
     if not file_name_extra == '':
-        output('running riv_update {keyword}...'.format(keyword=file_name_extra))
+        output(rrs.load_cfg_update.format(keyword=file_name_extra))
         console_update_sims(file_name_extra, _connection)
     else:
-        output(
-            'there are no cfg settings for this save ID. run "riv_auto xyz" with whatever keyword you want in place of xyz to set this up for this save ID.')
-    output('[riv_load_cfg_manually: all done]')
+        output(rrs.load_cfg_nexists)
+    output(f'[riv_load_cfg_manually: {rrs.all_done}]')
 
 
 # automatically updates json files, with/out current session files
@@ -2936,14 +2942,12 @@ def console_auto_json(file_name_extra: str, _connection=None):
         try:
             config.read_file(open(file_path, 'r'))
         except:
-            output('no .cfg file found. creating one...')
+            output(rrs.auto_makecfg)
 
         if hex_slot_id in config.sections():  # if we already have settings for this
-            output('updating settings for Slot_{num}.save to riv_rel - individual save settings.cfg...'
-                   .format(num=hex_slot_id))
+            output(rrs.auto_update.format(num=hex_slot_id))
         else:  # we don't already have settings for this
-            output('adding settings for Slot_{num}.save to riv_rel - individual save settings.cfg...'
-                   .format(num=hex_slot_id))
+            output(rrs.auto_add.format(num=hex_slot_id))
             config[hex_slot_id] = {}
 
         # search_if_updating_settings
@@ -2954,34 +2958,34 @@ def console_auto_json(file_name_extra: str, _connection=None):
             config.write(cfg_file)
             riv_log(f'added/updated cfg settings: slot {hex_slot_id} with word {file_name_extra}')
 
-        output('loading in new .cfg settings...')
+        output(rrs.auto_load_cfg)
         load_cfg_settings()
 
         # load sims before saving if this is an existing json file
         sims_file_name = f'riv_rel_{file_name_extra}.json'  # e.g. riv_rel_pine.json
         sims_file_path = os.path.join(file_dir, sims_file_name)
         if os.path.isfile(sims_file_path):
-            output('loading in sims from file...')
+            output(rrs.auto_load_sim)
             riv_sim_list.load_sims(file_name_extra)
 
         # load rels before saving if this is an existing json file
         rels_file_name = f'riv_relparents_{file_name_extra}.json'  # e.g. riv_rel_pine.json
         rels_file_path = os.path.join(file_dir, rels_file_name)
         if os.path.isfile(rels_file_path):
-            output('loading in rels from file...')
+            output(rrs.auto_load_rel)
             riv_rel_dict.load_rels(file_name_extra)
 
-        output('running save, clear, clean, then load...')
+        output(rrs.auto_sccl)
         console_save_sims(file_name_extra, _connection)
         console_clear_sims(_connection)
         console_clean_sims(file_name_extra, _connection)
         console_load_sims(file_name_extra, _connection)
 
-        output('[riv_auto: all done]')
+        output(f'[riv_auto: {rrs.all_done}]')
     else:  # this is an autosave slot
-        output('the current game slot is an MCCC autosave slot')
-        output('blocked riv_auto (autosave slots aren\'t specific to saves so this could cause issues)')
-        output('please manually save your game to another slot and try again')
+        output(rrs.auto_blocked0)
+        output(rrs.auto_blocked1)
+        output(rrs.auto_blocked2)
 
 
 # allow auto json for one sim info, and automatically get slot
@@ -3010,6 +3014,8 @@ def get_slot_olsaf(original, self, *args, **kwargs):
         raise Exception(f'(riv) error in get_slot_olsaf in on_loading_screen_animation_finished: {e}')
     return result
 
+
+# TODO: continue rrs strings
 
 # when going into live mode
 # also covers sims created in CAS
@@ -3342,7 +3348,6 @@ def auto_json_del_tmp_su(original, self, *args, **kwargs):
 #     return result
 
 # RIV_REL (and riv_rel_rand, riv_rel_all, riv_help)
-# TODO: continue making these into f-strings
 
 # gets direct, indirect, inlaw, step rel as a console command
 @sims4.commands.Command('riv_rel', command_type=sims4.commands.CommandType.Live)

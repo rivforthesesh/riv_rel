@@ -834,7 +834,7 @@ def console_famX(X='A', _connection=None):
     for sim_z in famX_tmp.keys():
         game_sim_z = riv_rel.get_sim_from_rivsim(sim_z)
         # get the stage heir, fam, exc, no traits
-        if sim_z.is_culled:
+        if sim_z.is_culled or (not sim_z.is_culled and sim_z.is_ghost):
             stage = 4
         elif game_sim_z.has_trait(trait_heir(X)):
             stage = 0
@@ -853,7 +853,7 @@ def console_famX(X='A', _connection=None):
     # TODO: make sure this doesn't loop infinitely
     #   output to text file
     gen = 0
-    stages = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other, unculled', 4: 'culled'}
+    stages = {0: f'heir{X}', 1: f'fam{X}', 2: f'exc{X}', 3: 'other, living', 4: 'dead/culled'}
     max_gen = max([sim[1] for sim in famX_list])
     max_stage = max(list(stages.keys()))
     while gen < max_gen:
