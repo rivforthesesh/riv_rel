@@ -54,12 +54,6 @@ strings_dict = {
         'Bit of an odd family...']
 }
 
-# middle of the notification
-#   if this is gendered, let me know if it depends on the speaker's gender ("I") or the listener's ("you")
-im_your = 'I\'m your '  # space at the end
-im_also_your = 'I\'m also your '  # space at the end
-#       I'm your second cousin and third cousin once removed. I'm also your brother in law.
-
 # extra flavour, based on their relationship
 #   these are all just a bit of fun!
 #   you can put whatever you want, or leave it as '' (no spaces) if you don't want to translate it
