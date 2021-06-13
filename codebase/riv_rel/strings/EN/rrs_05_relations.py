@@ -30,12 +30,12 @@ i1 = indirect_rels_1 = {
     -1: ('uncle', 'aunt'),              # your parent's sibling
     0: ('brother', 'sister'),           # your sibling
     1: ('nephew', 'niece'),             # your sibling's child
-    2: ('grandnephew', 'grandniece')    # your sibling's grandchild
+    2: ('grandnephew', 'grandniece'),   # your sibling's grandchild
 }
 # prefixes used to continue patterns - put the rules for it in comments
 i_great = 'great'   # moves one generation away from self, e.g. great-grandniece, great(x2)-grandniece...
 
-# = cousins =
+# = cousins =  TODO: modify for Spanish-like version
 cousin_up = 'cousin'    # any cousin relation that is a higher generation than you
 cousin = 'cousin'       # any cousin relation that is on the same generation as you
 cousin_down = 'cousin'  # any cousin relation that is a lower generation than you
@@ -54,7 +54,7 @@ th = ['st', 'nd', 'rd', 'th']
 #           4th, 5th, ..., 11th, ..., 21st, 22nd, 23rd cousin...
 nth_cousin = '{p(rrs.nth)} {p(rrs.cousin)}'   # use for word order
 
-# vertical distance on family tree TODO: modify for Spanish-like version
+# vertical distance on family tree
 # add numbers as you need them
 v = vertical_modifier = {
     -2: 'twice removed',    # grandparent of your nth cousin

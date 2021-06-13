@@ -135,6 +135,8 @@ def write_gedcom(keyword: str, _connection=None):
         # ensure it's the same repeated if only one
         elif len(p) == 1:
             p = p + p
+        else:
+            continue  # next p
 
         # add to parents if not added
         if p not in parents:
@@ -143,7 +145,7 @@ def write_gedcom(keyword: str, _connection=None):
     del parents_tmp
     # turn into fam units
     gedcom_fam_units = []
-    for xy in parents:
+    for xy in parents:  # each xy has two parents (even if it's a repeat)
         x = xy[0]
         y = xy[1]
         gedcom_fam_units.append(RivFamUnit(

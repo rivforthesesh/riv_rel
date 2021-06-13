@@ -834,7 +834,7 @@ def console_famX(X='A', _connection=None):
     for sim_z in famX_tmp.keys():
         game_sim_z = riv_rel.get_sim_from_rivsim(sim_z)
         # get the stage heir, fam, exc, no traits
-        if sim_z.is_culled or (not sim_z.is_culled and sim_z.is_ghost):
+        if sim_z.is_culled or (not sim_z.is_culled and riv_rel.get_sim_from_rivsim(sim_z).is_ghost):
             stage = 4
         elif game_sim_z.has_trait(trait_heir(X)):
             stage = 0
