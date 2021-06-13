@@ -83,24 +83,40 @@ class RivFamUnit:
 @sims4.commands.Command('riv_gedcom', command_type=sims4.commands.CommandType.Live)
 def write_gedcom(keyword: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
-    # locate files
-    file_dir = Path(__file__).resolve().parent.parent
-    sim_file_name = f'riv_rel_{keyword}.json'  # e.g. riv_rel_pine.json
-    sim_file_path = os.path.join(file_dir, sim_file_name)
-    rel_file_name = f'riv_relparents_{keyword}.json'  # e.g. riv_rel_pine.json
-    rel_file_path = os.path.join(file_dir, rel_file_name)
 
-    # grab sims
-    gedcom_sim_list = RivSimList()
-    with open(sim_file_path, 'r') as json_file:
-        gedcom_sim_list.sims = [RivSim(sim) for sim in json.load(json_file)]
-    output('[1/10] got sims')
+    if keyword:  # a file has been specified
+        # locate files
+        file_dir = Path(__file__).resolve().parent.parent
+        sim_file_name = f'riv_rel_{keyword}.json'  # e.g. riv_rel_pine.json
+        sim_file_path = os.path.join(file_dir, sim_file_name)
+        rel_file_name = f'riv_relparents_{keyword}.json'  # e.g. riv_rel_pine.json
+        rel_file_path = os.path.join(file_dir, rel_file_name)
 
-    # grab rels
-    gedcom_rel_dict = RivRelDict()
-    with open(rel_file_path, 'r') as json_file:
-        gedcom_rel_dict.rels = json.load(json_file)
-    output('[2/10] got rels')
+        # check if exists
+        output(f'[0/10] specified save {keyword}')
+        if not os.path.isfile(sim_file_path):
+            output(f'could not find files for keyword {keyword}; please try again')
+
+        # grab sims
+        gedcom_sim_list = RivSimList()
+        with open(sim_file_path, 'r') as json_file:
+            gedcom_sim_list.sims = [RivSim(sim) for sim in json.load(json_file)]
+        output(f'[1/10] got {len(gedcom_sim_list.sims)} sims')
+
+        # grab rels
+        gedcom_rel_dict = RivRelDict()
+        with open(rel_file_path, 'r') as json_file:
+            gedcom_rel_dict.rels = json.load(json_file)
+        output(f'[2/10] got rels')
+    else:
+        # use current sims
+        output(f'[0/10] no save specified, using current save file ({riv_rel.hex_slot_id})')
+        gedcom_sim_list = riv_rel.riv_sim_list
+        output(f'[1/10] got {len(gedcom_sim_list.sims)} sims')
+        gedcom_rel_dict = riv_rel.riv_rel_dict
+        output(f'[2/10] got rels')
+        # set up keyword
+        keyword = riv_rel.hex_slot_id
 
     dt = datetime.now()
     file_name = 'riv_' + keyword + '_' + dt.strftime('%Y-%m-%d-%H-%M-%S') + '.ged'
