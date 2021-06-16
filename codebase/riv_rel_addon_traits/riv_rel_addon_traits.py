@@ -135,8 +135,6 @@ sys.path.append('../')
 # https://stackoverflow.com/questions/4383571/importing-files-from-different-folder
 try:
     import riv_rel
-    from riv_rel import get_parents_ingame, get_children_ingame
-
     riv_rel.riv_log('riv_rel_addon_traits successfully imported riv_rel')
 except Exception as e:
     riv_rel.riv_log('error - riv_rel_addon_traits failed to import riv_rel because ' + str(e))
@@ -332,7 +330,7 @@ def add_to_family(X: str, sim_x: SimInfoParam, output=None, via=False):
     # if they have the trait, whether added before or now
     if sim_x.has_trait(trait_fam(X)):
         if riv_auto_inc_parent:  # if we want to auto add parents
-            for parent in get_parents_ingame(sim_x):  # look at ingame parents
+            for parent in riv_rel.get_parents_ingame(sim_x):  # look at ingame parents
                 if not parent.has_trait(trait_fam(X)):  # if the parent isn't in the family
                     riv_log('including parent ' + parent.first_name)
                     include_in_family(X, parent, True)  # then include them
@@ -342,7 +340,7 @@ def add_to_family(X: str, sim_x: SimInfoParam, output=None, via=False):
                     riv_log('including spouse ' + spouse.first_name)
                     include_in_family(X, spouse, True)  # then include them
         if riv_auto_fam_child:  # if we want to auto add fam to childen
-            for child in get_children_ingame(sim_x):  # look at children
+            for child in riv_rel.get_children_ingame(sim_x):  # look at children
                 if not child.has_trait(trait_fam(X)):  # if the child isn't in the family
                     riv_log('including child ' + child.first_name)
                     add_to_family(X, child, output, True)  # then add them
@@ -425,7 +423,7 @@ def make_heir(X: str, sim_x: SimInfoParam, output=None):
                 pass
             # propagate this
             if riv_auto_inc_heir_parent:  # if we want to auto add parents
-                for parent in get_parents_ingame(sim_x):  # look at ingame parents
+                for parent in riv_rel.get_parents_ingame(sim_x):  # look at ingame parents
                     if not parent.has_trait(trait_fam(X)):  # if the parent isn't in the family
                         riv_log('including parent ' + parent.first_name)
                         include_in_family(X, parent, True)  # then include them

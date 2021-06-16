@@ -170,80 +170,12 @@ riv_log('', 1)
 
 # get strings
 try:
-    import strings.riv_rel_strings as rrs   # TODO: get individual ones
+    import strings.riv_rel_strings as rrs  # TODO: get individual ones
+
     p = rrs.p
     riv_log(f'riv_rel successfully imported riv_rel_strings for language {rrs.lang}')
 except Exception as e:
     riv_log('error - riv_rel failed to import riv_rel_strings because ' + str(e))
-
-
-# find addons and MCCC
-
-extra_files_tic = time.perf_counter()
-
-# access the mods folder
-mods_path = Path(__file__).resolve()
-appendage = '/'
-# https://stackoverflow.com/questions/33372054/get-folder-name-of-the-file-in-python
-while not os.path.basename(mods_path) == 'Mods':
-    mods_path = mods_path.parent
-    appendage = '.' + appendage
-sys.path.append(appendage)  # will go up to Mods/ folder
-try:
-    mccc_cfg_path = None
-    # search folders and subfolders
-    # https://stackoverflow.com/questions/5817209/browse-files-and-subfolders-in-python
-    for root, dirs, files in os.walk(mods_path):
-        for name in files:
-            if name.startswith('mc_settings') and name.endswith('cfg'):
-                mccc_cfg_path = root + os.sep + name
-            elif name.startswith('riv_rel_addon_computer') and name.endswith('package'):
-                riv_log('detected computer addon', 2)
-                addons['computer'] = True
-            elif (not addons['traits']) and name.startswith('riv_rel_addon_traits') \
-                    and (name.endswith('package') or name.endswith('ts4script')):
-                riv_log('detected traits addon', 2)
-                addons['traits'] = True
-            elif name.startswith('riv_rel_addon_GT') and name.endswith('ts4script'):
-                riv_log('detected GT addon', 2)
-                addons['GT'] = True
-            if addons['computer'] and addons['traits'] and addons['GT'] and (mccc_cfg_path is not None):
-                # all settings confirmed
-                break
-    # find file and grab it as dict
-    if mccc_cfg_path is not None:
-        with open(mccc_cfg_path, 'r') as mccc_cfg:
-            mccc_cfg_dict = json.load(mccc_cfg)
-    else:
-        riv_log('did not find mc_settings.cfg', 1)
-    # get vars
-    mccc_autosave_enabled = mccc_cfg_dict['Autosave_Enabled']
-    mccc_autosave_hexslotnumber = mccc_cfg_dict['Autosave_HexSlotNumber']
-    mccc_autosave_maxsavenumber = mccc_cfg_dict['Autosave_MaxSaveNumber']
-    # kill dict
-    del mccc_cfg_dict
-except Exception as ex:
-    riv_log(f'mc_settings not grabbed from .cfg: {ex}', 1)
-    mccc_autosave_enabled = False
-    mccc_autosave_hexslotnumber = ''
-    mccc_autosave_maxsavenumber = 0
-
-# get list of autosave slots
-if mccc_autosave_enabled:
-    # turn smallest save ID into an int: '1111' -> '0x1111' -> 4369
-    smallest_save = int('0x' + str(mccc_autosave_hexslotnumber), 16)
-    for i in range(0, mccc_autosave_maxsavenumber):
-        # int_slot_id = 4369 + i
-        int_slot_id = smallest_save + i
-        # hex_slot_id_tmp = 1111
-        hex_slot_id_tmp = hex(int_slot_id)[2:]
-        # hex_slot_id = 00001111
-        hex_slot_id = ('0' * (8 - len(hex_slot_id_tmp))) + hex_slot_id_tmp
-        mccc_autosaves.append(hex_slot_id)
-    riv_log(f'autosave slots = {mccc_autosaves}')
-
-extra_files_toc = time.perf_counter()
-riv_log(f'time taken to find extra files (riv_rel addons and mc_settings.cfg): {extra_files_toc - extra_files_tic}')
 
 # gen 4 -> gen 5 update: rename .cfg
 for file in os.scandir(Path(__file__).resolve().parent.parent):
@@ -256,69 +188,159 @@ consang_limit = 2 ** -5  # second cousin
 drel_incest = True  # whether direct rels always count as incestuous
 show_consang = False  # whether consanguinity is shown in notifications
 
-# add to or make overall cfg file
-try:
-    # config stuff
-    config_dir = Path(__file__).resolve().parent.parent
-    config_name = 'riv_rel - overall settings.cfg'
-    file_path = os.path.join(config_dir, config_name)
-    config = configparser.ConfigParser()
 
-    # try to get cfg file
+# find addons and MCCC; now in a function so it can be called again
+
+# made into a function so it can be called
+def start_logging():
+    global riv_auto_log
+    if not riv_auto_log:
+        riv_log(f'[started logging at {format(dt_string)}]', 1)
+        riv_log('', 1)
+        try:
+            riv_log(f'using riv_rel_strings for language {rrs.lang}')
+        except Exception as e0:
+            riv_log('error - riv_rel failed to detect language because ' + str(e0))
+
+    extra_files_tic = time.perf_counter()
+
+    # access the mods folder
+    mods_path = Path(__file__).resolve()
+    appendage = '/'
+    # https://stackoverflow.com/questions/33372054/get-folder-name-of-the-file-in-python
+    while not os.path.basename(mods_path) == 'Mods':
+        mods_path = mods_path.parent
+        appendage = '.' + appendage
+    sys.path.append(appendage)  # will go up to Mods/ folder
+    global mccc_autosave_enabled
+    global mccc_autosave_hexslotnumber
+    global mccc_autosave_maxsavenumber
     try:
+        mccc_cfg_path = None
+        # search folders and subfolders
+        # https://stackoverflow.com/questions/5817209/browse-files-and-subfolders-in-python
+        for root, dirs, files in os.walk(mods_path):
+            for name in files:
+                if name.startswith('mc_settings') and name.endswith('cfg'):
+                    mccc_cfg_path = root + os.sep + name
+                elif name.startswith('riv_rel_addon_computer') and name.endswith('package'):
+                    riv_log('detected computer addon', 2)
+                    addons['computer'] = True
+                elif (not addons['traits']) and name.startswith('riv_rel_addon_traits') \
+                        and (name.endswith('package') or name.endswith('ts4script')):
+                    riv_log('detected traits addon', 2)
+                    addons['traits'] = True
+                elif name.startswith('riv_rel_addon_GT') and name.endswith('ts4script'):
+                    riv_log('detected GT addon', 2)
+                    addons['GT'] = True
+                if addons['computer'] and addons['traits'] and addons['GT'] and (mccc_cfg_path is not None):
+                    # all settings confirmed
+                    break
+        # find file and grab it as dict
+        if mccc_cfg_path is not None:
+            with open(mccc_cfg_path, 'r') as mccc_cfg:
+                mccc_cfg_dict = json.load(mccc_cfg)
+        else:
+            riv_log('did not find mc_settings.cfg', 1)
+        # get vars
+        mccc_autosave_enabled = mccc_cfg_dict['Autosave_Enabled']
+        mccc_autosave_hexslotnumber = mccc_cfg_dict['Autosave_HexSlotNumber']
+        mccc_autosave_maxsavenumber = mccc_cfg_dict['Autosave_MaxSaveNumber']
+        # kill dict
+        del mccc_cfg_dict
+    except Exception as ex:
+        riv_log(f'mc_settings not grabbed from .cfg: {ex}', 1)
+        mccc_autosave_enabled = False
+        mccc_autosave_hexslotnumber = ''
+        mccc_autosave_maxsavenumber = 0
+
+    # get list of autosave slots
+    if mccc_autosave_enabled:
+        # turn smallest save ID into an int: '1111' -> '0x1111' -> 4369
+        smallest_save = int('0x' + str(mccc_autosave_hexslotnumber), 16)
+        for i in range(0, mccc_autosave_maxsavenumber):
+            # int_slot_id = 4369 + i
+            int_slot_id = smallest_save + i
+            # hex_slot_id_tmp = 1111
+            hex_slot_id_tmp = hex(int_slot_id)[2:]
+            # hex_slot_id = 00001111
+            hex_slot_id = ('0' * (8 - len(hex_slot_id_tmp))) + hex_slot_id_tmp
+            mccc_autosaves.append(hex_slot_id)
+        riv_log(f'autosave slots = {mccc_autosaves}')
+
+    extra_files_toc = time.perf_counter()
+    riv_log(f'time taken to find extra files (riv_rel addons and mc_settings.cfg): {extra_files_toc - extra_files_tic}')
+
+    # add to or make overall cfg file
+    try:
+        # config stuff
+        config_dir = Path(__file__).resolve().parent.parent
+        config_name = 'riv_rel - overall settings.cfg'
+        file_path = os.path.join(config_dir, config_name)
+        config = configparser.ConfigParser()
+
+        # try to get cfg file
+        try:
+            config.read_file(open(file_path, 'r'))
+        except:
+            riv_log('no .cfg file found. creating one...')
+
+        # default settings if needed
+        if not (os.path.isfile(file_path) and 'main_mod' in config.sections()):
+            config['main_mod'] = {}
+            with open(file_path, 'w') as cfg_file:
+                config.write(cfg_file)
+                riv_log('created main_mod section in overall cfg')
+
+        # now cfg will exist; load in settings
         config.read_file(open(file_path, 'r'))
-    except:
-        riv_log('no .cfg file found. creating one...')
+        keys = []
+        for (key, val) in config.items('main_mod'):
+            if key not in keys:
+                keys.append(key)
+        # search_if_updating_settings
 
-    # default settings if needed
-    if not (os.path.isfile(file_path) and 'main_mod' in config.sections()):
-        config['main_mod'] = {}
-        with open(file_path, 'w') as cfg_file:
-            config.write(cfg_file)
-            riv_log('created main_mod section in overall cfg')
+        # consanguinity
+        global consang_limit
+        try:
+            consang_limit = config.getfloat('main_mod', 'consanguinity_limit')
+            riv_log(f'grabbed main_mod consanguinity limit as {consang_limit}')
+        except Exception as e:
+            config['main_mod']['consanguinity_limit'] = str(consang_limit)
+            with open(file_path, 'w') as cfg_file:
+                config.write(cfg_file)
+            riv_log(f'set up main_mod consanguinity limit as {consang_limit}')
 
-    # now cfg will exist; load in settings
-    config.read_file(open(file_path, 'r'))
-    keys = []
-    for (key, val) in config.items('main_mod'):
-        if key not in keys:
-            keys.append(key)
-    # search_if_updating_settings
+        # show consanguinity in notifications
+        global show_consang
+        try:
+            show_consang = config.getboolean('main_mod', 'show_consanguinity_in_notifs')
+            riv_log(f'grabbed main_mod show_consanguinity_in_notifs as {show_consang}')
+        except Exception as e:
+            config['main_mod']['show_consanguinity_in_notifs'] = str(show_consang)
+            with open(file_path, 'w') as cfg_file:
+                config.write(cfg_file)
+            riv_log(f'set up main_mod show_consanguinity_in_notifs as {show_consang}')
 
-    # consanguinity
-    try:
-        consang_limit = config.getfloat('main_mod', 'consanguinity_limit')
-        riv_log(f'grabbed main_mod consanguinity limit as {consang_limit}')
-    except Exception as e:
-        config['main_mod']['consanguinity_limit'] = str(consang_limit)
-        with open(file_path, 'w') as cfg_file:
-            config.write(cfg_file)
-        riv_log(f'set up main_mod consanguinity limit as {consang_limit}')
+        # direct rels are incest
+        global drel_incest
+        try:
+            drel_incest = config.getboolean('main_mod', 'direct_rels_are_incestuous')
+            riv_log(f'grabbed main_mod direct rel is always incest as {drel_incest}')
+        except Exception as e:
+            config['main_mod']['direct_rels_are_incestuous'] = str(drel_incest)
+            with open(file_path, 'w') as cfg_file:
+                config.write(cfg_file)
+            riv_log(f'set up main_mod direct rel is always incest as {drel_incest}')
 
-    # show consanguinity in notifications
-    try:
-        show_consang = config.getboolean('main_mod', 'show_consanguinity_in_notifs')
-        riv_log(f'grabbed main_mod show_consanguinity_in_notifs as {show_consang}')
-    except Exception as e:
-        config['main_mod']['show_consanguinity_in_notifs'] = str(show_consang)
-        with open(file_path, 'w') as cfg_file:
-            config.write(cfg_file)
-        riv_log(f'set up main_mod show_consanguinity_in_notifs as {show_consang}')
+        riv_log('loaded in cfg settings')
+    except Exception as e2:
+        riv_log('error - something went wrong with the cfg: ' + str(e2))
+        riv_log('using riv\'s default settings')
 
-    # direct rels are incest
-    try:
-        drel_incest = config.getboolean('main_mod', 'direct_rels_are_incestuous')
-        riv_log(f'grabbed main_mod direct rel is always incest as {drel_incest}')
-    except Exception as e:
-        config['main_mod']['direct_rels_are_incestuous'] = str(drel_incest)
-        with open(file_path, 'w') as cfg_file:
-            config.write(cfg_file)
-        riv_log(f'set up main_mod direct rel is always incest as {drel_incest}')
 
-    riv_log('loaded in cfg settings')
-except Exception as e2:
-    riv_log('error - something went wrong with the cfg: ' + str(e2))
-    riv_log('using riv\'s default settings')
+# call it (function name might be misleading, it doesn't always log lol)
+start_logging()
 
 
 # true and false
@@ -3670,6 +3692,18 @@ def riv_getsaveslotid(_connection=None):
 # json.dump([str(per._save_game_data_proto)], json_file)
 # used in ww:
 # per._save_game_data_proto.get_save_slot_proto_buff().slot_id
+
+# start the log
+@sims4.commands.Command('riv_rel_start_log', command_type=sims4.commands.CommandType.Live)
+def riv_clear_log(_connection=None):
+    output = sims4.commands.CheatOutput(_connection)
+    global riv_auto_log
+    riv_auto_log = True
+    start_logging()
+    output('created the logging file (riv_rel.log) - if you\'re trying to debug something, '
+           'redo whatever caused the issue and send it to me (rivforthesesh / riv#4381)')
+    output('to stop logging, just delete this file after you\'ve closed the game')
+
 
 # clear log except for errors and birth date records
 @sims4.commands.Command('riv_rel_log_clear', command_type=sims4.commands.CommandType.Live)
