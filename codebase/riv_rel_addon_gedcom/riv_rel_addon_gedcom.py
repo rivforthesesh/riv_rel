@@ -31,9 +31,13 @@ def riv_log(string):
     return riv_rel.riv_log('[gedcom] ' + str(string))
 
 
+# fam count (reset at the start of file creation)
+fam_count = 0
+
+
 # family unit
 class RivFamUnit:
-    def __init__(self, sim_x: RivSim, sim_y: RivSim, rel_dict: RivRelDict):
+    def __init__(self, sim_x: RivSim, sim_y: RivSim, rel_dict: RivRelDict, fam_num=0):
         # if f+m then is_fm and p = f, q = m, else p = smaller and q = larger sim_id
         # one f one m
         if sim_x.is_female and not sim_y.is_female:
@@ -66,11 +70,9 @@ class RivFamUnit:
         # kids (every rivsim that has these two as parents)
         self.children = [sim_id for sim_id in rel_dict.rels.keys()
                          if set(rel_dict.rels[sim_id]) == {int(sim_x.sim_id), int(sim_y.sim_id)}]
+
         # id
-        if self.q is not None:
-            self.fam_id = str(self.p.sim_id) + '000' + str(self.q.sim_id)
-        else:
-            self.fam_id = str(self.p.sim_id)
+        self.fam_id = f'fam_{fam_num}'
 
     def __str__(self):
         return f'<RivFamUnit {self.p} {self.q}>'
@@ -83,6 +85,9 @@ class RivFamUnit:
 @sims4.commands.Command('riv_gedcom', command_type=sims4.commands.CommandType.Live)
 def write_gedcom(keyword: str, _connection=None):
     output = sims4.commands.CheatOutput(_connection)
+
+    global fam_count
+    fam_count = 0
 
     if keyword:  # a file has been specified
         # locate files
@@ -120,22 +125,24 @@ def write_gedcom(keyword: str, _connection=None):
 
     dt = datetime.now()
     file_name = 'riv_' + keyword + '_' + dt.strftime('%Y-%m-%d-%H-%M-%S') + '.ged'
+    submitter = 'A. /Simmer/'  # TODO: username? active sim?
 
     # construct header
     header = '0 HEAD\n' \
                 '1 GEDC\n' \
                     '2 VERS 5.5.5\n' \
-                    '2 FORM LINEAGE-LINKED' \
-                        '3 VERS 5.5.5' \
-                '1 CHAR UTF-8\n' \
-                '1 SOUR riv_rel gen ' + str(riv_rel.rr_gen) + '\n' \
+                    '2 FORM LINEAGE-LINKED\n' \
+                        '3 VERS 5.5.5\n' \
+                '1 CHAR ASCII\n' \
+                '1 SOUR riv_rel\n' \
                     '2 NAME ' + keyword + '\n' \
-                    '2 VERS 5.5.5\n' \
-                        '3 WWW rivforthesesh.itch.io/riv-rel\n' \
+                    '2 VERS ' + str(riv_rel.rr_gen) + '\n' \
                 '1 DATE ' + dt.strftime('%d %b %Y') + '\n' \
                     '2 TIME ' + dt.strftime('%H:%M:%S') + '\n' \
                 '1 FILE ' + file_name + '\n' \
-                '1 LANG English\n'
+                '1 LANG English\n' \
+            '0 SUBM\n' \
+                '1 NAME ' + submitter + '\n'
     output('[3/10] constructed header')
 
     # get each fam unit
@@ -167,9 +174,11 @@ def write_gedcom(keyword: str, _connection=None):
         gedcom_fam_units.append(RivFamUnit(
             riv_rel.get_rivsim_from_id(x),
             riv_rel.get_rivsim_from_id(y),
-            gedcom_rel_dict
+            gedcom_rel_dict,
+            fam_count
         ))
-    # gedcom_fam_units = [RivFamUnit(x, y, gedcom_rel_dict) for [x, y] in parent_pairs
+        # increment family ID
+        fam_count += 1
     output('[4/10] got family units (parents + children)')
 
     # maps sim ID to their gedcom entry
@@ -183,10 +192,13 @@ def write_gedcom(keyword: str, _connection=None):
         else:
             gender = 'M'
 
+        first_name = sim.first_name if sim.first_name else 'Nameless'
+        last_name = sim.last_name if sim.first_name else f'Sim-{sim.sim_id}'
+
         gedsim = f'0 @{sim.sim_id}@ INDI\n' \
-                     f'1 NAME {sim.first_name} /{sim.last_name}/\n' \
-                         f'2 GIVN {sim.first_name}\n' \
-                         f'2 SURN {sim.last_name}\n' \
+                     f'1 NAME {first_name} /{last_name}/\n' \
+                         f'2 GIVN {first_name}\n' \
+                         f'2 SURN {last_name}\n' \
                      f'1 SEX {gender}\n'
 
         # add to dict
