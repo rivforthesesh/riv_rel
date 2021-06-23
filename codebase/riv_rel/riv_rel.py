@@ -470,7 +470,7 @@ class RivSimList:
             with open(file_path2, 'r') as json_file:  # read from this
                 temp_sims = json.load(json_file)
             self.sims = [RivSim(sim) for sim in temp_sims]
-        else:  # tmp file hasn't been created yet
+        elif os.path.isfile(file_path):  # tmp file hasn't been created but perm file has
             with open(file_path, 'r') as json_file:  # read from perm file
                 temp_sims = json.load(json_file)
             if use_currentsession_files:
@@ -505,15 +505,14 @@ class RivRelDict:
         if os.path.isfile(file_path2):  # if tmp file is already being used
             with open(file_path2, 'r') as json_file:
                 self.rels = json.load(json_file)
-        else:  # tmp file hasn't been created yet
-            if os.path.isfile(file_path):
-                # perm file exists
-                with open(file_path, 'r') as json_file:
-                    self.rels = json.load(json_file)
-                if use_currentsession_files:
-                    riv_log('creating temporary file in .load_rels for ' + file_name_extra)
-                    with open(file_path2, 'w') as json_file2:
-                        json.dump(self.rels, json_file2)
+        elif os.path.isfile(file_path):  # tmp file hasn't been created but perm file has
+            # perm file exists
+            with open(file_path, 'r') as json_file:
+                self.rels = json.load(json_file)
+            if use_currentsession_files:
+                riv_log('creating temporary file in .load_rels for ' + file_name_extra)
+                with open(file_path2, 'w') as json_file2:
+                    json.dump(self.rels, json_file2)
         return self.rels
 
     def clear_rels(self):
@@ -2270,13 +2269,15 @@ def load_sims(file_name_extra: str):
     if os.path.isfile(file_path2):  # if tmp file is already being used
         with open(file_path2, 'r') as json_file:  # read from this
             sims = json.load(json_file)
-    else:  # tmp file hasn't been created yet
+    elif os.path.isfile(file_path):  # tmp file hasn't been created yet but perm file has
         with open(file_path, 'r') as json_file:  # read from perm file
             sims = json.load(json_file)
         if use_currentsession_files:
             riv_log('creating temporary file in load_sims for ' + file_name_extra)
             with open(file_path2, 'w') as json_file2:  # create tmp file
                 json.dump(sims, json_file2)
+    else:
+        sims = {}  # SHOULD NOT HAPPEN
     return sims
 
 
@@ -3713,6 +3714,10 @@ def riv_clear_log(_connection=None):
     file_dir = Path(__file__).resolve().parent.parent
     file_name = 'riv_rel.log'
     file_path = os.path.join(file_dir, file_name)
+
+    if not os.path.isfile(file_path):
+        output('nothing to clear')
+        return
 
     # grab old text as list
     with open(file_path, 'r') as log_file:
