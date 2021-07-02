@@ -14,14 +14,18 @@ d = direct_rels = {
     1: ('son', 'daughter'),
     2: ('grandson', 'granddaughter'),
 }
-# prefixes used to continue patterns - put the rules for it in comments
-d_great = 'great'   # moves one generation away from self, e.g. great-grandson, great(x2)-grandson...
+# prefixes used to continue patterns - the below works like this
+#   if they're further up the tree than the minimum number above (d_anc), we add one d_great for each gen
+#   if they're further down the tree than the max number above (d_des), we add one d_great for each gen
+d_great = 'great'
+d_anc = min(d.keys())   # change to a fixed number if the pattern would be applied to a non-extreme
+d_des = max(d.keys())   # change to a fixed number if the pattern would be applied to a non-extreme
 
 # == indirect ==
 # shows this relation is through one ancestor, rather than a couple, e.g. you share one parent with your half-sibling
 half = 'half'
 # use for word order - the p(rrs.half) just makes sure it uses 'half' from above
-half_rel = '{p(rrs.half)} {rel}'
+half_rel = '{half} {rel}'
 
 # = siblings of direct rels / direct rels of siblings =
 # add numbers as you need them
