@@ -72,7 +72,7 @@ class RivFamUnit:
                          if set(rel_dict.rels[sim_id]) == {int(sim_x.sim_id), int(sim_y.sim_id)}]
 
         # id
-        self.fam_id = f'fam_{fam_num}'
+        self.fam_id = f'fam{fam_num}'
 
     def __str__(self):
         return f'<RivFamUnit {self.p} {self.q}>'
@@ -195,7 +195,7 @@ def write_gedcom(keyword: str, _connection=None):
         first_name = sim.first_name if sim.first_name else 'Nameless'
         last_name = sim.last_name if sim.first_name else f'Sim-{sim.sim_id}'
 
-        gedsim = f'0 @{sim.sim_id}@ INDI\n' \
+        gedsim = f'0 {sim.sim_id} INDI\n' \
                      f'1 NAME {first_name} /{last_name}/\n' \
                          f'2 GIVN {first_name}\n' \
                          f'2 SURN {last_name}\n' \
@@ -216,28 +216,28 @@ def write_gedcom(keyword: str, _connection=None):
         if fam.q is None:
             # add parent to fam
             if fam.p.is_female:
-                ged_parents = f'1 WIFE @{fam.p.sim_id}@\n'
+                ged_parents = f'1 WIFE {fam.p.sim_id}\n'
             else:
-                ged_parents = f'1 HUSB @{fam.p.sim_id}@\n'
+                ged_parents = f'1 HUSB {fam.p.sim_id}\n'
             # add link to fam in sim record
-            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS @{fam.p.sim_id}@\n'
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.p.sim_id}\n'
         else:
             # add two parents to fam
-            ged_parents = f'1 HUSB @{fam.q.sim_id}@\n' \
-                          f'1 WIFE @{fam.p.sim_id}@\n'
+            ged_parents = f'1 HUSB {fam.q.sim_id}\n' \
+                          f'1 WIFE {fam.p.sim_id}\n'
             # add link to fam in sim records
-            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS @{fam.p.sim_id}@\n'
-            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS @{fam.q.sim_id}@\n'
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.p.sim_id}\n'
+            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS {fam.q.sim_id}\n'
 
         # kids
         ged_children = ''
         for child_id in fam.children:
             # add child to fam
-            ged_children = ged_children + f'1 CHIL @{child_id}@\n'
+            ged_children = ged_children + f'1 CHIL {child_id}\n'
             # add link to fam in sim record
-            gedcom_sim_dict[child_id] = gedcom_sim_dict[child_id] + f'1 FAMS @{child_id}@\n'
+            gedcom_sim_dict[child_id] = gedcom_sim_dict[child_id] + f'1 FAMS {child_id}\n'
 
-        gedfam = f'@{fam.fam_id}@ FAM\n' \
+        gedfam = f'{fam.fam_id} FAM\n' \
                     + ged_parents \
                     + ged_children
 
