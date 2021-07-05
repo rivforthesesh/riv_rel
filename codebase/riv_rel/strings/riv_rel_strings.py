@@ -1,5 +1,7 @@
 # NO LANGUAGE STRINGS ALLOWED
 
+from typing import List
+from server_commands.argument_helpers import SimInfoParam
 # TODO: do not lock these to EN
 from strings.EN.rrs_00_your_details import *
 from strings.EN.rrs_01_main_commands import *
