@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\sims\sim_info_manager.py
-# Compiled at: 2021-01-29 00:09:07
-# Size of source mod 2**32: 44222 bytes
+# Compiled at: 2021-05-05 01:25:57
+# Size of source mod 2**32: 44633 bytes
 import itertools, caches, clubs, game_services, interactions.utils.routing, persistence_error_types, services, sims.household, sims.sim_info_types, sims4.log
 from fame.fame_tuning import FameTunables
 from filters.sim_filter_service import SimFilterGlobalBlacklistReason
@@ -49,6 +49,7 @@ class SimInfoManager(DistributableObjectManager):
         self._firemeter = None
         self._sim_info_telemetry_manager = SimInfoTelemetryManager()
         self._start_all_sims_opted_out_of_fame = False
+        self._super_interaction_restorer = None
         self._sim_info_cap_override = None
 
     @classproperty
@@ -440,8 +441,12 @@ class SimInfoManager(DistributableObjectManager):
         return results
 
     def restore_sim_si_state(self):
-        super_interaction_restorer = SuperInteractionRestorer()
-        super_interaction_restorer.restore_sim_si_state()
+        self._super_interaction_restorer = SuperInteractionRestorer()
+        self._super_interaction_restorer.restore_sim_si_state()
+
+    def restore_sim_queued_si_state(self):
+        self._super_interaction_restorer.restore_sim_queued_si_state()
+        self._super_interaction_restorer = None
 
     def verify_travel_sims_outfits(self):
         for traveled_sim_id in self._sims_traveled_to_zone:

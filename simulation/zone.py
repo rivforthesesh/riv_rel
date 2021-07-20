@@ -2,14 +2,14 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\zone.py
-# Compiled at: 2020-12-16 22:08:40
-# Size of source mod 2**32: 91783 bytes
+# Compiled at: 2021-06-14 21:48:27
+# Size of source mod 2**32: 94712 bytes
 import collections, gc, math, random, weakref
 from protocolbuffers import FileSerialization_pb2 as serialization
 from protocolbuffers.Consts_pb2 import MGR_OBJECT, MGR_SITUATION, MGR_PARTY, MGR_SOCIAL_GROUP, MGR_TRAVEL_GROUP
 from animation import get_throwaway_animation_context
 from animation.animation_drift_monitor import animation_drift_monitor_on_zone_shutdown
-from build_buy import get_object_in_household_inventory
+from build_buy import HouseholdInventoryFlags, get_object_in_household_inventory
 from careers.career_service import CareerService
 from clock import ClockSpeedMode
 from crafting.photography_service import PhotographyService
@@ -31,7 +31,7 @@ from world.lot_level import LotLevel
 from world.spawn_point import SpawnPointOption, SpawnPoint
 from world.spawn_point_enums import SpawnPointRequestReason
 from world.world_spawn_point import WorldSpawnPoint
-import adaptive_clock_speed, alarms, areaserver, caches, camera, clock, distributor.system, game_services, gsi_handlers.routing_handlers, indexed_manager, interactions.constraints, interactions.utils, persistence_module, placement, routing, services, sims4.log, sims4.random, tag, telemetry_helper, zone_types
+import adaptive_clock_speed, alarms, areaserver, caches, camera, clock, distributor.system, game_services, gsi_handlers.routing_handlers, indexed_manager, interactions.constraints, interactions.utils, persistence_module, placement, routing, services, sims4.log, sims4.random, sims4.resources, tag, telemetry_helper, zone_types
 with sims4.reload.protected(globals()):
     gc_count_log = None
 TELEMETRY_GROUP_GCSTATS = 'GCST'
@@ -102,6 +102,7 @@ class Zone:
         self._gc_full_count = 0
         self.is_active_lot_clearing = False
         self.suppress_object_commodity_callbacks = False
+        self._items_to_move_to_inventory = {}
 
     def __repr__(self):
         return '<Zone ID: {0:#x}>'.format(self.id)
@@ -201,7 +202,6 @@ class Zone:
         from services.fire_service import FireService
         from services.reset_and_delete_service import ResetAndDeleteService
         from services.object_routing_service import ObjectRoutingService
-        from sims.culling.culling_service import CullingService
         from sims.daycare import DaycareService
         from sims.master_controller import MasterController
         from sims.sim_spawner_service import SimSpawnerService
@@ -259,7 +259,6 @@ class Zone:
          LaundryService(),
          PhotographyService(),
          AdoptionService(),
-         CullingService(),
          GardeningService(),
          ObjectRoutingService(),
          DustService(),
@@ -582,6 +581,17 @@ class Zone:
         if object_preference_tracker is not None:
             object_preference_tracker.convert_existing_preferences()
 
+    def on_all_sims_spawned(self):
+        self._set_zone_state(zone_types.ZoneState.ALL_SIMS_SPAWNED)
+        try:
+            self._move_items_to_inventory()
+        except Exception as e:
+            try:
+                logger.error('Exception encountered in _move_items_to_inventory: {}', e)
+            finally:
+                e = None
+                del e
+
     def on_loading_screen_animation_finished(self):
         logger.debug('on_loading_screen_animation_finished')
         services.game_clock_service().restore_saved_clock_speed()
@@ -689,24 +699,29 @@ class Zone:
             spawn_points = [p for p in spawn_points if p.spawn_point_priority == max_priority]
         return spawn_points
 
-    def get_spawn_point(self, lot_id=None, sim_spawner_tags=None, must_have_tags=False, spawning_sim_info=None, spawn_point_request_reason=SpawnPointRequestReason.DEFAULT):
+    def get_spawn_point(self, lot_id=None, sim_spawner_tags=None, must_have_tags=False, spawning_sim_info=None, spawn_point_request_reason=SpawnPointRequestReason.DEFAULT, use_random_sim_spawner_tag=True):
         spawn_points = list(self.spawn_points_gen())
         if not spawn_points:
             return
-        spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(sim_info=spawning_sim_info,
-          lot_id=lot_id,
-          sim_spawner_tags=sim_spawner_tags,
-          spawn_point_request_reason=spawn_point_request_reason)
-        if not spawn_points_with_tags:
-            if not must_have_tags:
-                spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(sim_info=spawning_sim_info,
-                  sim_spawner_tags=sim_spawner_tags,
-                  spawn_point_request_reason=spawn_point_request_reason)
-        else:
+            spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(sim_info=spawning_sim_info,
+              lot_id=lot_id,
+              sim_spawner_tags=sim_spawner_tags,
+              spawn_point_request_reason=spawn_point_request_reason)
+            if not spawn_points_with_tags:
+                if not must_have_tags:
+                    spawn_points_with_tags = self._get_spawn_points_with_lot_id_and_tags(sim_info=spawning_sim_info,
+                      sim_spawner_tags=sim_spawner_tags,
+                      spawn_point_request_reason=spawn_point_request_reason)
             if spawn_points_with_tags:
-                return random.choice(spawn_points_with_tags)
+                if use_random_sim_spawner_tag:
+                    return random.choice(spawn_points_with_tags)
+                for tag in sim_spawner_tags:
+                    points_with_tag = [p for p in spawn_points_with_tags if p.has_tag(tag)]
+                    if points_with_tag:
+                        return random.choice(points_with_tag)
+
+        else:
             return must_have_tags or random.choice(spawn_points)
-        return
 
     def get_spawn_points_constraint(self, sim_info=None, lot_id=None, sim_spawner_tags=None, except_lot_id=None, spawn_point_request_reason=SpawnPointRequestReason.DEFAULT, generalize=False, backup_sim_spawner_tags=None, backup_lot_id=None):
         spawn_point_option = SpawnPointOption.SPAWN_ANY_POINT_WITH_CONSTRAINT_TAGS
@@ -902,6 +917,9 @@ class Zone:
         dust_service = services.dust_service()
         if dust_service is not None:
             dust_service.on_build_buy_exit()
+        animal_service = services.animal_service()
+        if animal_service is not None:
+            animal_service.on_build_buy_exit()
 
     def on_active_lot_clearing_begin(self):
         self.is_active_lot_clearing = True
@@ -916,7 +934,7 @@ class Zone:
         self.objects_to_fixup_post_bb.add(obj)
 
     def revert_zone_architectural_stat_effects(self):
-        statistic_manager = services.statistic_manager()
+        statistic_manager = services.get_instance_manager(sims4.resources.Types.STATISTIC)
         for stat_id, stat_value in self.zone_architectural_stat_effects.items():
             stat = statistic_manager.get(stat_id)
             if stat is None:
@@ -1093,26 +1111,26 @@ class Zone:
 
     def update_household_objects_ownership--- This code section failed: ---
 
- L.1780         0  LOAD_FAST                'self'
+ L.1806         0  LOAD_FAST                'self'
                 2  LOAD_METHOD              _get_zone_proto
                 4  CALL_METHOD_0         0  '0 positional arguments'
                 6  STORE_FAST               'zone_data_proto'
 
- L.1781         8  LOAD_FAST                'zone_data_proto'
+ L.1807         8  LOAD_FAST                'zone_data_proto'
                10  LOAD_CONST               None
                12  COMPARE_OP               is
                14  POP_JUMP_IF_FALSE    20  'to 20'
 
- L.1782        16  LOAD_CONST               None
+ L.1808        16  LOAD_CONST               None
                18  RETURN_VALUE     
              20_0  COME_FROM            14  '14'
 
- L.1784        20  LOAD_FAST                'self'
+ L.1810        20  LOAD_FAST                'self'
                22  LOAD_ATTR                venue_service
                24  LOAD_ATTR                active_venue
                26  STORE_FAST               'venue_instance'
 
- L.1785        28  LOAD_FAST                'venue_instance'
+ L.1811        28  LOAD_FAST                'venue_instance'
                30  LOAD_CONST               None
                32  COMPARE_OP               is
                34  POP_JUMP_IF_TRUE     42  'to 42'
@@ -1121,22 +1139,22 @@ class Zone:
                40  POP_JUMP_IF_TRUE     46  'to 46'
              42_0  COME_FROM            34  '34'
 
- L.1792        42  LOAD_CONST               None
+ L.1818        42  LOAD_CONST               None
                44  RETURN_VALUE     
              46_0  COME_FROM            40  '40'
 
- L.1794        46  LOAD_FAST                'zone_data_proto'
+ L.1820        46  LOAD_FAST                'zone_data_proto'
                48  LOAD_ATTR                gameplay_zone_data
                50  STORE_FAST               'gameplay_zone_data'
 
- L.1795        52  LOAD_FAST                'self'
+ L.1821        52  LOAD_FAST                'self'
                54  LOAD_ATTR                lot
                56  LOAD_ATTR                owner_household_id
                58  LOAD_CONST               0
                60  COMPARE_OP               ==
                62  POP_JUMP_IF_FALSE   122  'to 122'
 
- L.1796        64  LOAD_FAST                'self'
+ L.1822        64  LOAD_FAST                'self'
                66  LOAD_ATTR                travel_group_manager
                68  LOAD_METHOD              get_travel_group_by_zone_id
                70  LOAD_FAST                'self'
@@ -1144,19 +1162,19 @@ class Zone:
                74  CALL_METHOD_1         1  '1 positional argument'
                76  STORE_FAST               'travel_group'
 
- L.1798        78  LOAD_FAST                'travel_group'
+ L.1824        78  LOAD_FAST                'travel_group'
                80  LOAD_CONST               None
                82  COMPARE_OP               is
                84  POP_JUMP_IF_TRUE    110  'to 110'
 
- L.1799        86  LOAD_GLOBAL              protocol_buffer_utils
+ L.1825        86  LOAD_GLOBAL              protocol_buffer_utils
                88  LOAD_METHOD              has_field
                90  LOAD_FAST                'gameplay_zone_data'
                92  LOAD_STR                 'active_travel_group_id_on_save'
                94  CALL_METHOD_2         2  '2 positional arguments'
                96  POP_JUMP_IF_FALSE   110  'to 110'
 
- L.1800        98  LOAD_FAST                'gameplay_zone_data'
+ L.1826        98  LOAD_FAST                'gameplay_zone_data'
               100  LOAD_ATTR                active_travel_group_id_on_save
               102  LOAD_FAST                'travel_group'
               104  LOAD_ATTR                id
@@ -1165,7 +1183,7 @@ class Zone:
             110_0  COME_FROM            96  '96'
             110_1  COME_FROM            84  '84'
 
- L.1803       110  LOAD_FAST                'self'
+ L.1829       110  LOAD_FAST                'self'
               112  LOAD_METHOD              _set_zone_objects_household_owner_id
               114  LOAD_CONST               None
               116  CALL_METHOD_1         1  '1 positional argument'
@@ -1173,7 +1191,7 @@ class Zone:
               120  JUMP_FORWARD        178  'to 178'
             122_0  COME_FROM            62  '62'
 
- L.1805       122  LOAD_FAST                'self'
+ L.1831       122  LOAD_FAST                'self'
               124  LOAD_ATTR                lot
               126  LOAD_ATTR                owner_household_id
               128  LOAD_GLOBAL              services
@@ -1182,14 +1200,14 @@ class Zone:
               134  COMPARE_OP               ==
               136  POP_JUMP_IF_FALSE   178  'to 178'
 
- L.1810       138  LOAD_GLOBAL              protocol_buffer_utils
+ L.1836       138  LOAD_GLOBAL              protocol_buffer_utils
               140  LOAD_METHOD              has_field
               142  LOAD_FAST                'gameplay_zone_data'
               144  LOAD_STR                 'active_household_id_on_save'
               146  CALL_METHOD_2         2  '2 positional arguments'
               148  POP_JUMP_IF_FALSE   164  'to 164'
 
- L.1811       150  LOAD_FAST                'gameplay_zone_data'
+ L.1837       150  LOAD_FAST                'gameplay_zone_data'
               152  LOAD_ATTR                lot_owner_household_id_on_save
               154  LOAD_GLOBAL              services
               156  LOAD_METHOD              active_household_id
@@ -1198,7 +1216,7 @@ class Zone:
               162  POP_JUMP_IF_FALSE   178  'to 178'
             164_0  COME_FROM           148  '148'
 
- L.1812       164  LOAD_FAST                'self'
+ L.1838       164  LOAD_FAST                'self'
               166  LOAD_METHOD              _set_zone_objects_household_owner_id
               168  LOAD_GLOBAL              services
               170  LOAD_METHOD              active_household_id
@@ -1239,27 +1257,27 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
 
     def should_restore_sis--- This code section failed: ---
 
- L.1852         0  LOAD_FAST                'self'
+ L.1878         0  LOAD_FAST                'self'
                 2  LOAD_METHOD              time_has_passed_in_world_since_zone_save
                 4  CALL_METHOD_0         0  '0 positional arguments'
                 6  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1853         8  LOAD_FAST                'self'
+ L.1879         8  LOAD_FAST                'self'
                10  LOAD_METHOD              venue_changed_between_save_and_load
                12  CALL_METHOD_0         0  '0 positional arguments'
                14  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1854        16  LOAD_FAST                'self'
+ L.1880        16  LOAD_FAST                'self'
                18  LOAD_METHOD              lot_owner_household_changed_between_save_and_load
                20  CALL_METHOD_0         0  '0 positional arguments'
                22  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1855        24  LOAD_FAST                'self'
+ L.1881        24  LOAD_FAST                'self'
                26  LOAD_METHOD              active_household_changed_between_save_and_load
                28  CALL_METHOD_0         0  '0 positional arguments'
                30  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1856        32  LOAD_FAST                'self'
+ L.1882        32  LOAD_FAST                'self'
                34  LOAD_ATTR                is_first_visit_to_zone
                36  POP_JUMP_IF_FALSE    42  'to 42'
              38_0  COME_FROM            30  '30'
@@ -1267,11 +1285,11 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
              38_2  COME_FROM            14  '14'
              38_3  COME_FROM             6  '6'
 
- L.1857        38  LOAD_CONST               False
+ L.1883        38  LOAD_CONST               False
                40  RETURN_VALUE     
              42_0  COME_FROM            36  '36'
 
- L.1858        42  LOAD_CONST               True
+ L.1884        42  LOAD_CONST               True
                44  RETURN_VALUE     
                -1  RETURN_LAST      
 
@@ -1281,6 +1299,31 @@ Parse error at or near `RETURN_VALUE' instruction at offset 44
         if self.lot is None:
             return
         return services.household_manager().get(self.lot.owner_household_id)
+
+    def have_sims_spawned(self):
+        return self._zone_state >= zone_types.ZoneState.ALL_SIMS_SPAWNED
+
+    def add_item_to_add_to_inventory(self, household_id, household_object):
+        household_objects = self._items_to_move_to_inventory.get(household_id)
+        if household_objects is None:
+            household_objects = set()
+            self._items_to_move_to_inventory[household_id] = household_objects
+        household_objects.add(household_object.id)
+
+    def _move_items_to_inventory(self):
+        household_manager = services.household_manager()
+        object_manager = services.object_manager()
+        for household_id, household_objects in self._items_to_move_to_inventory.items():
+            household = household_manager.get(household_id)
+            for object_id in household_objects:
+                household_object = object_manager.get(object_id)
+                if household_object:
+                    if household:
+                        household.move_object_to_sim_or_household_inventory(household_object, failure_flags=(HouseholdInventoryFlags.DESTROY_OBJECT))
+                    else:
+                        household_object.destroy(cause='Owning household of object destroyed while waiting to return object to household')
+
+        self._items_to_move_to_inventory.clear()
 
     def time_of_last_save(self):
         return self._time_of_last_save

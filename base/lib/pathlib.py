@@ -1071,7 +1071,7 @@ class Path(PurePath):
         if self._closed:
             self._raise_closed()
         for name in self._accessor.listdir(self):
-            if name in frozenset({'..', '.'}):
+            if name in frozenset({'.', '..'}):
                 continue
             yield self._make_child_relpath(name)
             if self._closed:

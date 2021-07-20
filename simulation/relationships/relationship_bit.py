@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\relationships\relationship_bit.py
-# Compiled at: 2020-08-06 23:18:51
-# Size of source mod 2**32: 25726 bytes
+# Compiled at: 2020-11-20 01:58:37
+# Size of source mod 2**32: 25753 bytes
 from event_testing.resolver import DoubleSimResolver, SingleSimResolver
 from objects.mixins import SuperAffordanceProviderMixin, MixerProviderMixin
 from relationships.relationship_enums import RelationshipBitCullingPrevention, RelationshipDirection
@@ -66,7 +66,7 @@ class RelationshipBit(HasTunableReference, SuperAffordanceProviderMixin, MixerPr
        tunable_type=RelationshipBitType,
        default=RelationshipBitType.NoGroup), 
      'triggered_track':TunableReference(description='\n            If set, the track that is triggered when this bit is set\n            ',
-       manager=services.statistic_manager(),
+       manager=services.get_instance_manager(sims4.resources.Types.STATISTIC),
        allow_none=True,
        class_restrictions='RelationshipTrack'), 
      'required_bits':TunableList(description='\n            List of all bits that are required to be on in order to allow this\n            bit to turn on.\n            ',
@@ -75,7 +75,7 @@ class RelationshipBit(HasTunableReference, SuperAffordanceProviderMixin, MixerPr
        default=0), 
      'remove_on_threshold':OptionalTunable(tunable=TunableTuple(description='\n                If enabled, this bit will be removed when the referenced track\n                reaches the appropriate threshold.\n                ',
        track=TunableReference(description='\n                    The track to be tested.\n                    ',
-       manager=(services.statistic_manager()),
+       manager=(services.get_instance_manager(sims4.resources.Types.STATISTIC)),
        class_restrictions='RelationshipTrack'),
        threshold=TunableThreshold(description='\n                    The threshold at which to remove this bit.\n                    '))), 
      'historical_bits':OptionalTunable(tunable=TunableList(tunable=TunableTuple(age_trans_from=TunableEnumEntry(description='\n                        Age we are transitioning out of.\n                        ',

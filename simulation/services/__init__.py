@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\services\__init__.py
-# Compiled at: 2021-04-02 23:01:34
-# Size of source mod 2**32: 34120 bytes
+# Compiled at: 2021-05-29 01:09:20
+# Size of source mod 2**32: 34570 bytes
 import argparse, functools, gc, time
 from services.tuning_managers import InstanceTuningManagers
 from sims4.resources import INSTANCE_TUNING_DEFINITIONS
@@ -660,7 +660,7 @@ def get_club_service():
 
 
 def get_culling_service():
-    return current_zone().culling_service
+    return game_services.service_manager.culling_service
 
 
 def get_gardening_service():
@@ -703,6 +703,10 @@ def dust_service():
 
 def get_sickness_service():
     return game_services.service_manager.sickness_service
+
+
+def animal_service():
+    return getattr(game_services.service_manager, 'animal_service', None)
 
 
 def get_curfew_service():
@@ -788,6 +792,14 @@ def get_ab_test_service():
 
 def get_zone_reservation_service():
     return game_services.service_manager.zone_reservation_service
+
+
+def purchase_picker_service():
+    return game_services.service_manager.purchase_picker_service
+
+
+def global_flag_service():
+    return game_services.service_manager.global_flag_service
 
 
 def c_api_gsi_dump():

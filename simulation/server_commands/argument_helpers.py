@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\server_commands\argument_helpers.py
-# Compiled at: 2020-05-28 02:01:50
-# Size of source mod 2**32: 19611 bytes
+# Compiled at: 2020-10-19 19:08:30
+# Size of source mod 2**32: 20310 bytes
 from collections import namedtuple
 import operator, re
 from sims4.commands import CustomParam
@@ -339,6 +339,8 @@ class RequiredTargetParam:
 class OptionalTargetParam:
     TARGET_ID_ACTIVE_LOT = -1
     TARGET_ID_CURRENT_REGION = -2
+    TARGET_ID_ACTIVE_STREET = -3
+    TARGET_ID_ACTIVE_VENUE = -4
 
     def __init__(self, target_id: int=None):
         if not target_id:
@@ -363,6 +365,17 @@ class OptionalTargetParam:
             if current_region_inst is None:
                 sims4.commands.output('Could not find current region instance, is this region persistable?', _connection)
             return current_region_inst
+        if self._target_id == self.TARGET_ID_ACTIVE_STREET:
+            street = services.current_zone().street
+            street_service = services.street_service()
+            if street_service is None:
+                return
+            return street_service.get_provider(street)
+        if self._target_id == self.TARGET_ID_ACTIVE_VENUE:
+            venue_service = services.venue_service()
+            if venue_service.source_venue is None or venue_service.source_venue.civic_policy_provider is None:
+                return
+            return venue_service.source_venue.civic_policy_provider
         return services.object_manager().get(self._target_id)
 
 

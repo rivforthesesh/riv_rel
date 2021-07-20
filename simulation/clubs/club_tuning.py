@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\clubs\club_tuning.py
-# Compiled at: 2020-04-12 10:32:10
-# Size of source mod 2**32: 80370 bytes
+# Compiled at: 2021-05-06 19:07:25
+# Size of source mod 2**32: 80364 bytes
 import weakref
 from broadcasters.broadcaster import Broadcaster
 from broadcasters.broadcaster_effect import BroadcasterEffectLoot
@@ -43,8 +43,8 @@ from tag import Tag
 from traits.traits import Trait
 from ui.ui_dialog import UiDialogOkCancel, UiDialogOk
 from ui.ui_dialog_notification import TunableUiDialogNotificationSnippet
-from world.lot import get_lot_id_from_instance_id
 import bucks, enum, event_testing, services, sims4.log, snippets
+from world import get_lot_id_from_instance_id
 logger = sims4.log.Logger('Clubs', default_owner='tastle')
 CRITERIA_CLUB_MEMBERS = 'club_members'
 CRITERIA_NON_MEMBERS = 'non_members'
