@@ -1832,30 +1832,7 @@ def get_str_list(sim_x, sim_y, x_ancestors, y_ancestors, include_step_rels=globa
 # outputs a string with the prefix for relation multiplicity and a space after if it is a word
 # show_single = 0 if you want 1 -> '', instead of 1 -> 'single'
 def num_to_tuple(n: int, show_single: int):
-    # https://cosmosdawn.net/forum/threads/if-1-single-2-double-n-tuple-n-tuples.2735/
-    # n : tuple with n
-    leq_ten_tuple = {1: 'single', 2: 'double', 3: 'triple',
-                     4: 'quadruple', 5: 'quintuple', 6: 'sextuple',
-                     7: 'septuple', 8: 'octuple', 9: 'nonuple'}
-    # n : tuple with 10*n
-    tens_tuple = {1: 'decuple', 2: 'viguple', 3: 'triguple', 4: 'quadraguple', 5: 'quinquaguple',
-                  6: 'sexaguple', 7: 'septuaguple', 8: 'octoguple', 9: 'nonaguple', 10: 'centuple'}
-    # n : prefix to tuple > 10
-    prefix_tuple = {0: '', 1: 'un', 2: 'duo', 3: 'tre', 4: 'quattuor',
-                    5: 'quin', 6: 'sex', 7: 'septen', 8: 'octo', 9: 'novem'}
-    if n < 1:
-        return 'not '
-    elif n == 1 and show_single == 0:  # doesn't show single when redundant
-        return ''
-    elif n < 10:
-        return leq_ten_tuple[n] + ' '
-    elif n <= 100:
-        ones_bit = n % 10
-        tens_bit = int((n - (n % 10)) / 10)
-        # i.e. if n = ab (these are digits), ones_bit = b, tens_bit = a
-        return prefix_tuple[ones_bit] + tens_tuple[tens_bit] + ' '
-    else:
-        return '{n}-tuple '.format(n=n)
+    return rrs.tup(n, show_single)
 
 
 # input: lists of bio_rels and inlaw_rels and step_rels as strings with repeats for multiplicity

@@ -38,6 +38,8 @@ i1 = indirect_rels_1 = {
 }
 # prefixes used to continue patterns - put the rules for it in comments
 i_great = 'great'   # moves one generation away from self, e.g. great-grandniece, great(x2)-grandniece...
+i1_anc = min(i1.keys())   # change to a fixed number if the pattern would be applied to a non-extreme
+i1_des = max(i1.keys())   # change to a fixed number if the pattern would be applied to a non-extreme
 
 # = cousins =  TODO: modify for Spanish-like version
 cousin_up = 'cousin'    # any cousin relation that is a higher generation than you
@@ -51,12 +53,24 @@ h = horizontal_modifier = {
     2: 'second',        # closest shared relatives are great-grandparents
     3: 'third',         # closest shared relatives are great-great-grandparents
 }
-# continued pattern
-th = ['st', 'nd', 'rd', 'th']
-#       keep commas between strings, and please let me know when each of these is used
-#           first cousin, second cousin, third cousin
-#           4th, 5th, ..., 11th, ..., 21st, 22nd, 23rd cousin...
-nth_cousin = '{p(rrs.nth)} {p(rrs.cousin)}'   # use for word order
+
+
+#   continued pattern for nth
+#       please let me know when each suffix is used
+#           e.g. 4th, 5th, ..., 11th, 12th, 13th, ..., 21st, 22nd, 23rd cousin...
+#       i'll rewrite the function below as needed
+def th(n):
+    if n % 10 == 1 and n % 100 != 11:
+        return 'st'  # ends in 1 but not in 11
+    elif n % 10 == 2 and n % 100 != 12:
+        return 'nd'  # ends in 2 but not in 12
+    elif n % 10 == 3 and n % 100 != 13:
+        return 'rd'  # ends in 3 but not in 13
+    else:
+        return 'th'
+
+
+nth_cousin = '{nth} {cousin}'   # use for word order
 
 # vertical distance on family tree
 # add numbers as you need them
@@ -71,25 +85,28 @@ v = vertical_modifier = {
 m_times = '{num} times removed'
 #       first cousin once removed, first cousin twice removed, first cousin 3 times removed, ...
 
-nth_cousin_m_times_removed = '{p(rrs.nth)} {p(rrs.cousin)} {m_times_removed}'  # use for word order
+nth_cousin_m_times_removed = '{nth_cousin} {m_times_removed}'  # use for word order
 
 # == inlaw ==
 spouse = ('husband', 'wife')
 in_law = 'in law'
-rel_in_law = '{rel} {p(rrs.in_law)}'
+rel_in_law = '{rel} {in_law}'
 #       e.g. brother in law, grandmother in law
 
 # == step (this bit is really low priority since step rels very rarely show up) ==
 step = 'step'
-step_rel = '{p(rrs.step)} {rel}'
+step_rel = '{step} {rel}'
 #       e.g. step sister, step uncle
 
 # ==== tuples (high priority, but you can set max_n to a low number to have most show up as "n-tuple") ====
 #   used to show a relation is repeated
 #   I've done this in English up to 100, and above that it just says something like "101-tuple"
+#       used https://cosmosdawn.net/forum/threads/if-1-single-2-double-n-tuple-n-tuples.2735/
 #       when you go above 10, you add a prefix for the ones bit, e.g. "12 times" is duo(2) + decuple(10)
 #   you can set a maximum below if you don't want to bother beyond a certain value; don't go above 100
 max_n = 100  # for any number n that is greater than this, it will just display "n-tuple"
+
+# if this varies by gender I need to know!!!
 
 #   going up in ones, i.e. we want n: '<word for n-tuple>'
 #       e.g. "double first cousin" = first cousin two different ways
@@ -111,5 +128,5 @@ tens_tuple = {1: 'decuple', 2: 'viguple', 3: 'triguple', 4: 'quadraguple', 5: 'q
 prefix_tuple = {0: '', 1: 'un', 2: 'duo', 3: 'tre', 4: 'quattuor',
                 5: 'quin', 6: 'sex', 7: 'septen', 8: 'octo', 9: 'novem'}
 
-# if the number is too high (above max_n), just give up
+# if the number is too high (above max_n), just use the number
 n_tuple = '{n}-tuple '  # space at the end
