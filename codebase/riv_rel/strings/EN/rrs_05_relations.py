@@ -60,14 +60,19 @@ h = horizontal_modifier = {
 #           e.g. 4th, 5th, ..., 11th, 12th, 13th, ..., 21st, 22nd, 23rd cousin...
 #       i'll rewrite the function below as needed
 def th(n):
+    # words
+    if n in h.keys():
+        return h[n]  # has a word for it above
+
+    # numbers
     if n % 10 == 1 and n % 100 != 11:
-        return 'st'  # ends in 1 but not in 11
+        return f'{n}st'  # ends in 1 but not in 11
     elif n % 10 == 2 and n % 100 != 12:
-        return 'nd'  # ends in 2 but not in 12
+        return f'{n}nd'  # ends in 2 but not in 12
     elif n % 10 == 3 and n % 100 != 13:
-        return 'rd'  # ends in 3 but not in 13
+        return f'{n}rd'  # ends in 3 but not in 13
     else:
-        return 'th'
+        return f'{n}th'
 
 
 nth_cousin = '{nth} {cousin}'   # use for word order
