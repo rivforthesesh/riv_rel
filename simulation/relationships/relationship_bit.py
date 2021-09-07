@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\relationships\relationship_bit.py
-# Compiled at: 2020-11-20 01:58:37
-# Size of source mod 2**32: 25753 bytes
+# Compiled at: 2021-07-22 02:39:26
+# Size of source mod 2**32: 25801 bytes
 from event_testing.resolver import DoubleSimResolver, SingleSimResolver
 from objects.mixins import SuperAffordanceProviderMixin, MixerProviderMixin
 from relationships.relationship_enums import RelationshipBitCullingPrevention, RelationshipDirection
@@ -28,7 +28,7 @@ class RelationshipBitCollectionUid(DynamicEnumLocked, display_sorted=True):
     All = 1
 
 
-class RelationshipBit(HasTunableReference, SuperAffordanceProviderMixin, MixerProviderMixin, metaclass=HashedTunedInstanceMetaclass, manager=services.relationship_bit_manager()):
+class RelationshipBit(HasTunableReference, SuperAffordanceProviderMixin, MixerProviderMixin, metaclass=HashedTunedInstanceMetaclass, manager=services.get_instance_manager(sims4.resources.Types.RELATIONSHIP_BIT)):
     INSTANCE_TUNABLES = {'display_name':TunableLocalizedStringFactory(description='\n            Localized name of this bit\n            ',
        allow_none=True,
        export_modes=ExportModes.All), 
@@ -70,7 +70,7 @@ class RelationshipBit(HasTunableReference, SuperAffordanceProviderMixin, MixerPr
        allow_none=True,
        class_restrictions='RelationshipTrack'), 
      'required_bits':TunableList(description='\n            List of all bits that are required to be on in order to allow this\n            bit to turn on.\n            ',
-       tunable=TunableReference(services.relationship_bit_manager())), 
+       tunable=TunableReference(manager=(services.get_instance_manager(sims4.resources.Types.RELATIONSHIP_BIT)))), 
      'timeout':TunableSimMinute(description='\n            The length of time this bit will last in sim minutes.  0 means the\n            bit will never timeout.\n            ',
        default=0), 
      'remove_on_threshold':OptionalTunable(tunable=TunableTuple(description='\n                If enabled, this bit will be removed when the referenced track\n                reaches the appropriate threshold.\n                ',
@@ -275,7 +275,7 @@ class SocialContextBit(RelationshipBit):
         return super().on_remove_from_relationship(sim, target_sim_info)
 
 
-class RelationshipBitCollection(metaclass=HashedTunedInstanceMetaclass, manager=services.relationship_bit_manager()):
+class RelationshipBitCollection(metaclass=HashedTunedInstanceMetaclass, manager=services.get_instance_manager(sims4.resources.Types.RELATIONSHIP_BIT)):
     INSTANCE_TUNABLES = {'name':TunableLocalizedString(description='\n            Name to be displayed for the collection.\n            ',
        export_modes=ExportModes.All), 
      'icon':TunableResourceKey(description='\n            Icon to be displayed for the collection.\n            ',

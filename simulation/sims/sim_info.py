@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\sims\sim_info.py
-# Compiled at: 2021-05-18 22:07:56
-# Size of source mod 2**32: 205427 bytes
+# Compiled at: 2021-07-08 12:06:33
+# Size of source mod 2**32: 205453 bytes
 from _sims4_collections import frozendict
 import contextlib
 from collections import OrderedDict
@@ -205,7 +205,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
     APPLY_DEFAULT_AWAY_ACTION_INTERACTION = ApplyDefaultAwayActionInteraction.TunableReference(description='\n        Interaction that will be used to apply the default away action onto the\n        sim info.\n        ')
     SIM_SKEWER_AFFORDANCES = TunableList(description="\n        A list of affordances that will test and be available when the player\n        clicks on a Sim's interaction button in the Sim skewer.\n        ",
       tunable=TunableReference(description="\n            An affordance shown when the player clicks on a sim's\n            interaction button in the Sim skewer.\n            ",
-      manager=(services.affordance_manager())))
+      manager=(services.get_instance_manager(sims4.resources.Types.INTERACTION))))
     MAX_WHIM_BUCKS = 999999999
     SIM_INFO_TRACKERS = OrderedDict((
      (
@@ -2076,87 +2076,87 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
 
     def _load_sim_info--- This code section failed: ---
 
- L.3238         0  LOAD_FAST                'sim_proto'
+ L.3239         0  LOAD_FAST                'sim_proto'
                 2  LOAD_ATTR                first_name
                 4  LOAD_FAST                'self'
                 6  LOAD_ATTR                _base
                 8  STORE_ATTR               first_name
 
- L.3239        10  LOAD_FAST                'sim_proto'
+ L.3240        10  LOAD_FAST                'sim_proto'
                12  LOAD_ATTR                last_name
                14  LOAD_FAST                'self'
                16  LOAD_ATTR                _base
                18  STORE_ATTR               last_name
 
- L.3240        20  LOAD_FAST                'sim_proto'
+ L.3241        20  LOAD_FAST                'sim_proto'
                22  LOAD_ATTR                breed_name
                24  LOAD_FAST                'self'
                26  LOAD_ATTR                _base
                28  STORE_ATTR               breed_name
 
- L.3241        30  LOAD_FAST                'sim_proto'
+ L.3242        30  LOAD_FAST                'sim_proto'
                32  LOAD_ATTR                first_name_key
                34  LOAD_FAST                'self'
                36  LOAD_ATTR                _base
                38  STORE_ATTR               first_name_key
 
- L.3242        40  LOAD_FAST                'sim_proto'
+ L.3243        40  LOAD_FAST                'sim_proto'
                42  LOAD_ATTR                last_name_key
                44  LOAD_FAST                'self'
                46  LOAD_ATTR                _base
                48  STORE_ATTR               last_name_key
 
- L.3243        50  LOAD_FAST                'sim_proto'
+ L.3244        50  LOAD_FAST                'sim_proto'
                52  LOAD_ATTR                full_name_key
                54  LOAD_FAST                'self'
                56  LOAD_ATTR                _base
                58  STORE_ATTR               full_name_key
 
- L.3244        60  LOAD_FAST                'sim_proto'
+ L.3245        60  LOAD_FAST                'sim_proto'
                62  LOAD_ATTR                breed_name_key
                64  LOAD_FAST                'self'
                66  LOAD_ATTR                _base
                68  STORE_ATTR               breed_name_key
 
- L.3245        70  LOAD_FAST                'sim_proto'
+ L.3246        70  LOAD_FAST                'sim_proto'
                72  LOAD_ATTR                zone_id
                74  LOAD_FAST                'self'
                76  STORE_ATTR               _zone_id
 
- L.3246        78  LOAD_FAST                'sim_proto'
+ L.3247        78  LOAD_FAST                'sim_proto'
                80  LOAD_ATTR                zone_name
                82  LOAD_FAST                'self'
                84  STORE_ATTR               zone_name
 
- L.3247        86  LOAD_FAST                'sim_proto'
+ L.3248        86  LOAD_FAST                'sim_proto'
                88  LOAD_ATTR                world_id
                90  LOAD_FAST                'self'
                92  STORE_ATTR               _world_id
 
- L.3248        94  LOAD_FAST                'sim_proto'
+ L.3249        94  LOAD_FAST                'sim_proto'
                96  LOAD_ATTR                household_id
                98  LOAD_FAST                'self'
               100  STORE_ATTR               _household_id
 
- L.3249       102  LOAD_FAST                'sim_proto'
+ L.3250       102  LOAD_FAST                'sim_proto'
               104  LOAD_ATTR                gameplay_data
               106  LOAD_ATTR                serialization_option
               108  LOAD_FAST                'self'
               110  STORE_ATTR               _serialization_option
 
- L.3250       112  LOAD_FAST                'sim_proto'
+ L.3251       112  LOAD_FAST                'sim_proto'
               114  LOAD_ATTR                skin_tone
               116  LOAD_FAST                'self'
               118  LOAD_ATTR                _base
               120  STORE_ATTR               skin_tone
 
- L.3251       122  LOAD_FAST                'sim_proto'
+ L.3252       122  LOAD_FAST                'sim_proto'
               124  LOAD_ATTR                skin_tone_val_shift
               126  LOAD_FAST                'self'
               128  LOAD_ATTR                _base
               130  STORE_ATTR               skin_tone_val_shift
 
- L.3252       132  LOAD_FAST                'sim_proto'
+ L.3253       132  LOAD_FAST                'sim_proto'
               134  LOAD_ATTR                pelt_layers
               136  LOAD_METHOD              SerializeToString
               138  CALL_METHOD_0         0  '0 positional arguments'
@@ -2164,53 +2164,53 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               142  LOAD_ATTR                _base
               144  STORE_ATTR               pelt_layers
 
- L.3253       146  LOAD_FAST                'sim_proto'
+ L.3254       146  LOAD_FAST                'sim_proto'
               148  LOAD_ATTR                custom_texture
               150  LOAD_FAST                'self'
               152  LOAD_ATTR                _base
               154  STORE_ATTR               custom_texture
 
- L.3254       156  LOAD_FAST                'sim_proto'
+ L.3255       156  LOAD_FAST                'sim_proto'
               158  LOAD_ATTR                voice_pitch
               160  LOAD_FAST                'self'
               162  LOAD_ATTR                _base
               164  STORE_ATTR               voice_pitch
 
- L.3255       166  LOAD_FAST                'sim_proto'
+ L.3256       166  LOAD_FAST                'sim_proto'
               168  LOAD_ATTR                voice_actor
               170  LOAD_FAST                'self'
               172  LOAD_ATTR                _base
               174  STORE_ATTR               voice_actor
 
- L.3256       176  LOAD_FAST                'sim_proto'
+ L.3257       176  LOAD_FAST                'sim_proto'
               178  LOAD_ATTR                voice_effect
               180  LOAD_FAST                'self'
               182  LOAD_ATTR                _base
               184  STORE_ATTR               voice_effect
 
- L.3257       186  LOAD_FAST                'sim_proto'
+ L.3258       186  LOAD_FAST                'sim_proto'
               188  LOAD_ATTR                physique
               190  LOAD_FAST                'self'
               192  LOAD_ATTR                _base
               194  STORE_ATTR               physique
 
- L.3258       196  LOAD_FAST                'sim_proto'
+ L.3259       196  LOAD_FAST                'sim_proto'
               198  LOAD_ATTR                facial_attr
               200  LOAD_FAST                'self'
               202  LOAD_ATTR                _base
               204  STORE_ATTR               facial_attributes
 
- L.3259       206  LOAD_FAST                'sim_proto'
+ L.3260       206  LOAD_FAST                'sim_proto'
               208  LOAD_ATTR                generation
               210  LOAD_FAST                'self'
               212  STORE_ATTR               _generation
 
- L.3260       214  LOAD_FAST                'sim_proto'
+ L.3261       214  LOAD_FAST                'sim_proto'
               216  LOAD_ATTR                fix_relationship
               218  LOAD_FAST                'self'
               220  STORE_ATTR               _fix_relationships
 
- L.3264       222  LOAD_FAST                'self'
+ L.3265       222  LOAD_FAST                'self'
               224  LOAD_ATTR                _sim_creation_path
               226  LOAD_GLOBAL              serialization
               228  LOAD_ATTR                SimData
@@ -2219,21 +2219,21 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               234  LOAD_FAST                'self'
               236  STORE_ATTR               do_first_sim_info_load_fixups
 
- L.3266       238  LOAD_FAST                'self'
+ L.3267       238  LOAD_FAST                'self'
               240  LOAD_METHOD              _get_fit_fat
               242  CALL_METHOD_0         0  '0 positional arguments'
               244  POP_TOP          
 
- L.3268       246  LOAD_FAST                'sim_proto'
+ L.3269       246  LOAD_FAST                'sim_proto'
               248  LOAD_ATTR                attributes
               250  STORE_FAST               'sim_attribute_data'
 
- L.3269       252  LOAD_FAST                'sim_attribute_data'
+ L.3270       252  LOAD_FAST                'sim_attribute_data'
               254  LOAD_CONST               None
               256  COMPARE_OP               is-not
           258_260  POP_JUMP_IF_FALSE   296  'to 296'
 
- L.3274       262  LOAD_FAST                'self'
+ L.3275       262  LOAD_FAST                'self'
               264  LOAD_ATTR                set_trait_ids_on_base
               266  LOAD_GLOBAL              list
               268  LOAD_GLOBAL              set
@@ -2252,26 +2252,26 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               294  POP_TOP          
             296_0  COME_FROM           258  '258'
 
- L.3279       296  LOAD_FAST                'self'
+ L.3280       296  LOAD_FAST                'self'
               298  LOAD_METHOD              load_outfits
               300  LOAD_FAST                'sim_proto'
               302  LOAD_ATTR                outfits
               304  CALL_METHOD_1         1  '1 positional argument'
               306  POP_TOP          
 
- L.3281       308  LOAD_GLOBAL              SimInfoCreationSource
+ L.3282       308  LOAD_GLOBAL              SimInfoCreationSource
               310  LOAD_METHOD              load_creation_source
               312  LOAD_FAST                'sim_proto'
               314  CALL_METHOD_1         1  '1 positional argument'
               316  LOAD_FAST                'self'
               318  STORE_ATTR               creation_source
 
- L.3282       320  LOAD_FAST                'sim_proto'
+ L.3283       320  LOAD_FAST                'sim_proto'
               322  LOAD_ATTR                nucleus_id
               324  LOAD_FAST                'self'
               326  STORE_ATTR               _nucleus_id
 
- L.3283       328  LOAD_FAST                'sim_proto'
+ L.3284       328  LOAD_FAST                'sim_proto'
               330  LOAD_ATTR                genetic_data
               332  LOAD_METHOD              SerializeToString
               334  CALL_METHOD_0         0  '0 positional arguments'
@@ -2279,29 +2279,29 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               338  LOAD_ATTR                _base
               340  STORE_ATTR               genetic_data
 
- L.3284       342  LOAD_FAST                'sim_proto'
+ L.3285       342  LOAD_FAST                'sim_proto'
               344  LOAD_ATTR                flags
               346  LOAD_FAST                'self'
               348  LOAD_ATTR                _base
               350  STORE_ATTR               flags
 
- L.3285       352  LOAD_FAST                'sim_proto'
+ L.3286       352  LOAD_FAST                'sim_proto'
               354  LOAD_ATTR                gameplay_data
               356  LOAD_ATTR                premade_sim_template_id
               358  LOAD_FAST                'self'
               360  STORE_ATTR               premade_sim_template_id
 
- L.3286       362  LOAD_FAST                'sim_proto'
+ L.3287       362  LOAD_FAST                'sim_proto'
               364  LOAD_ATTR                revision
               366  LOAD_FAST                'self'
               368  STORE_ATTR               _revision
 
- L.3288       370  LOAD_FAST                'sim_attribute_data'
+ L.3289       370  LOAD_FAST                'sim_attribute_data'
               372  LOAD_CONST               None
               374  COMPARE_OP               is-not
           376_378  POP_JUMP_IF_FALSE   462  'to 462'
 
- L.3289       380  LOAD_FAST                'self'
+ L.3290       380  LOAD_FAST                'self'
               382  LOAD_ATTR                _relationship_tracker
               384  LOAD_METHOD              load
               386  LOAD_FAST                'sim_attribute_data'
@@ -2310,7 +2310,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               392  CALL_METHOD_1         1  '1 positional argument'
               394  POP_TOP          
 
- L.3290       396  LOAD_FAST                'self'
+ L.3291       396  LOAD_FAST                'self'
               398  LOAD_ATTR                _genealogy_tracker
               400  LOAD_METHOD              load_genealogy
               402  LOAD_FAST                'sim_attribute_data'
@@ -2318,7 +2318,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               406  CALL_METHOD_1         1  '1 positional argument'
               408  POP_TOP          
 
- L.3291       410  LOAD_FAST                'self'
+ L.3292       410  LOAD_FAST                'self'
               412  LOAD_ATTR                _death_tracker
               414  LOAD_METHOD              load
               416  LOAD_FAST                'sim_attribute_data'
@@ -2326,7 +2326,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               420  CALL_METHOD_1         1  '1 positional argument'
               422  POP_TOP          
 
- L.3292       424  LOAD_FAST                'self'
+ L.3293       424  LOAD_FAST                'self'
               426  LOAD_ATTR                _occult_tracker
               428  LOAD_METHOD              load
               430  LOAD_FAST                'sim_attribute_data'
@@ -2334,13 +2334,13 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               434  CALL_METHOD_1         1  '1 positional argument'
               436  POP_TOP          
 
- L.3293       438  LOAD_FAST                'sim_proto'
+ L.3294       438  LOAD_FAST                'sim_proto'
               440  LOAD_ATTR                significant_other
               442  LOAD_CONST               0
               444  COMPARE_OP               !=
           446_448  POP_JUMP_IF_FALSE   462  'to 462'
 
- L.3294       450  LOAD_FAST                'self'
+ L.3295       450  LOAD_FAST                'self'
               452  LOAD_METHOD              update_spouse_sim_id
               454  LOAD_FAST                'sim_proto'
               456  LOAD_ATTR                significant_other
@@ -2349,20 +2349,20 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
             462_0  COME_FROM           446  '446'
             462_1  COME_FROM           376  '376'
 
- L.3300       462  LOAD_GLOBAL              Ghost
+ L.3301       462  LOAD_GLOBAL              Ghost
               464  LOAD_METHOD              make_ghost_if_needed
               466  LOAD_FAST                'self'
               468  CALL_METHOD_1         1  '1 positional argument'
               470  POP_TOP          
 
- L.3302       472  LOAD_FAST                'self'
+ L.3303       472  LOAD_FAST                'self'
               474  LOAD_ATTR                lod
               476  LOAD_GLOBAL              SimInfoLODLevel
               478  LOAD_ATTR                MINIMUM
               480  COMPARE_OP               ==
           482_484  POP_JUMP_IF_FALSE   504  'to 504'
 
- L.3305       486  LOAD_GLOBAL              services
+ L.3306       486  LOAD_GLOBAL              services
               488  LOAD_METHOD              sim_info_manager
               490  CALL_METHOD_0         0  '0 positional arguments'
               492  LOAD_METHOD              add_sim_info_if_not_in_manager
@@ -2370,38 +2370,38 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               496  CALL_METHOD_1         1  '1 positional argument'
               498  POP_TOP          
 
- L.3306       500  LOAD_CONST               None
+ L.3307       500  LOAD_CONST               None
               502  RETURN_VALUE     
             504_0  COME_FROM           482  '482'
 
- L.3308       504  LOAD_FAST                'sim_proto'
+ L.3309       504  LOAD_FAST                'sim_proto'
               506  LOAD_ATTR                age_progress
               508  STORE_FAST               'age_progress'
 
- L.3309       510  LOAD_FAST                'sim_proto'
+ L.3310       510  LOAD_FAST                'sim_proto'
               512  LOAD_ATTR                age_progress_randomized
           514_516  POP_JUMP_IF_TRUE    528  'to 528'
 
- L.3310       518  LOAD_FAST                'self'
+ L.3311       518  LOAD_FAST                'self'
               520  LOAD_METHOD              get_randomized_progress
               522  LOAD_FAST                'age_progress'
               524  CALL_METHOD_1         1  '1 positional argument'
               526  STORE_FAST               'age_progress'
             528_0  COME_FROM           514  '514'
 
- L.3311       528  LOAD_FAST                'self'
+ L.3312       528  LOAD_FAST                'self'
               530  LOAD_ATTR                _age_progress
               532  LOAD_METHOD              set_value
               534  LOAD_FAST                'age_progress'
               536  CALL_METHOD_1         1  '1 positional argument'
               538  POP_TOP          
 
- L.3312       540  LOAD_GLOBAL              set
+ L.3313       540  LOAD_GLOBAL              set
               542  CALL_FUNCTION_0       0  '0 positional arguments'
               544  LOAD_FAST                'self'
               546  STORE_ATTR               _build_buy_unlocks
 
- L.3315       548  LOAD_GLOBAL              set
+ L.3316       548  LOAD_GLOBAL              set
               550  LOAD_GLOBAL              list
               552  LOAD_FAST                'sim_proto'
               554  LOAD_ATTR                gameplay_data
@@ -2410,20 +2410,20 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               560  CALL_FUNCTION_1       1  '1 positional argument'
               562  STORE_FAST               'old_unlocks'
 
- L.3316       564  SETUP_LOOP          622  'to 622'
+ L.3317       564  SETUP_LOOP          622  'to 622'
               566  LOAD_FAST                'old_unlocks'
               568  GET_ITER         
             570_0  COME_FROM           582  '582'
               570  FOR_ITER            620  'to 620'
               572  STORE_FAST               'unlock'
 
- L.3317       574  LOAD_GLOBAL              isinstance
+ L.3318       574  LOAD_GLOBAL              isinstance
               576  LOAD_FAST                'unlock'
               578  LOAD_GLOBAL              int
               580  CALL_FUNCTION_2       2  '2 positional arguments'
           582_584  POP_JUMP_IF_FALSE   570  'to 570'
 
- L.3318       586  LOAD_GLOBAL              sims4
+ L.3319       586  LOAD_GLOBAL              sims4
               588  LOAD_ATTR                resources
               590  LOAD_METHOD              Key
               592  LOAD_GLOBAL              Types
@@ -2433,7 +2433,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               600  CALL_METHOD_3         3  '3 positional arguments'
               602  STORE_FAST               'key'
 
- L.3319       604  LOAD_FAST                'self'
+ L.3320       604  LOAD_FAST                'self'
               606  LOAD_ATTR                _build_buy_unlocks
               608  LOAD_METHOD              add
               610  LOAD_FAST                'key'
@@ -2443,14 +2443,14 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               620  POP_BLOCK        
             622_0  COME_FROM_LOOP      564  '564'
 
- L.3320       622  LOAD_GLOBAL              hasattr
+ L.3321       622  LOAD_GLOBAL              hasattr
               624  LOAD_FAST                'sim_proto'
               626  LOAD_ATTR                gameplay_data
               628  LOAD_STR                 'build_buy_unlock_list'
               630  CALL_FUNCTION_2       2  '2 positional arguments'
           632_634  POP_JUMP_IF_FALSE   692  'to 692'
 
- L.3321       636  SETUP_LOOP          692  'to 692'
+ L.3322       636  SETUP_LOOP          692  'to 692'
               638  LOAD_FAST                'sim_proto'
               640  LOAD_ATTR                gameplay_data
               642  LOAD_ATTR                build_buy_unlock_list
@@ -2459,7 +2459,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               648  FOR_ITER            690  'to 690'
               650  STORE_FAST               'key_proto'
 
- L.3322       652  LOAD_GLOBAL              sims4
+ L.3323       652  LOAD_GLOBAL              sims4
               654  LOAD_ATTR                resources
               656  LOAD_METHOD              Key
               658  LOAD_FAST                'key_proto'
@@ -2471,7 +2471,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               670  CALL_METHOD_3         3  '3 positional arguments'
               672  STORE_FAST               'key'
 
- L.3323       674  LOAD_FAST                'self'
+ L.3324       674  LOAD_FAST                'self'
               676  LOAD_ATTR                _build_buy_unlocks
               678  LOAD_METHOD              add
               680  LOAD_FAST                'key'
@@ -2482,7 +2482,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
             692_0  COME_FROM_LOOP      636  '636'
             692_1  COME_FROM           632  '632'
 
- L.3325       692  LOAD_GLOBAL              services
+ L.3326       692  LOAD_GLOBAL              services
               694  LOAD_METHOD              get_instance_manager
               696  LOAD_GLOBAL              sims4
               698  LOAD_ATTR                resources
@@ -2496,7 +2496,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               714  LOAD_FAST                'self'
               716  STORE_ATTR               _primary_aspiration
 
- L.3330       718  LOAD_FAST                'self'
+ L.3331       718  LOAD_FAST                'self'
               720  LOAD_ATTR                _primary_aspiration
               722  LOAD_CONST               None
               724  COMPARE_OP               is
@@ -2508,18 +2508,18 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
           738_740  POP_JUMP_IF_TRUE    866  'to 866'
             742_0  COME_FROM           726  '726'
 
- L.3331       742  LOAD_FAST                'self'
+ L.3332       742  LOAD_FAST                'self'
               744  LOAD_ATTR                is_human
           746_748  POP_JUMP_IF_FALSE   866  'to 866'
 
- L.3332       750  LOAD_FAST                'self'
+ L.3333       750  LOAD_FAST                'self'
               752  LOAD_ATTR                is_toddler_or_younger
           754_756  POP_JUMP_IF_TRUE    866  'to 866'
 
- L.3333       758  BUILD_LIST_0          0 
+ L.3334       758  BUILD_LIST_0          0 
               760  STORE_FAST               'available_aspirations'
 
- L.3335       762  LOAD_GLOBAL              services
+ L.3336       762  LOAD_GLOBAL              services
               764  LOAD_METHOD              get_instance_manager
               766  LOAD_GLOBAL              sims4
               768  LOAD_ATTR                resources
@@ -2528,7 +2528,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               774  CALL_METHOD_1         1  '1 positional argument'
               776  STORE_FAST               'aspiration_track_manager'
 
- L.3336       778  SETUP_LOOP          854  'to 854'
+ L.3337       778  SETUP_LOOP          854  'to 854'
               780  LOAD_FAST                'aspiration_track_manager'
               782  LOAD_ATTR                types
               784  LOAD_METHOD              values
@@ -2539,19 +2539,19 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               790  FOR_ITER            852  'to 852'
               792  STORE_FAST               'aspiration_track'
 
- L.3338       794  LOAD_FAST                'aspiration_track'
+ L.3339       794  LOAD_FAST                'aspiration_track'
               796  LOAD_ATTR                is_hidden_unlockable
           798_800  POP_JUMP_IF_TRUE    790  'to 790'
 
- L.3339       802  LOAD_FAST                'aspiration_track'
+ L.3340       802  LOAD_FAST                'aspiration_track'
               804  LOAD_ATTR                is_child_aspiration_track
           806_808  POP_JUMP_IF_FALSE   830  'to 830'
 
- L.3340       810  LOAD_FAST                'self'
+ L.3341       810  LOAD_FAST                'self'
               812  LOAD_ATTR                is_child
           814_816  POP_JUMP_IF_FALSE   848  'to 848'
 
- L.3341       818  LOAD_FAST                'available_aspirations'
+ L.3342       818  LOAD_FAST                'available_aspirations'
               820  LOAD_METHOD              append
               822  LOAD_FAST                'aspiration_track'
               824  CALL_METHOD_1         1  '1 positional argument'
@@ -2559,11 +2559,11 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               828  JUMP_BACK           790  'to 790'
             830_0  COME_FROM           806  '806'
 
- L.3343       830  LOAD_FAST                'self'
+ L.3344       830  LOAD_FAST                'self'
               832  LOAD_ATTR                is_child
           834_836  POP_JUMP_IF_TRUE    790  'to 790'
 
- L.3344       838  LOAD_FAST                'available_aspirations'
+ L.3345       838  LOAD_FAST                'available_aspirations'
               840  LOAD_METHOD              append
               842  LOAD_FAST                'aspiration_track'
               844  CALL_METHOD_1         1  '1 positional argument'
@@ -2573,7 +2573,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               852  POP_BLOCK        
             854_0  COME_FROM_LOOP      778  '778'
 
- L.3346       854  LOAD_GLOBAL              random
+ L.3347       854  LOAD_GLOBAL              random
               856  LOAD_METHOD              choice
               858  LOAD_FAST                'available_aspirations'
               860  CALL_METHOD_1         1  '1 positional argument'
@@ -2583,13 +2583,13 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
             866_1  COME_FROM           746  '746'
             866_2  COME_FROM           738  '738'
 
- L.3347       866  LOAD_FAST                'sim_proto'
+ L.3348       866  LOAD_FAST                'sim_proto'
               868  LOAD_ATTR                gameplay_data
               870  LOAD_ATTR                inventory_value
               872  LOAD_FAST                'self'
               874  STORE_ATTR               _cached_inventory_value
 
- L.3353       876  LOAD_FAST                'skip_load'
+ L.3354       876  LOAD_FAST                'skip_load'
           878_880  POP_JUMP_IF_TRUE    910  'to 910'
               882  LOAD_FAST                'self'
               884  LOAD_ATTR                _away_action_tracker
@@ -2597,7 +2597,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               888  COMPARE_OP               is-not
           890_892  POP_JUMP_IF_FALSE   910  'to 910'
 
- L.3354       894  LOAD_FAST                'self'
+ L.3355       894  LOAD_FAST                'self'
               896  LOAD_ATTR                _away_action_tracker
               898  LOAD_METHOD              load_away_action_info_from_proto
               900  LOAD_FAST                'sim_proto'
@@ -2608,7 +2608,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
             910_0  COME_FROM           890  '890'
             910_1  COME_FROM           878  '878'
 
- L.3356       910  LOAD_FAST                'sim_proto'
+ L.3357       910  LOAD_FAST                'sim_proto'
               912  LOAD_ATTR                gameplay_data
               914  LOAD_METHOD              HasField
               916  LOAD_STR                 'spawn_point_id'
@@ -2624,7 +2624,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               934  LOAD_FAST                'self'
               936  STORE_ATTR               spawn_point_id
 
- L.3357       938  LOAD_FAST                'sim_proto'
+ L.3358       938  LOAD_FAST                'sim_proto'
               940  LOAD_ATTR                gameplay_data
               942  LOAD_METHOD              HasField
               944  LOAD_STR                 'spawn_point_option'
@@ -2643,30 +2643,30 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
               968  LOAD_FAST                'self'
               970  STORE_ATTR               spawn_point_option
 
- L.3358       972  BUILD_LIST_0          0 
+ L.3359       972  BUILD_LIST_0          0 
               974  LOAD_FAST                'self'
               976  STORE_ATTR               spawner_tags
 
- L.3360       978  LOAD_FAST                'sim_proto'
+ L.3361       978  LOAD_FAST                'sim_proto'
               980  LOAD_METHOD              HasField
               982  LOAD_STR                 'initial_fitness_value'
               984  CALL_METHOD_1         1  '1 positional argument'
           986_988  POP_JUMP_IF_FALSE   998  'to 998'
 
- L.3361       990  LOAD_FAST                'sim_proto'
+ L.3362       990  LOAD_FAST                'sim_proto'
               992  LOAD_ATTR                initial_fitness_value
               994  LOAD_FAST                'self'
               996  STORE_ATTR               _initial_fitness_value
             998_0  COME_FROM           986  '986'
 
- L.3365       998  LOAD_FAST                'sim_proto'
+ L.3366       998  LOAD_FAST                'sim_proto'
              1000  LOAD_ATTR                gameplay_data
              1002  LOAD_METHOD              HasField
              1004  LOAD_STR                 'time_alive'
              1006  CALL_METHOD_1         1  '1 positional argument'
          1008_1010  POP_JUMP_IF_FALSE  1026  'to 1026'
 
- L.3366      1012  LOAD_GLOBAL              TimeSpan
+ L.3367      1012  LOAD_GLOBAL              TimeSpan
              1014  LOAD_FAST                'sim_proto'
              1016  LOAD_ATTR                gameplay_data
              1018  LOAD_ATTR                time_alive
@@ -2675,17 +2675,17 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1024  JUMP_FORWARD       1030  'to 1030'
            1026_0  COME_FROM          1008  '1008'
 
- L.3368      1026  LOAD_CONST               None
+ L.3369      1026  LOAD_CONST               None
              1028  STORE_FAST               'time_alive'
            1030_0  COME_FROM          1024  '1024'
 
- L.3369      1030  LOAD_FAST                'self'
+ L.3370      1030  LOAD_FAST                'self'
              1032  LOAD_METHOD              load_time_alive
              1034  LOAD_FAST                'time_alive'
              1036  CALL_METHOD_1         1  '1 positional argument'
              1038  POP_TOP          
 
- L.3371      1040  SETUP_LOOP         1078  'to 1078'
+ L.3372      1040  SETUP_LOOP         1078  'to 1078'
              1042  LOAD_FAST                'sim_proto'
              1044  LOAD_ATTR                gameplay_data
              1046  LOAD_ATTR                spawner_tags
@@ -2693,7 +2693,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1050  FOR_ITER           1076  'to 1076'
              1052  STORE_FAST               'spawner_tag'
 
- L.3372      1054  LOAD_FAST                'self'
+ L.3373      1054  LOAD_FAST                'self'
              1056  LOAD_ATTR                spawner_tags
              1058  LOAD_METHOD              append
              1060  LOAD_GLOBAL              tag
@@ -2706,24 +2706,24 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1076  POP_BLOCK        
            1078_0  COME_FROM_LOOP     1040  '1040'
 
- L.3374      1078  SETUP_FINALLY      1148  'to 1148'
+ L.3375      1078  SETUP_FINALLY      1148  'to 1148'
 
- L.3375      1080  LOAD_CONST               True
+ L.3376      1080  LOAD_CONST               True
              1082  LOAD_FAST                'self'
              1084  LOAD_ATTR                Buffs
              1086  STORE_ATTR               load_in_progress
 
- L.3379      1088  LOAD_CONST               True
+ L.3380      1088  LOAD_CONST               True
              1090  LOAD_FAST                'self'
              1092  LOAD_ATTR                commodity_tracker
              1094  STORE_ATTR               load_in_progress
 
- L.3383      1096  LOAD_FAST                'self'
+ L.3384      1096  LOAD_FAST                'self'
              1098  LOAD_METHOD              on_base_characteristic_changed
              1100  CALL_METHOD_0         0  '0 positional arguments'
              1102  POP_TOP          
 
- L.3385      1104  LOAD_GLOBAL              services
+ L.3386      1104  LOAD_GLOBAL              services
              1106  LOAD_METHOD              relationship_service
              1108  CALL_METHOD_0         0  '0 positional arguments'
              1110  LOAD_METHOD              suppress_client_updates_context_manager
@@ -2731,7 +2731,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1114  SETUP_WITH         1138  'to 1138'
              1116  POP_TOP          
 
- L.3386      1118  LOAD_FAST                'self'
+ L.3387      1118  LOAD_FAST                'self'
              1120  LOAD_ATTR                _trait_tracker
              1122  LOAD_METHOD              load
              1124  LOAD_FAST                'sim_attribute_data'
@@ -2749,29 +2749,29 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1146  LOAD_CONST               None
            1148_0  COME_FROM_FINALLY  1078  '1078'
 
- L.3388      1148  LOAD_CONST               False
+ L.3389      1148  LOAD_CONST               False
              1150  LOAD_FAST                'self'
              1152  LOAD_ATTR                Buffs
              1154  STORE_ATTR               load_in_progress
 
- L.3389      1156  LOAD_CONST               False
+ L.3390      1156  LOAD_CONST               False
              1158  LOAD_FAST                'self'
              1160  LOAD_ATTR                commodity_tracker
              1162  STORE_ATTR               load_in_progress
              1164  END_FINALLY      
 
- L.3391      1166  LOAD_FAST                'self'
+ L.3392      1166  LOAD_FAST                'self'
              1168  LOAD_METHOD              _create_additional_statistics
              1170  CALL_METHOD_0         0  '0 positional arguments'
              1172  POP_TOP          
 
- L.3394      1174  LOAD_FAST                'self'
+ L.3395      1174  LOAD_FAST                'self'
              1176  LOAD_ATTR                _whim_tracker
              1178  LOAD_CONST               None
              1180  COMPARE_OP               is-not
          1182_1184  POP_JUMP_IF_FALSE  1224  'to 1224'
 
- L.3395      1186  LOAD_FAST                'self'
+ L.3396      1186  LOAD_FAST                'self'
              1188  LOAD_METHOD              set_whim_bucks
              1190  LOAD_FAST                'sim_proto'
              1192  LOAD_ATTR                gameplay_data
@@ -2781,7 +2781,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1200  CALL_METHOD_2         2  '2 positional arguments'
              1202  POP_TOP          
 
- L.3396      1204  LOAD_FAST                'self'
+ L.3397      1204  LOAD_FAST                'self'
              1206  LOAD_ATTR                _whim_tracker
              1208  LOAD_ATTR                cache_whim_goal_proto
              1210  LOAD_FAST                'sim_proto'
@@ -2793,21 +2793,21 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1222  POP_TOP          
            1224_0  COME_FROM          1182  '1182'
 
- L.3398      1224  LOAD_FAST                'sim_proto'
+ L.3399      1224  LOAD_FAST                'sim_proto'
              1226  LOAD_METHOD              HasField
              1228  LOAD_STR                 'current_outfit_type'
              1230  CALL_METHOD_1         1  '1 positional argument'
          1232_1234  POP_JUMP_IF_FALSE  1262  'to 1262'
 
- L.3399      1236  LOAD_FAST                'sim_proto'
+ L.3400      1236  LOAD_FAST                'sim_proto'
              1238  LOAD_ATTR                current_outfit_type
              1240  STORE_FAST               'outfit_type'
 
- L.3400      1242  LOAD_FAST                'sim_proto'
+ L.3401      1242  LOAD_FAST                'sim_proto'
              1244  LOAD_ATTR                current_outfit_index
              1246  STORE_FAST               'outfit_index'
 
- L.3401      1248  LOAD_FAST                'self'
+ L.3402      1248  LOAD_FAST                'self'
              1250  LOAD_METHOD              _set_current_outfit_without_distribution
              1252  LOAD_FAST                'outfit_type'
              1254  LOAD_FAST                'outfit_index'
@@ -2816,20 +2816,20 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1260  POP_TOP          
            1262_0  COME_FROM          1232  '1232'
 
- L.3403      1262  LOAD_FAST                'self'
+ L.3404      1262  LOAD_FAST                'self'
              1264  LOAD_METHOD              _load_inventory
              1266  LOAD_FAST                'sim_proto'
              1268  LOAD_FAST                'skip_load'
              1270  CALL_METHOD_2         2  '2 positional arguments'
              1272  POP_TOP          
 
- L.3404      1274  LOAD_FAST                'sim_proto'
+ L.3405      1274  LOAD_FAST                'sim_proto'
              1276  LOAD_ATTR                gameplay_data
              1278  LOAD_ATTR                additional_bonus_days
              1280  LOAD_FAST                'self'
              1282  STORE_ATTR               _additional_bonus_days
 
- L.3405      1284  LOAD_FAST                'self'
+ L.3406      1284  LOAD_FAST                'self'
              1286  LOAD_METHOD              load_favorite
              1288  LOAD_FAST                'sim_proto'
              1290  LOAD_ATTR                gameplay_data
@@ -2837,7 +2837,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1294  CALL_METHOD_1         1  '1 positional argument'
              1296  POP_TOP          
 
- L.3409      1298  LOAD_FAST                'skip_load'
+ L.3410      1298  LOAD_FAST                'skip_load'
          1300_1302  POP_JUMP_IF_TRUE   1336  'to 1336'
              1304  LOAD_FAST                'sim_proto'
              1306  LOAD_ATTR                gameplay_data
@@ -2847,7 +2847,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1314  CALL_METHOD_1         1  '1 positional argument'
          1316_1318  POP_JUMP_IF_FALSE  1336  'to 1336'
 
- L.3410      1320  LOAD_GLOBAL              DateAndTime
+ L.3411      1320  LOAD_GLOBAL              DateAndTime
              1322  LOAD_FAST                'sim_proto'
              1324  LOAD_ATTR                gameplay_data
              1326  LOAD_ATTR                zone_time_stamp
@@ -2858,7 +2858,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            1336_0  COME_FROM          1316  '1316'
            1336_1  COME_FROM          1300  '1300'
 
- L.3412      1336  LOAD_FAST                'sim_proto'
+ L.3413      1336  LOAD_FAST                'sim_proto'
              1338  LOAD_ATTR                gameplay_data
              1340  LOAD_ATTR                zone_time_stamp
              1342  LOAD_ATTR                game_time_expire
@@ -2866,7 +2866,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1346  COMPARE_OP               !=
          1348_1350  POP_JUMP_IF_FALSE  1364  'to 1364'
 
- L.3415      1352  LOAD_FAST                'sim_proto'
+ L.3416      1352  LOAD_FAST                'sim_proto'
              1354  LOAD_ATTR                gameplay_data
              1356  LOAD_ATTR                zone_time_stamp
              1358  LOAD_ATTR                game_time_expire
@@ -2874,24 +2874,24 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1362  STORE_ATTR               game_time_bring_home
            1364_0  COME_FROM          1348  '1348'
 
- L.3418      1364  LOAD_FAST                'sim_attribute_data'
+ L.3419      1364  LOAD_FAST                'sim_attribute_data'
          1366_1368  POP_JUMP_IF_FALSE  2206  'to 2206'
 
- L.3420  1370_1372  SETUP_FINALLY      2190  'to 2190'
+ L.3421  1370_1372  SETUP_FINALLY      2190  'to 2190'
          1374_1376  SETUP_EXCEPT       2158  'to 2158'
 
- L.3421      1378  LOAD_CONST               True
+ L.3422      1378  LOAD_CONST               True
              1380  LOAD_FAST                'self'
              1382  LOAD_ATTR                Buffs
              1384  STORE_ATTR               load_in_progress
 
- L.3423      1386  LOAD_FAST                'self'
+ L.3424      1386  LOAD_FAST                'self'
              1388  LOAD_METHOD              get_blacklisted_statistics
              1390  CALL_METHOD_0         0  '0 positional arguments'
              1392  LOAD_FAST                'self'
              1394  STORE_ATTR               _blacklisted_statistics_cache
 
- L.3426      1396  LOAD_FAST                'self'
+ L.3427      1396  LOAD_FAST                'self'
              1398  LOAD_ATTR                commodity_tracker
              1400  LOAD_ATTR                load
              1402  LOAD_FAST                'sim_attribute_data'
@@ -2903,14 +2903,14 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1414  CALL_FUNCTION_KW_3     3  '3 total positional and keyword args'
              1416  POP_TOP          
 
- L.3427      1418  LOAD_FAST                'self'
+ L.3428      1418  LOAD_FAST                'self'
              1420  LOAD_ATTR                lod
              1422  LOAD_GLOBAL              SimInfoLODLevel
              1424  LOAD_ATTR                BASE
              1426  COMPARE_OP               >
          1428_1430  POP_JUMP_IF_FALSE  1472  'to 1472'
 
- L.3428      1432  SETUP_LOOP         1472  'to 1472'
+ L.3429      1432  SETUP_LOOP         1472  'to 1472'
              1434  LOAD_GLOBAL              tuple
              1436  LOAD_FAST                'self'
              1438  LOAD_ATTR                commodity_tracker
@@ -2920,12 +2920,12 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1444  FOR_ITER           1470  'to 1470'
              1446  STORE_FAST               'commodity'
 
- L.3429      1448  LOAD_FAST                'commodity'
+ L.3430      1448  LOAD_FAST                'commodity'
              1450  LOAD_METHOD              has_auto_satisfy_value
              1452  CALL_METHOD_0         0  '0 positional arguments'
          1454_1456  POP_JUMP_IF_FALSE  1444  'to 1444'
 
- L.3430      1458  LOAD_FAST                'commodity'
+ L.3431      1458  LOAD_FAST                'commodity'
              1460  LOAD_METHOD              set_to_auto_satisfy_value
              1462  CALL_METHOD_0         0  '0 positional arguments'
              1464  POP_TOP          
@@ -2934,7 +2934,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            1472_0  COME_FROM_LOOP     1432  '1432'
            1472_1  COME_FROM          1428  '1428'
 
- L.3432      1472  LOAD_FAST                'self'
+ L.3433      1472  LOAD_FAST                'self'
              1474  LOAD_ATTR                statistic_tracker
              1476  LOAD_ATTR                load
              1478  LOAD_FAST                'sim_attribute_data'
@@ -2945,7 +2945,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1488  CALL_FUNCTION_KW_2     2  '2 total positional and keyword args'
              1490  POP_TOP          
 
- L.3434      1492  LOAD_FAST                'self'
+ L.3435      1492  LOAD_FAST                'self'
              1494  LOAD_ATTR                commodity_tracker
              1496  LOAD_ATTR                load
              1498  LOAD_FAST                'sim_attribute_data'
@@ -2956,7 +2956,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1508  CALL_FUNCTION_KW_2     2  '2 total positional and keyword args'
              1510  POP_TOP          
 
- L.3436      1512  LOAD_FAST                'self'
+ L.3437      1512  LOAD_FAST                'self'
              1514  LOAD_ATTR                commodity_tracker
              1516  LOAD_ATTR                load
              1518  LOAD_FAST                'sim_attribute_data'
@@ -2967,11 +2967,11 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1528  CALL_FUNCTION_KW_2     2  '2 total positional and keyword args'
              1530  POP_TOP          
 
- L.3438      1532  LOAD_FAST                'self'
+ L.3439      1532  LOAD_FAST                'self'
              1534  LOAD_ATTR                is_human
          1536_1538  POP_JUMP_IF_FALSE  1554  'to 1554'
 
- L.3439      1540  LOAD_FAST                'self'
+ L.3440      1540  LOAD_FAST                'self'
              1542  LOAD_ATTR                trait_statistic_tracker
              1544  LOAD_METHOD              load
              1546  LOAD_FAST                'sim_attribute_data'
@@ -2980,7 +2980,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1552  POP_TOP          
            1554_0  COME_FROM          1536  '1536'
 
- L.3441      1554  LOAD_FAST                'self'
+ L.3442      1554  LOAD_FAST                'self'
              1556  LOAD_ATTR                _suntan_tracker
              1558  LOAD_METHOD              load
              1560  LOAD_FAST                'sim_attribute_data'
@@ -2988,7 +2988,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1564  CALL_METHOD_1         1  '1 positional argument'
              1566  POP_TOP          
 
- L.3444      1568  LOAD_LISTCOMP            '<code_object <listcomp>>'
+ L.3445      1568  LOAD_LISTCOMP            '<code_object <listcomp>>'
              1570  LOAD_STR                 'SimInfo._load_sim_info.<locals>.<listcomp>'
              1572  MAKE_FUNCTION_0          'Neither defaults, keyword-only args, annotations, nor closures'
              1574  LOAD_FAST                'self'
@@ -2999,10 +2999,10 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1584  CALL_FUNCTION_1       1  '1 positional argument'
              1586  STORE_FAST               'skills_to_check_for_unlocks'
 
- L.3445      1588  LOAD_FAST                'skills_to_check_for_unlocks'
+ L.3446      1588  LOAD_FAST                'skills_to_check_for_unlocks'
          1590_1592  POP_JUMP_IF_FALSE  1610  'to 1610'
 
- L.3446      1594  LOAD_FAST                'self'
+ L.3447      1594  LOAD_FAST                'self'
              1596  LOAD_METHOD              _check_skills_for_unlock
              1598  LOAD_FAST                'skills_to_check_for_unlocks'
              1600  LOAD_FAST                'sim_attribute_data'
@@ -3012,7 +3012,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1608  POP_TOP          
            1610_0  COME_FROM          1590  '1590'
 
- L.3448      1610  LOAD_FAST                'self'
+ L.3449      1610  LOAD_FAST                'self'
              1612  LOAD_ATTR                _pregnancy_tracker
              1614  LOAD_METHOD              load
              1616  LOAD_FAST                'sim_attribute_data'
@@ -3020,7 +3020,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1620  CALL_METHOD_1         1  '1 positional argument'
              1622  POP_TOP          
 
- L.3449      1624  LOAD_FAST                'self'
+ L.3450      1624  LOAD_FAST                'self'
              1626  LOAD_ATTR                _story_progression_tracker
              1628  LOAD_METHOD              load
              1630  LOAD_FAST                'sim_attribute_data'
@@ -3028,7 +3028,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1634  CALL_METHOD_1         1  '1 positional argument'
              1636  POP_TOP          
 
- L.3450      1638  LOAD_FAST                'self'
+ L.3451      1638  LOAD_FAST                'self'
              1640  LOAD_ATTR                appearance_tracker
              1642  LOAD_METHOD              load_appearance_tracker
              1644  LOAD_FAST                'sim_attribute_data'
@@ -3036,13 +3036,13 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1648  CALL_METHOD_1         1  '1 positional argument'
              1650  POP_TOP          
 
- L.3452      1652  LOAD_FAST                'sim_attribute_data'
+ L.3453      1652  LOAD_FAST                'sim_attribute_data'
              1654  LOAD_METHOD              HasField
              1656  LOAD_STR                 'sickness_tracker'
              1658  CALL_METHOD_1         1  '1 positional argument'
          1660_1662  POP_JUMP_IF_FALSE  1700  'to 1700'
 
- L.3454      1664  LOAD_FAST                'self'
+ L.3455      1664  LOAD_FAST                'self'
              1666  LOAD_ATTR                sickness_tracker
              1668  LOAD_METHOD              load_sickness_tracker_data
              1670  LOAD_FAST                'sim_attribute_data'
@@ -3050,12 +3050,12 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1674  CALL_METHOD_1         1  '1 positional argument'
              1676  POP_TOP          
 
- L.3456      1678  LOAD_FAST                'self'
+ L.3457      1678  LOAD_FAST                'self'
              1680  LOAD_METHOD              has_sickness_tracking
              1682  CALL_METHOD_0         0  '0 positional arguments'
          1684_1686  POP_JUMP_IF_FALSE  1700  'to 1700'
 
- L.3457      1688  LOAD_FAST                'self'
+ L.3458      1688  LOAD_FAST                'self'
              1690  LOAD_ATTR                current_sickness
              1692  LOAD_METHOD              on_sim_info_loaded
              1694  LOAD_FAST                'self'
@@ -3064,31 +3064,31 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            1700_0  COME_FROM          1684  '1684'
            1700_1  COME_FROM          1660  '1660'
 
- L.3460      1700  LOAD_FAST                'sim_attribute_data'
+ L.3461      1700  LOAD_FAST                'sim_attribute_data'
              1702  LOAD_METHOD              HasField
              1704  LOAD_STR                 'stored_object_info_component'
              1706  CALL_METHOD_1         1  '1 positional argument'
          1708_1710  POP_JUMP_IF_FALSE  1756  'to 1756'
 
- L.3461      1712  LOAD_GLOBAL              objects
+ L.3462      1712  LOAD_GLOBAL              objects
              1714  LOAD_ATTR                components
              1716  LOAD_ATTR                types
              1718  LOAD_ATTR                STORED_OBJECT_INFO_COMPONENT
              1720  STORE_FAST               'component_def'
 
- L.3462      1722  LOAD_FAST                'self'
+ L.3463      1722  LOAD_FAST                'self'
              1724  LOAD_METHOD              add_dynamic_component
              1726  LOAD_FAST                'component_def'
              1728  CALL_METHOD_1         1  '1 positional argument'
          1730_1732  POP_JUMP_IF_FALSE  1756  'to 1756'
 
- L.3463      1734  LOAD_FAST                'self'
+ L.3464      1734  LOAD_FAST                'self'
              1736  LOAD_METHOD              get_component
              1738  LOAD_FAST                'component_def'
              1740  CALL_METHOD_1         1  '1 positional argument'
              1742  STORE_FAST               'stored_object_info_component'
 
- L.3464      1744  LOAD_FAST                'stored_object_info_component'
+ L.3465      1744  LOAD_FAST                'stored_object_info_component'
              1746  LOAD_METHOD              load_stored_object_info
              1748  LOAD_FAST                'sim_attribute_data'
              1750  LOAD_ATTR                stored_object_info_component
@@ -3097,7 +3097,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            1756_0  COME_FROM          1730  '1730'
            1756_1  COME_FROM          1708  '1708'
 
- L.3467      1756  SETUP_LOOP         1790  'to 1790'
+ L.3468      1756  SETUP_LOOP         1790  'to 1790'
              1758  LOAD_FAST                'sim_attribute_data'
              1760  LOAD_ATTR                object_preferences
              1762  LOAD_ATTR                preferences
@@ -3105,7 +3105,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1766  FOR_ITER           1788  'to 1788'
              1768  STORE_FAST               'entry'
 
- L.3468      1770  LOAD_FAST                'entry'
+ L.3469      1770  LOAD_FAST                'entry'
              1772  LOAD_ATTR                object_id
              1774  LOAD_FAST                'self'
              1776  LOAD_ATTR                _autonomy_scoring_preferences
@@ -3116,7 +3116,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1788  POP_BLOCK        
            1790_0  COME_FROM_LOOP     1756  '1756'
 
- L.3470      1790  SETUP_LOOP         1824  'to 1824'
+ L.3471      1790  SETUP_LOOP         1824  'to 1824'
              1792  LOAD_FAST                'sim_attribute_data'
              1794  LOAD_ATTR                object_ownership
              1796  LOAD_ATTR                owned_object
@@ -3124,7 +3124,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1800  FOR_ITER           1822  'to 1822'
              1802  STORE_FAST               'entry'
 
- L.3471      1804  LOAD_FAST                'entry'
+ L.3472      1804  LOAD_FAST                'entry'
              1806  LOAD_ATTR                object_id
              1808  LOAD_FAST                'self'
              1810  LOAD_ATTR                _autonomy_use_preferences
@@ -3135,7 +3135,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1822  POP_BLOCK        
            1824_0  COME_FROM_LOOP     1790  '1790'
 
- L.3472      1824  LOAD_FAST                'self'
+ L.3473      1824  LOAD_FAST                'self'
              1826  LOAD_ATTR                _career_tracker
              1828  LOAD_ATTR                load
              1830  LOAD_FAST                'sim_attribute_data'
@@ -3145,13 +3145,13 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1838  CALL_FUNCTION_KW_2     2  '2 total positional and keyword args'
              1840  POP_TOP          
 
- L.3473      1842  LOAD_FAST                'self'
+ L.3474      1842  LOAD_FAST                'self'
              1844  LOAD_ATTR                _adventure_tracker
              1846  LOAD_CONST               None
              1848  COMPARE_OP               is-not
          1850_1852  POP_JUMP_IF_FALSE  1868  'to 1868'
 
- L.3474      1854  LOAD_FAST                'self'
+ L.3475      1854  LOAD_FAST                'self'
              1856  LOAD_ATTR                _adventure_tracker
              1858  LOAD_METHOD              load
              1860  LOAD_FAST                'sim_attribute_data'
@@ -3160,13 +3160,13 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1866  POP_TOP          
            1868_0  COME_FROM          1850  '1850'
 
- L.3475      1868  LOAD_FAST                'self'
+ L.3476      1868  LOAD_FAST                'self'
              1870  LOAD_ATTR                _notebook_tracker
              1872  LOAD_CONST               None
              1874  COMPARE_OP               is-not
          1876_1878  POP_JUMP_IF_FALSE  1894  'to 1894'
 
- L.3476      1880  LOAD_FAST                'self'
+ L.3477      1880  LOAD_FAST                'self'
              1882  LOAD_ATTR                _notebook_tracker
              1884  LOAD_METHOD              load_notebook
              1886  LOAD_FAST                'sim_attribute_data'
@@ -3175,7 +3175,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1892  POP_TOP          
            1894_0  COME_FROM          1876  '1876'
 
- L.3477      1894  LOAD_FAST                'self'
+ L.3478      1894  LOAD_FAST                'self'
              1896  LOAD_ATTR                _royalty_tracker
              1898  LOAD_CONST               None
              1900  COMPARE_OP               is-not
@@ -3183,7 +3183,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1906  LOAD_FAST                'skip_load'
          1908_1910  POP_JUMP_IF_TRUE   1926  'to 1926'
 
- L.3478      1912  LOAD_FAST                'self'
+ L.3479      1912  LOAD_FAST                'self'
              1914  LOAD_ATTR                _royalty_tracker
              1916  LOAD_METHOD              load
              1918  LOAD_FAST                'sim_attribute_data'
@@ -3193,20 +3193,20 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            1926_0  COME_FROM          1908  '1908'
            1926_1  COME_FROM          1902  '1902'
 
- L.3479      1926  LOAD_FAST                'self'
+ L.3480      1926  LOAD_FAST                'self'
              1928  LOAD_ATTR                _unlock_tracker
              1930  LOAD_CONST               None
              1932  COMPARE_OP               is-not
          1934_1936  POP_JUMP_IF_FALSE  1968  'to 1968'
 
- L.3480      1938  LOAD_FAST                'skip_load'
+ L.3481      1938  LOAD_FAST                'skip_load'
          1940_1942  JUMP_IF_FALSE_OR_POP  1948  'to 1948'
              1944  LOAD_FAST                'is_clone'
              1946  UNARY_NOT        
            1948_0  COME_FROM          1940  '1940'
              1948  STORE_FAST               'skip_load'
 
- L.3481      1950  LOAD_FAST                'self'
+ L.3482      1950  LOAD_FAST                'self'
              1952  LOAD_ATTR                _unlock_tracker
              1954  LOAD_ATTR                load_unlock
              1956  LOAD_FAST                'sim_attribute_data'
@@ -3217,7 +3217,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1966  POP_TOP          
            1968_0  COME_FROM          1934  '1934'
 
- L.3482      1968  LOAD_FAST                'self'
+ L.3483      1968  LOAD_FAST                'self'
              1970  LOAD_ATTR                _relic_tracker
              1972  LOAD_CONST               None
              1974  COMPARE_OP               is-not
@@ -3225,7 +3225,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              1980  LOAD_FAST                'skip_load'
          1982_1984  POP_JUMP_IF_TRUE   2000  'to 2000'
 
- L.3483      1986  LOAD_FAST                'self'
+ L.3484      1986  LOAD_FAST                'self'
              1988  LOAD_ATTR                _relic_tracker
              1990  LOAD_METHOD              load
              1992  LOAD_FAST                'sim_attribute_data'
@@ -3235,7 +3235,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            2000_0  COME_FROM          1982  '1982'
            2000_1  COME_FROM          1976  '1976'
 
- L.3484      2000  LOAD_FAST                'self'
+ L.3485      2000  LOAD_FAST                'self'
              2002  LOAD_ATTR                _lifestyle_brand_tracker
              2004  LOAD_CONST               None
              2006  COMPARE_OP               is-not
@@ -3243,7 +3243,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2012  LOAD_FAST                'skip_load'
          2014_2016  POP_JUMP_IF_TRUE   2032  'to 2032'
 
- L.3485      2018  LOAD_FAST                'self'
+ L.3486      2018  LOAD_FAST                'self'
              2020  LOAD_ATTR                _lifestyle_brand_tracker
              2022  LOAD_METHOD              load
              2024  LOAD_FAST                'sim_attribute_data'
@@ -3253,7 +3253,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            2032_0  COME_FROM          2014  '2014'
            2032_1  COME_FROM          2008  '2008'
 
- L.3486      2032  LOAD_FAST                'self'
+ L.3487      2032  LOAD_FAST                'self'
              2034  LOAD_ATTR                _favorites_tracker
              2036  LOAD_CONST               None
              2038  COMPARE_OP               is-not
@@ -3261,7 +3261,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2044  LOAD_FAST                'skip_load'
          2046_2048  POP_JUMP_IF_TRUE   2064  'to 2064'
 
- L.3487      2050  LOAD_FAST                'self'
+ L.3488      2050  LOAD_FAST                'self'
              2052  LOAD_ATTR                _favorites_tracker
              2054  LOAD_METHOD              load
              2056  LOAD_FAST                'sim_attribute_data'
@@ -3271,13 +3271,13 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            2064_0  COME_FROM          2046  '2046'
            2064_1  COME_FROM          2040  '2040'
 
- L.3488      2064  LOAD_FAST                'self'
+ L.3489      2064  LOAD_FAST                'self'
              2066  LOAD_ATTR                _degree_tracker
              2068  LOAD_CONST               None
              2070  COMPARE_OP               is-not
          2072_2074  POP_JUMP_IF_FALSE  2090  'to 2090'
 
- L.3489      2076  LOAD_FAST                'self'
+ L.3490      2076  LOAD_FAST                'self'
              2078  LOAD_ATTR                degree_tracker
              2080  LOAD_METHOD              load
              2082  LOAD_FAST                'sim_attribute_data'
@@ -3286,7 +3286,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2088  POP_TOP          
            2090_0  COME_FROM          2072  '2072'
 
- L.3490      2090  LOAD_FAST                'self'
+ L.3491      2090  LOAD_FAST                'self'
              2092  LOAD_ATTR                _organization_tracker
              2094  LOAD_CONST               None
              2096  COMPARE_OP               is-not
@@ -3294,7 +3294,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2102  LOAD_FAST                'skip_load'
          2104_2106  POP_JUMP_IF_TRUE   2122  'to 2122'
 
- L.3491      2108  LOAD_FAST                'self'
+ L.3492      2108  LOAD_FAST                'self'
              2110  LOAD_ATTR                _organization_tracker
              2112  LOAD_METHOD              load
              2114  LOAD_FAST                'sim_attribute_data'
@@ -3304,7 +3304,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            2122_0  COME_FROM          2104  '2104'
            2122_1  COME_FROM          2098  '2098'
 
- L.3492      2122  LOAD_FAST                'self'
+ L.3493      2122  LOAD_FAST                'self'
              2124  LOAD_ATTR                _fixup_tracker
              2126  LOAD_CONST               None
              2128  COMPARE_OP               is-not
@@ -3312,7 +3312,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2134  LOAD_FAST                'skip_load'
          2136_2138  POP_JUMP_IF_TRUE   2154  'to 2154'
 
- L.3493      2140  LOAD_FAST                'self'
+ L.3494      2140  LOAD_FAST                'self'
              2142  LOAD_ATTR                _fixup_tracker
              2144  LOAD_METHOD              load
              2146  LOAD_FAST                'sim_attribute_data'
@@ -3325,11 +3325,11 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2156  JUMP_FORWARD       2186  'to 2186'
            2158_0  COME_FROM_EXCEPT   1374  '1374'
 
- L.3495      2158  POP_TOP          
+ L.3496      2158  POP_TOP          
              2160  POP_TOP          
              2162  POP_TOP          
 
- L.3496      2164  LOAD_GLOBAL              logger
+ L.3497      2164  LOAD_GLOBAL              logger
              2166  LOAD_METHOD              exception
              2168  LOAD_STR                 'Failed to load attributes for sim {}.'
              2170  LOAD_FAST                'self'
@@ -3346,93 +3346,93 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2188  LOAD_CONST               None
            2190_0  COME_FROM_FINALLY  1370  '1370'
 
- L.3498      2190  LOAD_CONST               None
+ L.3499      2190  LOAD_CONST               None
              2192  LOAD_FAST                'self'
              2194  STORE_ATTR               _blacklisted_statistics_cache
 
- L.3499      2196  LOAD_CONST               False
+ L.3500      2196  LOAD_CONST               False
              2198  LOAD_FAST                'self'
              2200  LOAD_ATTR                Buffs
              2202  STORE_ATTR               load_in_progress
              2204  END_FINALLY      
            2206_0  COME_FROM          1366  '1366'
 
- L.3504      2206  LOAD_FAST                'self'
+ L.3505      2206  LOAD_FAST                'self'
              2208  LOAD_METHOD              _setup_fitness_commodities
              2210  CALL_METHOD_0         0  '0 positional arguments'
              2212  POP_TOP          
 
- L.3506      2214  LOAD_FAST                'skip_load'
+ L.3507      2214  LOAD_FAST                'skip_load'
          2216_2218  POP_JUMP_IF_TRUE   2340  'to 2340'
 
- L.3507      2220  LOAD_FAST                'sim_proto'
+ L.3508      2220  LOAD_FAST                'sim_proto'
              2222  LOAD_ATTR                gameplay_data
              2224  LOAD_METHOD              HasField
              2226  LOAD_STR                 'location'
              2228  CALL_METHOD_1         1  '1 positional argument'
          2230_2232  POP_JUMP_IF_FALSE  2340  'to 2340'
 
- L.3508      2234  LOAD_FAST                'self'
+ L.3509      2234  LOAD_FAST                'self'
              2236  LOAD_ATTR                _serialization_option
              2238  LOAD_GLOBAL              SimSerializationOption
              2240  LOAD_ATTR                UNDECLARED
              2242  COMPARE_OP               !=
          2244_2246  POP_JUMP_IF_FALSE  2340  'to 2340'
 
- L.3509      2248  LOAD_GLOBAL              sims4
+ L.3510      2248  LOAD_GLOBAL              sims4
              2250  LOAD_ATTR                math
              2252  LOAD_METHOD              Transform
              2254  CALL_METHOD_0         0  '0 positional arguments'
              2256  STORE_FAST               'world_coord'
 
- L.3510      2258  LOAD_FAST                'sim_proto'
+ L.3511      2258  LOAD_FAST                'sim_proto'
              2260  LOAD_ATTR                gameplay_data
              2262  LOAD_ATTR                location
              2264  STORE_FAST               'location'
 
- L.3511      2266  LOAD_GLOBAL              sims4
+ L.3512      2266  LOAD_GLOBAL              sims4
              2268  LOAD_ATTR                math
              2270  LOAD_METHOD              Vector3
              2272  LOAD_FAST                'location'
              2274  LOAD_ATTR                x
 
- L.3512      2276  LOAD_FAST                'location'
+ L.3513      2276  LOAD_FAST                'location'
              2278  LOAD_ATTR                y
 
- L.3513      2280  LOAD_FAST                'location'
+ L.3514      2280  LOAD_FAST                'location'
              2282  LOAD_ATTR                z
              2284  CALL_METHOD_3         3  '3 positional arguments'
              2286  LOAD_FAST                'world_coord'
              2288  STORE_ATTR               translation
 
- L.3515      2290  LOAD_GLOBAL              sims4
+ L.3516      2290  LOAD_GLOBAL              sims4
              2292  LOAD_ATTR                math
              2294  LOAD_METHOD              Quaternion
              2296  LOAD_FAST                'location'
              2298  LOAD_ATTR                rot_x
 
- L.3516      2300  LOAD_FAST                'location'
+ L.3517      2300  LOAD_FAST                'location'
              2302  LOAD_ATTR                rot_y
 
- L.3517      2304  LOAD_FAST                'location'
+ L.3518      2304  LOAD_FAST                'location'
              2306  LOAD_ATTR                rot_z
 
- L.3518      2308  LOAD_FAST                'location'
+ L.3519      2308  LOAD_FAST                'location'
              2310  LOAD_ATTR                rot_w
              2312  CALL_METHOD_4         4  '4 positional arguments'
              2314  LOAD_FAST                'world_coord'
              2316  STORE_ATTR               orientation
 
- L.3519      2318  LOAD_FAST                'world_coord'
+ L.3520      2318  LOAD_FAST                'world_coord'
              2320  LOAD_FAST                'self'
              2322  STORE_ATTR               _transform_on_load
 
- L.3520      2324  LOAD_FAST                'location'
+ L.3521      2324  LOAD_FAST                'location'
              2326  LOAD_ATTR                level
              2328  LOAD_FAST                'self'
              2330  STORE_ATTR               _level_on_load
 
- L.3521      2332  LOAD_FAST                'location'
+ L.3522      2332  LOAD_FAST                'location'
              2334  LOAD_ATTR                surface_id
              2336  LOAD_FAST                'self'
              2338  STORE_ATTR               _surface_id_on_load
@@ -3440,24 +3440,24 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            2340_1  COME_FROM          2230  '2230'
            2340_2  COME_FROM          2216  '2216'
 
- L.3523  2340_2342  LOAD_GLOBAL              gameplay_serialization
+ L.3524  2340_2342  LOAD_GLOBAL              gameplay_serialization
          2344_2346  LOAD_METHOD              SuperInteractionSaveState
              2348  CALL_METHOD_0         0  '0 positional arguments'
              2350  LOAD_FAST                'self'
          2352_2354  STORE_ATTR               _si_state
 
- L.3524      2356  LOAD_FAST                'sim_proto'
+ L.3525      2356  LOAD_FAST                'sim_proto'
              2358  LOAD_ATTR                gameplay_data
              2360  LOAD_METHOD              HasField
              2362  LOAD_STR                 'interaction_state'
              2364  CALL_METHOD_1         1  '1 positional argument'
          2366_2368  POP_JUMP_IF_FALSE  2400  'to 2400'
 
- L.3530      2370  LOAD_CONST               True
+ L.3531      2370  LOAD_CONST               True
              2372  LOAD_FAST                'self'
          2374_2376  STORE_ATTR               _has_loaded_si_state
 
- L.3531      2378  LOAD_FAST                'self'
+ L.3532      2378  LOAD_FAST                'self'
          2380_2382  LOAD_ATTR                _si_state
          2384_2386  LOAD_METHOD              MergeFrom
              2388  LOAD_FAST                'sim_proto'
@@ -3467,7 +3467,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2398  POP_TOP          
            2400_0  COME_FROM          2366  '2366'
 
- L.3533      2400  LOAD_GLOBAL              services
+ L.3534      2400  LOAD_GLOBAL              services
              2402  LOAD_METHOD              sim_info_manager
              2404  CALL_METHOD_0         0  '0 positional arguments'
              2406  LOAD_METHOD              add_sim_info_if_not_in_manager
@@ -3475,7 +3475,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2410  CALL_METHOD_1         1  '1 positional argument'
              2412  POP_TOP          
 
- L.3535  2414_2416  LOAD_GLOBAL              len
+ L.3536  2414_2416  LOAD_GLOBAL              len
              2418  LOAD_FAST                'sim_proto'
              2420  LOAD_ATTR                gameplay_data
          2422_2424  LOAD_ATTR                bucks_data
@@ -3484,14 +3484,14 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2430  COMPARE_OP               >
          2432_2434  POP_JUMP_IF_FALSE  2464  'to 2464'
 
- L.3536      2436  LOAD_FAST                'self'
+ L.3537      2436  LOAD_FAST                'self'
          2438_2440  LOAD_ATTR                get_bucks_tracker
              2442  LOAD_CONST               True
              2444  LOAD_CONST               ('add_if_none',)
              2446  CALL_FUNCTION_KW_1     1  '1 total positional and keyword args'
              2448  STORE_FAST               'bucks_tracker'
 
- L.3537      2450  LOAD_FAST                'bucks_tracker'
+ L.3538      2450  LOAD_FAST                'bucks_tracker'
          2452_2454  LOAD_METHOD              load_data
              2456  LOAD_FAST                'sim_proto'
              2458  LOAD_ATTR                gameplay_data
@@ -3499,48 +3499,48 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2462  POP_TOP          
            2464_0  COME_FROM          2432  '2432'
 
- L.3539      2464  LOAD_FAST                'sim_proto'
+ L.3540      2464  LOAD_FAST                'sim_proto'
              2466  LOAD_ATTR                gameplay_data
              2468  LOAD_METHOD              HasField
              2470  LOAD_STR                 'gameplay_options'
              2472  CALL_METHOD_1         1  '1 positional argument'
          2474_2476  POP_JUMP_IF_FALSE  2578  'to 2578'
 
- L.3540      2478  LOAD_FAST                'sim_proto'
+ L.3541      2478  LOAD_FAST                'sim_proto'
              2480  LOAD_ATTR                gameplay_data
          2482_2484  LOAD_ATTR                gameplay_options
              2486  LOAD_FAST                'self'
          2488_2490  STORE_ATTR               _gameplay_options
 
- L.3543      2492  LOAD_FAST                'self'
+ L.3544      2492  LOAD_FAST                'self'
          2494_2496  LOAD_METHOD              get_gameplay_option
          2498_2500  LOAD_GLOBAL              SimInfoGameplayOptions
          2502_2504  LOAD_ATTR                FORCE_CURRENT_ALLOW_FAME_SETTING
              2506  CALL_METHOD_1         1  '1 positional argument'
          2508_2510  POP_JUMP_IF_FALSE  2542  'to 2542'
 
- L.3544      2512  LOAD_FAST                'self'
+ L.3545      2512  LOAD_FAST                'self'
          2514_2516  LOAD_METHOD              get_gameplay_option
          2518_2520  LOAD_GLOBAL              SimInfoGameplayOptions
          2522_2524  LOAD_ATTR                ALLOW_FAME
              2526  CALL_METHOD_1         1  '1 positional argument'
          2528_2530  POP_JUMP_IF_TRUE   2542  'to 2542'
 
- L.3546      2532  LOAD_CONST               False
+ L.3547      2532  LOAD_CONST               False
              2534  LOAD_FAST                'self'
          2536_2538  STORE_ATTR               allow_fame
              2540  JUMP_FORWARD       2578  'to 2578'
            2542_0  COME_FROM          2528  '2528'
            2542_1  COME_FROM          2508  '2508'
 
- L.3547      2542  LOAD_FAST                'self'
+ L.3548      2542  LOAD_FAST                'self'
          2544_2546  LOAD_METHOD              get_gameplay_option
          2548_2550  LOAD_GLOBAL              SimInfoGameplayOptions
          2552_2554  LOAD_ATTR                FREEZE_FAME
              2556  CALL_METHOD_1         1  '1 positional argument'
          2558_2560  POP_JUMP_IF_FALSE  2578  'to 2578'
 
- L.3548      2562  LOAD_FAST                'self'
+ L.3549      2562  LOAD_FAST                'self'
          2564_2566  LOAD_ATTR                set_freeze_fame
              2568  LOAD_CONST               True
              2570  LOAD_CONST               True
@@ -3551,7 +3551,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
            2578_1  COME_FROM          2540  '2540'
            2578_2  COME_FROM          2474  '2474'
 
- L.3550      2578  SETUP_LOOP         2612  'to 2612'
+ L.3551      2578  SETUP_LOOP         2612  'to 2612'
              2580  LOAD_FAST                'sim_proto'
              2582  LOAD_ATTR                gameplay_data
          2584_2586  LOAD_ATTR                squad_members
@@ -3559,7 +3559,7 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2590  FOR_ITER           2610  'to 2610'
              2592  STORE_FAST               'squad_member_id'
 
- L.3551      2594  LOAD_FAST                'self'
+ L.3552      2594  LOAD_FAST                'self'
          2596_2598  LOAD_METHOD              add_sim_info_id_to_squad
              2600  LOAD_FAST                'squad_member_id'
              2602  CALL_METHOD_1         1  '1 positional argument'
@@ -3568,21 +3568,21 @@ class SimInfo(SimInfoWithOccultTracker, SimInfoCreationSource.SimInfoCreationSou
              2610  POP_BLOCK        
            2612_0  COME_FROM_LOOP     2578  '2578'
 
- L.3553      2612  LOAD_FAST                'sim_proto'
+ L.3554      2612  LOAD_FAST                'sim_proto'
              2614  LOAD_ATTR                gameplay_data
              2616  LOAD_METHOD              HasField
              2618  LOAD_STR                 'vehicle_id'
              2620  CALL_METHOD_1         1  '1 positional argument'
          2622_2624  POP_JUMP_IF_FALSE  2640  'to 2640'
 
- L.3554      2626  LOAD_FAST                'sim_proto'
+ L.3555      2626  LOAD_FAST                'sim_proto'
              2628  LOAD_ATTR                gameplay_data
          2630_2632  LOAD_ATTR                vehicle_id
              2634  LOAD_FAST                'self'
          2636_2638  STORE_ATTR               _vehicle_id
            2640_0  COME_FROM          2622  '2622'
 
- L.3556      2640  LOAD_FAST                'self'
+ L.3557      2640  LOAD_FAST                'self'
          2642_2644  LOAD_METHOD              _post_load
              2646  CALL_METHOD_0         0  '0 positional arguments'
              2648  POP_TOP          

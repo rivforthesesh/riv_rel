@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\clubs\club_tuning.py
-# Compiled at: 2021-05-06 19:07:25
-# Size of source mod 2**32: 80364 bytes
+# Compiled at: 2021-07-13 11:55:45
+# Size of source mod 2**32: 80378 bytes
 import weakref
 from broadcasters.broadcaster import Broadcaster
 from broadcasters.broadcaster_effect import BroadcasterEffectLoot
@@ -366,7 +366,7 @@ class ClubTunables:
       tuple_name='TunableRelationshipMod')
     CLUB_BUCKS_REWARDS_MULTIPLIER = TunableTuple(description='\n        A combination of trait reference and multiplier.\n        \n        When a Sim receiving the Club Bucks has the tuned trait then they will\n        get the tuned multiplier applied to the amound of reward they receive.\n        ',
       trait=TunableReference(description='\n            The trait required to receiver the multiplier bonus to the club \n            bucks the Sim receives.\n            ',
-      manager=(services.trait_manager()),
+      manager=(services.get_instance_manager(sims4.resources.Types.TRAIT)),
       pack_safe=True),
       multiplier=Tunable(description='\n            The multiplier to apply to the amount of club bucks a club member \n            receives if they have the appropriate trait.\n            ',
       tunable_type=float,

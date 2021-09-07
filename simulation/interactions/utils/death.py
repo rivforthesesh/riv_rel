@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\interactions\utils\death.py
-# Compiled at: 2019-11-07 19:15:40
-# Size of source mod 2**32: 12180 bytes
+# Compiled at: 2021-07-13 11:51:45
+# Size of source mod 2**32: 12206 bytes
 import random
 from protocolbuffers import SimObjectAttributes_pb2 as protocols
 from buffs.tunable import TunableBuffReference
@@ -55,7 +55,7 @@ class DeathTracker(SimInfoTracker):
       default=(DeathType.NONE)),
       key_name='Death Type',
       value_type=TunableReference(description='\n            The ghost trait to apply to a Sim when they die from the specified\n            death type.\n            ',
-      manager=(services.trait_manager())),
+      manager=(services.get_instance_manager(sims4.resources.Types.TRAIT))),
       value_name='Ghost Trait')
     DEATH_BUFFS = TunableList(description='\n        A list of buffs to apply to Sims when another Sim dies. For example, use\n        this tuning to tune a "Death of a Good Friend" buff.\n        ',
       tunable=TunableTuple(test_set=TunableReference(description="\n                The test that must pass between the dying Sim (TargetSim) and\n                the Sim we're considering (Actor). If this test passes, no\n                further test is executed.\n                ",
@@ -68,7 +68,7 @@ class DeathTracker(SimInfoTracker):
       tunable=TunableUiDialogNotificationReference(description='\n                    The notification to show.\n                    ',
       pack_safe=True))))
     IS_DYING_BUFF = TunableReference(description='\n        A reference to the buff a Sim is given when they are dying.\n        ',
-      manager=(services.buff_manager()))
+      manager=(services.get_instance_manager(sims4.resources.Types.BUFF)))
     DEATH_RELATIONSHIP_BIT_FIXUP_LOOT = TunableReference(description='\n        A reference to the loot to apply to a Sim upon death.\n        \n        This is where the relationship bit fixup loots will be tuned. This\n        used to be on the interactions themselves but if the interaction was\n        reset then the bits would stay as they were. If we add more relationship\n        bits we want to clean up on death, the references Loot is the place to \n        do it.\n        ',
       manager=(services.get_instance_manager(sims4.resources.Types.ACTION)))
 

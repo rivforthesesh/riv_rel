@@ -2,8 +2,8 @@
 # Python bytecode 3.7 (3394)
 # Decompiled from: Python 3.7.0 (v3.7.0:1bf9cc5093, Jun 27 2018, 04:59:51) [MSC v.1914 64 bit (AMD64)]
 # Embedded file name: T:\InGame\Gameplay\Scripts\Server\zone.py
-# Compiled at: 2021-06-14 21:48:27
-# Size of source mod 2**32: 94712 bytes
+# Compiled at: 2021-08-03 03:28:50
+# Size of source mod 2**32: 95448 bytes
 import collections, gc, math, random, weakref
 from protocolbuffers import FileSerialization_pb2 as serialization
 from protocolbuffers.Consts_pb2 import MGR_OBJECT, MGR_SITUATION, MGR_PARTY, MGR_SOCIAL_GROUP, MGR_TRAVEL_GROUP
@@ -23,6 +23,7 @@ from sims.royalty_tracker import RoyaltyAlarmManager
 from sims4 import protocol_buffer_utils, reload
 from sims4.callback_utils import CallableList, CallableListPreventingRecursion
 from sims4.tuning.tunable import TunableEnumWithFilter
+from singletons import EMPTY_SET
 from situations.npc_hosted_situations import NPCHostedSituationService
 from travel_group.travel_group_manager import TravelGroupManager
 from world import region, street
@@ -1111,26 +1112,26 @@ class Zone:
 
     def update_household_objects_ownership--- This code section failed: ---
 
- L.1806         0  LOAD_FAST                'self'
+ L.1807         0  LOAD_FAST                'self'
                 2  LOAD_METHOD              _get_zone_proto
                 4  CALL_METHOD_0         0  '0 positional arguments'
                 6  STORE_FAST               'zone_data_proto'
 
- L.1807         8  LOAD_FAST                'zone_data_proto'
+ L.1808         8  LOAD_FAST                'zone_data_proto'
                10  LOAD_CONST               None
                12  COMPARE_OP               is
                14  POP_JUMP_IF_FALSE    20  'to 20'
 
- L.1808        16  LOAD_CONST               None
+ L.1809        16  LOAD_CONST               None
                18  RETURN_VALUE     
              20_0  COME_FROM            14  '14'
 
- L.1810        20  LOAD_FAST                'self'
+ L.1811        20  LOAD_FAST                'self'
                22  LOAD_ATTR                venue_service
                24  LOAD_ATTR                active_venue
                26  STORE_FAST               'venue_instance'
 
- L.1811        28  LOAD_FAST                'venue_instance'
+ L.1812        28  LOAD_FAST                'venue_instance'
                30  LOAD_CONST               None
                32  COMPARE_OP               is
                34  POP_JUMP_IF_TRUE     42  'to 42'
@@ -1139,103 +1140,109 @@ class Zone:
                40  POP_JUMP_IF_TRUE     46  'to 46'
              42_0  COME_FROM            34  '34'
 
- L.1818        42  LOAD_CONST               None
+ L.1819        42  LOAD_CONST               None
                44  RETURN_VALUE     
              46_0  COME_FROM            40  '40'
 
- L.1820        46  LOAD_FAST                'zone_data_proto'
+ L.1821        46  LOAD_FAST                'zone_data_proto'
                48  LOAD_ATTR                gameplay_zone_data
                50  STORE_FAST               'gameplay_zone_data'
 
- L.1821        52  LOAD_FAST                'self'
-               54  LOAD_ATTR                lot
-               56  LOAD_ATTR                owner_household_id
-               58  LOAD_CONST               0
-               60  COMPARE_OP               ==
-               62  POP_JUMP_IF_FALSE   122  'to 122'
+ L.1822        52  LOAD_GLOBAL              services
+               54  LOAD_METHOD              active_household_id
+               56  CALL_METHOD_0         0  '0 positional arguments'
+               58  STORE_FAST               'active_household_id'
 
- L.1822        64  LOAD_FAST                'self'
-               66  LOAD_ATTR                travel_group_manager
-               68  LOAD_METHOD              get_travel_group_by_zone_id
-               70  LOAD_FAST                'self'
-               72  LOAD_ATTR                id
-               74  CALL_METHOD_1         1  '1 positional argument'
-               76  STORE_FAST               'travel_group'
+ L.1824        60  LOAD_FAST                'self'
+               62  LOAD_ATTR                lot
+               64  LOAD_ATTR                owner_household_id
+               66  LOAD_CONST               0
+               68  COMPARE_OP               ==
+               70  POP_JUMP_IF_FALSE   136  'to 136'
 
- L.1824        78  LOAD_FAST                'travel_group'
-               80  LOAD_CONST               None
-               82  COMPARE_OP               is
-               84  POP_JUMP_IF_TRUE    110  'to 110'
+ L.1825        72  LOAD_FAST                'self'
+               74  LOAD_ATTR                travel_group_manager
+               76  LOAD_METHOD              get_travel_group_by_zone_id
+               78  LOAD_FAST                'self'
+               80  LOAD_ATTR                id
+               82  CALL_METHOD_1         1  '1 positional argument'
+               84  STORE_FAST               'travel_group'
 
- L.1825        86  LOAD_GLOBAL              protocol_buffer_utils
-               88  LOAD_METHOD              has_field
-               90  LOAD_FAST                'gameplay_zone_data'
-               92  LOAD_STR                 'active_travel_group_id_on_save'
-               94  CALL_METHOD_2         2  '2 positional arguments'
-               96  POP_JUMP_IF_FALSE   110  'to 110'
+ L.1827        86  LOAD_FAST                'travel_group'
+               88  LOAD_CONST               None
+               90  COMPARE_OP               is
+               92  POP_JUMP_IF_TRUE    118  'to 118'
 
- L.1826        98  LOAD_FAST                'gameplay_zone_data'
-              100  LOAD_ATTR                active_travel_group_id_on_save
-              102  LOAD_FAST                'travel_group'
-              104  LOAD_ATTR                id
-              106  COMPARE_OP               !=
-              108  POP_JUMP_IF_FALSE   178  'to 178'
-            110_0  COME_FROM            96  '96'
-            110_1  COME_FROM            84  '84'
+ L.1828        94  LOAD_GLOBAL              protocol_buffer_utils
+               96  LOAD_METHOD              has_field
+               98  LOAD_FAST                'gameplay_zone_data'
+              100  LOAD_STR                 'active_travel_group_id_on_save'
+              102  CALL_METHOD_2         2  '2 positional arguments'
+              104  POP_JUMP_IF_FALSE   118  'to 118'
 
- L.1829       110  LOAD_FAST                'self'
-              112  LOAD_METHOD              _set_zone_objects_household_owner_id
-              114  LOAD_CONST               None
-              116  CALL_METHOD_1         1  '1 positional argument'
-              118  POP_TOP          
-              120  JUMP_FORWARD        178  'to 178'
-            122_0  COME_FROM            62  '62'
+ L.1829       106  LOAD_FAST                'gameplay_zone_data'
+              108  LOAD_ATTR                active_travel_group_id_on_save
+              110  LOAD_FAST                'travel_group'
+              112  LOAD_ATTR                id
+              114  COMPARE_OP               !=
+              116  POP_JUMP_IF_FALSE   180  'to 180'
+            118_0  COME_FROM           104  '104'
+            118_1  COME_FROM            92  '92'
 
- L.1831       122  LOAD_FAST                'self'
-              124  LOAD_ATTR                lot
-              126  LOAD_ATTR                owner_household_id
-              128  LOAD_GLOBAL              services
-              130  LOAD_METHOD              active_household_id
-              132  CALL_METHOD_0         0  '0 positional arguments'
-              134  COMPARE_OP               ==
-              136  POP_JUMP_IF_FALSE   178  'to 178'
+ L.1834       118  LOAD_FAST                'self'
+              120  LOAD_ATTR                _set_zone_objects_household_owner_id
+              122  LOAD_CONST               None
+              124  LOAD_FAST                'active_household_id'
+              126  BUILD_SET_1           1 
+              128  LOAD_CONST               ('skip_objects_owned_by_household_ids',)
+              130  CALL_FUNCTION_KW_2     2  '2 total positional and keyword args'
+              132  POP_TOP          
+              134  JUMP_FORWARD        180  'to 180'
+            136_0  COME_FROM            70  '70'
 
- L.1836       138  LOAD_GLOBAL              protocol_buffer_utils
-              140  LOAD_METHOD              has_field
-              142  LOAD_FAST                'gameplay_zone_data'
-              144  LOAD_STR                 'active_household_id_on_save'
-              146  CALL_METHOD_2         2  '2 positional arguments'
-              148  POP_JUMP_IF_FALSE   164  'to 164'
+ L.1836       136  LOAD_FAST                'self'
+              138  LOAD_ATTR                lot
+              140  LOAD_ATTR                owner_household_id
+              142  LOAD_FAST                'active_household_id'
+              144  COMPARE_OP               ==
+              146  POP_JUMP_IF_FALSE   180  'to 180'
 
- L.1837       150  LOAD_FAST                'gameplay_zone_data'
-              152  LOAD_ATTR                lot_owner_household_id_on_save
-              154  LOAD_GLOBAL              services
-              156  LOAD_METHOD              active_household_id
-              158  CALL_METHOD_0         0  '0 positional arguments'
-              160  COMPARE_OP               !=
-              162  POP_JUMP_IF_FALSE   178  'to 178'
-            164_0  COME_FROM           148  '148'
+ L.1841       148  LOAD_GLOBAL              protocol_buffer_utils
+              150  LOAD_METHOD              has_field
+              152  LOAD_FAST                'gameplay_zone_data'
+              154  LOAD_STR                 'active_household_id_on_save'
+              156  CALL_METHOD_2         2  '2 positional arguments'
+              158  POP_JUMP_IF_FALSE   170  'to 170'
 
- L.1838       164  LOAD_FAST                'self'
-              166  LOAD_METHOD              _set_zone_objects_household_owner_id
-              168  LOAD_GLOBAL              services
-              170  LOAD_METHOD              active_household_id
-              172  CALL_METHOD_0         0  '0 positional arguments'
-              174  CALL_METHOD_1         1  '1 positional argument'
-              176  POP_TOP          
-            178_0  COME_FROM           162  '162'
-            178_1  COME_FROM           136  '136'
-            178_2  COME_FROM           120  '120'
-            178_3  COME_FROM           108  '108'
+ L.1842       160  LOAD_FAST                'gameplay_zone_data'
+              162  LOAD_ATTR                lot_owner_household_id_on_save
+              164  LOAD_FAST                'active_household_id'
+              166  COMPARE_OP               !=
+              168  POP_JUMP_IF_FALSE   180  'to 180'
+            170_0  COME_FROM           158  '158'
 
-Parse error at or near `COME_FROM' instruction at offset 122_0
+ L.1843       170  LOAD_FAST                'self'
+              172  LOAD_METHOD              _set_zone_objects_household_owner_id
+              174  LOAD_FAST                'active_household_id'
+              176  CALL_METHOD_1         1  '1 positional argument'
+              178  POP_TOP          
+            180_0  COME_FROM           168  '168'
+            180_1  COME_FROM           146  '146'
+            180_2  COME_FROM           134  '134'
+            180_3  COME_FROM           116  '116'
+
+Parse error at or near `COME_FROM' instruction at offset 136_0
 
     def disown_household_objects(self):
         self._set_zone_objects_household_owner_id(None)
 
-    def _set_zone_objects_household_owner_id(self, household_id):
+    def _set_zone_objects_household_owner_id(self, household_id, skip_objects_owned_by_household_ids=None):
+        if skip_objects_owned_by_household_ids is None:
+            skip_objects_owned_by_household_ids = EMPTY_SET
         for obj in services.object_manager(self.id).get_all():
             if obj.is_on_active_lot():
+                if obj.get_household_owner_id() in skip_objects_owned_by_household_ids:
+                    continue
                 obj.set_household_owner_id(household_id)
 
         for _, inventory in self.lot.get_all_object_inventories_gen():
@@ -1244,6 +1251,8 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
                     if inventory.owner.household_id != household_id:
                         continue
             for inv_obj in inventory:
+                if inv_obj.get_household_owner_id() in skip_objects_owned_by_household_ids:
+                    continue
                 inv_obj.set_household_owner_id(household_id)
 
     def venue_changed_between_save_and_load(self):
@@ -1257,27 +1266,27 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
 
     def should_restore_sis--- This code section failed: ---
 
- L.1878         0  LOAD_FAST                'self'
+ L.1889         0  LOAD_FAST                'self'
                 2  LOAD_METHOD              time_has_passed_in_world_since_zone_save
                 4  CALL_METHOD_0         0  '0 positional arguments'
                 6  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1879         8  LOAD_FAST                'self'
+ L.1890         8  LOAD_FAST                'self'
                10  LOAD_METHOD              venue_changed_between_save_and_load
                12  CALL_METHOD_0         0  '0 positional arguments'
                14  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1880        16  LOAD_FAST                'self'
+ L.1891        16  LOAD_FAST                'self'
                18  LOAD_METHOD              lot_owner_household_changed_between_save_and_load
                20  CALL_METHOD_0         0  '0 positional arguments'
                22  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1881        24  LOAD_FAST                'self'
+ L.1892        24  LOAD_FAST                'self'
                26  LOAD_METHOD              active_household_changed_between_save_and_load
                28  CALL_METHOD_0         0  '0 positional arguments'
                30  POP_JUMP_IF_TRUE     38  'to 38'
 
- L.1882        32  LOAD_FAST                'self'
+ L.1893        32  LOAD_FAST                'self'
                34  LOAD_ATTR                is_first_visit_to_zone
                36  POP_JUMP_IF_FALSE    42  'to 42'
              38_0  COME_FROM            30  '30'
@@ -1285,11 +1294,11 @@ Parse error at or near `COME_FROM' instruction at offset 122_0
              38_2  COME_FROM            14  '14'
              38_3  COME_FROM             6  '6'
 
- L.1883        38  LOAD_CONST               False
+ L.1894        38  LOAD_CONST               False
                40  RETURN_VALUE     
              42_0  COME_FROM            36  '36'
 
- L.1884        42  LOAD_CONST               True
+ L.1895        42  LOAD_CONST               True
                44  RETURN_VALUE     
                -1  RETURN_LAST      
 
