@@ -92,9 +92,9 @@ file_name_extra = ''
 hex_slot_id = '00000000'  # updated on game load
 # interactions (ask if related)
 riv_rel_int_24508_SnippetId = 24508
-riv_rel_int_24508_MixerId = (17552881007513514036,)
-riv_rel_int_163702_SnippetId = 163702
-riv_rel_int_163702_MixerId = (18078901824007092157,)  # (17552881007513514036,)  # TODO: confirm if experiment worked
+riv_rel_int_24508_MixerId = (17552881007513514036,18078901824007092157)
+# riv_rel_int_163702_SnippetId = 163702
+# riv_rel_int_163702_MixerId = (17552881007513514036,)  # TODO: confirm if experiment worked
 # for giving a heads up about own folder
 jsyk_ownfolder = False  # KEEP FALSE
 # for MCCC autosave compatibility
@@ -1691,23 +1691,23 @@ def riv_rel_int_AddMixer_24508(original, self):
             snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
 
 
-@inject_to(InstanceManager, 'load_data_into_class_instances')
-def riv_rel_int_AddMixer_163702(original, self):
-    original(self)
-    if self.TYPE == Types.SNIPPET:
-        key = sims4.resources.get_resource_key(riv_rel_int_163702_SnippetId, Types.SNIPPET)
-        snippet_tuning = self._tuned_classes.get(key)
-        if snippet_tuning is None:
-            return
-        for m_id in riv_rel_int_163702_MixerId:
-            affordance_manager = services.affordance_manager()
-            key = sims4.resources.get_resource_key(m_id, Types.INTERACTION)
-            mixer_tuning = affordance_manager.get(key)
-            if mixer_tuning is None:
-                return
-            if mixer_tuning in snippet_tuning.value:
-                return
-            snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
+# @inject_to(InstanceManager, 'load_data_into_class_instances')  # TODO: FIX
+# def riv_rel_int_AddMixer_163702(original, self):
+#     original(self)
+#     if self.TYPE == Types.SNIPPET:
+#         key = sims4.resources.get_resource_key(riv_rel_int_163702_SnippetId, Types.SNIPPET)
+#         snippet_tuning = self._tuned_classes.get(key)
+#         if snippet_tuning is None:
+#             return
+#         for m_id in riv_rel_int_163702_MixerId:
+#             affordance_manager = services.affordance_manager()
+#             key = sims4.resources.get_resource_key(m_id, Types.INTERACTION)
+#             mixer_tuning = affordance_manager.get(key)
+#             if mixer_tuning is None:
+#                 return
+#             if mixer_tuning in snippet_tuning.value:
+#                 return
+#             snippet_tuning.value = snippet_tuning.value + (mixer_tuning,)
 
 
 # attempt for notification:
