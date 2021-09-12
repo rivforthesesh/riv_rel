@@ -94,7 +94,7 @@ hex_slot_id = '00000000'  # updated on game load
 riv_rel_int_24508_SnippetId = 24508
 riv_rel_int_24508_MixerId = (17552881007513514036,)
 riv_rel_int_163702_SnippetId = 163702
-riv_rel_int_163702_MixerId = (17552881007513514036,)
+riv_rel_int_163702_MixerId = (18078901824007092157,)  # (17552881007513514036,)  # TODO: confirm if experiment worked
 # for giving a heads up about own folder
 jsyk_ownfolder = False  # KEEP FALSE
 # for MCCC autosave compatibility
@@ -1896,41 +1896,15 @@ def give_me_a_string(string_type):
     # 5 = 101 = step and inlaw
     # 6 = 110 = step and bio
     # 7 = 111 = step, bio, and inlaw
-    strings_dict = {
-        0: ['Nope, we aren\'t related.',
-            'We aren\'t related at all.',
-            'I\'m not related to you. What gave you that idea?'],
-        1: ['I\'d hope we aren\'t related.',
-            'We aren\'t related.',
-            'We don\'t have any biological relation.'],
-        2: ['Yeah, we\'re related.',
-            'Of course we\'re related.'],
-        3: ['Uh... we are related.',
-            'Might as well start singing Sweet Home Appaloosa...',
-            'This is a bit awkward.',
-            'It\'s a little complicated...'],
-        4: ['We aren\'t exactly related.',
-            'Technically, we aren\'t related.',
-            'We\'re only stepfamily.'],
-        5: ['We aren\'t technically related.',
-            'I\'m one of your in-laws, but we\'re also stepfamily.',
-            'Well... we aren\'t related!'],
-        6: ['We\'re related, but also stepfamily, which is... odd.',
-            'Yeah, we\'re related. Everything is kinda messy though.',
-            'I mean, we are related, but we\'re stepfamily too.'],
-        7: ['Oh llamas, our family relationship is an absolute mess!',
-            'It\'s very complicated.',
-            'Bit of an odd family...']
-    }
+    strings_dict = rrs.strings_dict
     string_list = strings_dict[string_type]
     string_output = random.choice(string_list)
     # amend these if there are strong friendship/romantic relations
     return string_output + ' '
 
 
-# for the interaction
-@sims4.commands.Command('riv_get_notif', command_type=sims4.commands.CommandType.Live)
-def riv_get_notif(x_id: int, y_id: int, _connection=None):
+# generic for interactions
+def riv_get_notif_generic(x_id: int, y_id: int, x_person: int, y_person: int, _connection=None):
     # sim_x = TargetSim/Object
     # sim_y = Actor
     # tried:
@@ -1972,121 +1946,142 @@ def riv_get_notif(x_id: int, y_id: int, _connection=None):
         rel_code += 4
 
     # formats the notification
-    notif_text = give_me_a_string(rel_code)
+    if x_person == 1 and y_person == 2:
+        notif_text = give_me_a_string(rel_code)
+    elif x_person == 1 and y_person == 3:
+        notif_text = rrs.othersim_string.format(yname=sim_y.first_name)
+        if rel_code == 0:
+            notif_text = notif_text + ' ' + give_me_a_string(rel_code)
+    else:
+        notif_text = ''
+
     if bio_rels:
         # has bio rel
-        notif_text += 'I\'m your ' + bio_rels[0]
+        notif_text += rrs.x_is_ys[f'{x_person}.{y_person}'] + bio_rels[0]
         if len(bio_rels) == 2:  # a and b
-            notif_text += ' and ' + bio_rels[1]
+            notif_text += rrs.and__ + bio_rels[1]
         elif len(bio_rels) > 2:  # a, b, c, and d
             for i in range(1, len(bio_rels) - 1):
                 notif_text += ', ' + bio_rels[i]
-            notif_text += ', and ' + bio_rels[len(bio_rels) - 1]
+            notif_text += ',' + rrs.and__ + bio_rels[len(bio_rels) - 1]
         notif_text += '. '
         if inlaw_rels + step_rels:
             # has bio and non-bio rel
             non_bio_rels = inlaw_rels + step_rels
-            notif_text += 'I\'m also your ' + non_bio_rels[0]
+            notif_text += rrs.x_is_ys[f'{x_person}..{y_person}'] + non_bio_rels[0]
             if len(non_bio_rels) == 2:  # a and b
-                notif_text += ' and ' + non_bio_rels[1]
+                notif_text += rrs.and__ + non_bio_rels[1]
             elif len(non_bio_rels) > 2:  # a, b, c, and d
                 for i in range(1, len(non_bio_rels) - 1):
                     notif_text += ', ' + non_bio_rels[i]
-                notif_text += ', and ' + non_bio_rels[len(non_bio_rels) - 1]
+                notif_text += ',' + rrs.and__ + non_bio_rels[len(non_bio_rels) - 1]
             notif_text += '. '
     else:
         # no bio rel
         if inlaw_rels:
             # has inlaw rel
-            notif_text += 'I\'m your ' + inlaw_rels[0]
+            notif_text += rrs.x_is_ys[f'{x_person}.{y_person}'] + inlaw_rels[0]
             if len(inlaw_rels) == 2:  # a and b
-                notif_text += ' and ' + inlaw_rels[1]
+                notif_text += rrs.and__ + inlaw_rels[1]
             elif len(inlaw_rels) > 2:  # a, b, c, and d
                 for i in range(1, len(inlaw_rels) - 1):
                     notif_text += ', ' + inlaw_rels[i]
-                notif_text += ', and ' + inlaw_rels[len(inlaw_rels) - 1]
+                notif_text += ',' + rrs.and__ + inlaw_rels[len(inlaw_rels) - 1]
             notif_text += '. '
             if step_rels:
                 # has inlaw and step rel
-                notif_text += 'I\'m also your ' + step_rels[0]
+                notif_text += rrs.x_is_ys[f'{x_person}..{y_person}'] + step_rels[0]
                 if len(step_rels) == 2:  # a and b
-                    notif_text += ' and ' + step_rels[1]
+                    notif_text += rrs.and__ + step_rels[1]
                 elif len(step_rels) > 2:  # a, b, c, and d
                     for i in range(1, len(step_rels) - 1):
                         notif_text += ', ' + step_rels[i]
-                    notif_text += ', and ' + step_rels[len(step_rels) - 1]
+                    notif_text += ',' + rrs.and__ + step_rels[len(step_rels) - 1]
                 notif_text += '. '
         else:
             # no inlaw rel
             if step_rels:
                 # step rel
-                notif_text += 'I\'m your ' + step_rels[0]
+                notif_text += rrs.x_is_ys[f'{x_person}.{y_person}'] + step_rels[0]
                 if len(step_rels) == 2:  # a and b
-                    notif_text += ' and ' + step_rels[1]
+                    notif_text += rrs.and__ + step_rels[1]
                 elif len(step_rels) > 2:  # a, b, c, and d
                     for i in range(1, len(step_rels) - 1):
                         notif_text += ', ' + step_rels[i]
-                    notif_text += ', and ' + step_rels[len(step_rels) - 1]
+                    notif_text += ',' + rrs.and__ + step_rels[len(step_rels) - 1]
                 notif_text += '. '
 
-    try:
-        # extra starting/ending strings
-        manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
-        if sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DB4)):  # friendship-despised
-            if rel_code == 0:
-                notif_text = 'I\'m so glad we aren\'t related.'
-                scumbumbo_show_notification(sim_x, sim_y, notif_text)
-                return  # bc we don't need to do anything else here
-            else:
-                notif_text = notif_text + ' Doesn\'t mean I want anything to do with you.'
-        if sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x79EB)):  # friendship-bff_BromanticPartner
-            notif_text = 'Bro... ' + notif_text
-        if sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x18961)):  # relbit_Pregnancy_Birthparent
-            notif_text = 'What? I gave birth to you! ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDF)):  # RomanticCombo_Soulmates
-            if rel_code < 2:  # no rel or inlaw only
-                notif_text = 'You\'re my soulmate! ' + notif_text
-            elif rel_code < 8:  # bio, step, combos of bio/step/inlaw, futureproofed for codes \geq 8
-                notif_text = notif_text + ' I can\'t help being deeply in love with you, though.'  # i mean, EW
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id,
-                                                manager.get(0x18465)):  # romantic-Promised = engaged teens
-            notif_text = 'I\'ve already promised myself to you, so it\'s a bit late to ask... ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DC8)):  # romantic-Engaged
-            notif_text = notif_text + ' ...we\'re still on for the wedding, right?'
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DCE)):  # romantic-Married
-            notif_text = 'Ah yes, the right time to double check is after we get married. ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x17B82)):  # romantic-HaveDoneWooHoo_Recently
-            notif_text = 'We JUST woohooed! ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x873B)):  # romantic-HaveDoneWooHoo
-            notif_text = 'We\'ve woohooed, and now you\'re asking? ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x27A6)):  # ShortTerm_RecentFirstKiss
-            notif_text = 'We literally just had our first kiss. ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x27A6)):  # had first kiss
-            notif_text = 'Maybe you should\'ve asked before we kissed? ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x1F064)):  # romantic-ExchangedNumbers
-            notif_text = 'Checking to see if you should keep my number? ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DD9)):  # RomanticCombo_ItsAwkward
-            notif_text = 'Things are already weird. ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDA)):  # RomanticCombo_ItsComplicated
-            notif_text = 'This relationship is already complicated. ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDB)):  # RomanticCombo_ItsVeryAwkward
-            notif_text = 'Everything\'s already really weird... ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDC)):  # RomanticCombo_ItsVeryComplicated
-            notif_text = 'This relationship is already SUPER complicated! ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x181C4)):  # HaveBeenRomantic
-            notif_text = 'We\'ve already been flirting... it\'s a little late to ask. ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x1A36D)):  # relationshipbit_CoWorkers
-            notif_text = 'We work together. ' + notif_text
-        elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DB0)):  # friendship-acquaintances
-            notif_text = 'Oh, right, you barely know me. ' + notif_text
-    except Exception as e:
-        riv_log('error: failed to add flavour to notif because ' + str(e))
+    if x_person == 1 and y_person == 2:  # sim_x is talking to sim_y
+        try:
+            # extra starting/ending strings
+            manager = services.get_instance_manager(Types.RELATIONSHIP_BIT)
+            if sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DB4)):  # friendship-despised
+                if rel_code == 0:
+                    notif_text = 'I\'m so glad we aren\'t related.'
+                    scumbumbo_show_notification(sim_x, sim_y, notif_text)
+                    return  # bc we don't need to do anything else here
+                else:
+                    notif_text = notif_text + ' Doesn\'t mean I want anything to do with you.'
+            if sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x79EB)):  # friendship-bff_BromanticPartner
+                notif_text = 'Bro... ' + notif_text
+            if sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x18961)):  # relbit_Pregnancy_Birthparent
+                notif_text = 'What? I gave birth to you! ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDF)):  # RomanticCombo_Soulmates
+                if rel_code < 2:  # no rel or inlaw only
+                    notif_text = 'You\'re my soulmate! ' + notif_text
+                elif rel_code < 8:  # bio, step, combos of bio/step/inlaw, futureproofed for codes \geq 8
+                    notif_text = notif_text + ' I can\'t help being deeply in love with you, though.'  # i mean, EW
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id,
+                                                    manager.get(0x18465)):  # romantic-Promised = engaged teens
+                notif_text = 'I\'ve already promised myself to you, so it\'s a bit late to ask... ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DC8)):  # romantic-Engaged
+                notif_text = notif_text + ' ...we\'re still on for the wedding, right?'
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DCE)):  # romantic-Married
+                notif_text = 'Ah yes, the right time to double check is after we get married. ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x17B82)):  # romantic-HaveDoneWooHoo_Recently
+                notif_text = 'We JUST woohooed! ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x873B)):  # romantic-HaveDoneWooHoo
+                notif_text = 'We\'ve woohooed, and now you\'re asking? ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x27A6)):  # ShortTerm_RecentFirstKiss
+                notif_text = 'We literally just had our first kiss. ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x27A6)):  # had first kiss
+                notif_text = 'Maybe you should\'ve asked before we kissed? ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x1F064)):  # romantic-ExchangedNumbers
+                notif_text = 'Checking to see if you should keep my number? ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DD9)):  # RomanticCombo_ItsAwkward
+                notif_text = 'Things are already weird. ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDA)):  # RomanticCombo_ItsComplicated
+                notif_text = 'This relationship is already complicated. ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDB)):  # RomanticCombo_ItsVeryAwkward
+                notif_text = 'Everything\'s already really weird... ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DDC)):  # RomanticCombo_ItsVeryComplicated
+                notif_text = 'This relationship is already SUPER complicated! ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x181C4)):  # HaveBeenRomantic
+                notif_text = 'We\'ve already been flirting... it\'s a little late to ask. ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x1A36D)):  # relationshipbit_CoWorkers
+                notif_text = 'We work together. ' + notif_text
+            elif sim_x.relationship_tracker.has_bit(sim_y.sim_id, manager.get(0x3DB0)):  # friendship-acquaintances
+                notif_text = 'Oh, right, you barely know me. ' + notif_text
+        except Exception as e:
+            riv_log('error: failed to add flavour to notif because ' + str(e))
 
     # add consanguinity
     if show_consang:
         notif_text = notif_text + '\n\n[consanguinity: {num}%]'.format(num=round(100 * consang(sim_x, sim_y), 5))
 
     scumbumbo_show_notification(sim_x, sim_y, notif_text)
+
+
+# used for main interaction
+@sims4.commands.Command('riv_get_notif', command_type=sims4.commands.CommandType.Live)
+def riv_get_notif(x_id: int, y_id: int, _connection=None):
+    riv_get_notif_generic(x_id, y_id, 1, 2, _connection)
+
+
+# used for ask about other sim interaction
+@sims4.commands.Command('riv_get_notif_othersim', command_type=sims4.commands.CommandType.Live)
+def riv_get_notif(x_id: int, y_id: int, _connection=None):
+    riv_get_notif_generic(x_id, y_id, 1, 3, _connection)
 
 
 # save/load/clean json
@@ -2875,7 +2870,11 @@ def auto_json_oahasil(original, self, client):
             riv_log(f'save ID not loaded in, as it was {hsi}')
             if (not riv_sim_list.sims) and riv_auto_enabled:  # if there are no sims loaded in, but there should be
                 scumbumbo_show_notif_texttitle(
-                    'failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, you quit a different save without saving and then loaded this one, or you moved/deleted the .json files. \nif you have not (or aren\'t about to) set up auto .json file updates for this save ID please ignore this notification. \notherwise, please save your game and then enter the following into the command line (CTRL+SHIFT+C): \n\nriv_load_cfg_manually',
+                    'failed to load in sims for this save ID: this usually happens when you\'ve just left CAS, you quit'
+                    ' a different save without saving and then loaded this one, or you moved/deleted the .json files. '
+                    '\nif you have not (or aren\'t about to) set up auto .json file updates for this save ID please '
+                    'ignore this notification. \notherwise, please save your game and then enter the following into '
+                    'the command line (CTRL+SHIFT+C): \n\nriv_load_cfg_manually',
                     'riv_rel issue')
         # clears sims + rels if id changes
         # clears tmp files if id was 0

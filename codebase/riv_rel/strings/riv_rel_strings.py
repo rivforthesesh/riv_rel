@@ -44,10 +44,10 @@ def direct(gens: List, gender: bool):
                 rel_str = p(d[n], gender)  # gets direct rel for that number then parses it
             elif n < d_anc:
                 mult = '(x' + str(d_anc - n) + ')-' if d_anc - n > 1 else '-'
-                rel_str = mult + p(d[d_anc], gender)
+                rel_str = d_great + mult + p(d[d_anc], gender)
             elif n > d_des:
                 mult = '(x' + str(n - d_des) + ')-' if n - d_des > 1 else '-'
-                rel_str = mult + p(d[d_des], gender)
+                rel_str = d_great + mult + p(d[d_des], gender)
             else:
                 rel_str = '?'
             rl.append(rel_str)
@@ -99,10 +99,10 @@ def indirect(xy_indirect_rels: List, gender: bool):
                     rel_str = p(i1[nce], gender)  # gets indirect then parses
                 elif nce < d_anc:
                     mult = '(x' + str(i1_anc - nce) + ')-' if i1_anc - nce > 1 else '-'
-                    rel_str = mult + p(i1[i1_anc], gender)
+                    rel_str = i_great + mult + p(i1[i1_anc], gender)
                 elif n > d_des:
                     mult = '(x' + str(nce - i1_des) + ')-' if nce - i1_des > 1 else '-'
-                    rel_str = mult + p(i1[i1_des], gender)
+                    rel_str = i_great + mult + p(i1[i1_des], gender)
                 else:
                     rel_str = '?'
             else:  # cousin

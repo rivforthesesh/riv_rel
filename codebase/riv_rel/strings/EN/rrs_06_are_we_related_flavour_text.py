@@ -2,7 +2,7 @@
 
 # ==== notification text (low priority) ====
 
-# start of the notification
+# start of the notification for sim_x = I, sim_y = you
 #   you can add or remove strings from each list if you want!
 #   this is just flavour text, so it doesn't need to be exact
 #   if you want to skip a case, change the list to the below (where n is whatever number is previously there):
@@ -16,7 +16,7 @@ strings_dict = {
     #  no relations
     0: ['Nope, we aren\'t related.',
         'We aren\'t related at all.',
-        'I\'m not related to you. What gave you that idea?'],
+        'Related? What gave you that idea?'],
 
     #   inlaw only
     1: ['I\'d hope we aren\'t related.',
@@ -54,7 +54,11 @@ strings_dict = {
         'Bit of an odd family...']
 }
 
+# start of the notif for sim_x = I, sim_y = they
+othersim_string = 'Oh, {yname}?'
+
 # extra flavour, based on their relationship
+#   only used for main version of interaction (i.e. sim_x = I, sim_y = you)
 #   these are all just a bit of fun!
 #   you can put whatever you want, or leave it as '' (no spaces) if you don't want to translate it
 despised_unrelated = 'I\'m so glad we aren\'t related.'
