@@ -92,7 +92,10 @@ file_name_extra = ''
 hex_slot_id = '00000000'  # updated on game load
 # interactions (ask if related)
 riv_rel_int_24508_SnippetId = 24508
-riv_rel_int_24508_MixerId = (17552881007513514036,18078901824007092157)
+riv_rel_int_24508_MixerId = (
+    17552881007513514036,
+    #18078901824007092157
+)
 # riv_rel_int_163702_SnippetId = 163702
 # riv_rel_int_163702_MixerId = (17552881007513514036,)  # TODO: confirm if experiment worked
 # for giving a heads up about own folder
