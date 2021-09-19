@@ -440,7 +440,7 @@ class RivSim:
             self.last_name = new_last_name
             something_changed = True
         if self.is_female != new_is_female:
-            riv_log('updated is_female ' + self.is_female + ' to ' + new_is_female)
+            riv_log('updated is_female ' + str(self.is_female) + ' to ' + str(new_is_female))
             self.is_female = new_is_female
             something_changed = True
         if something_changed:
