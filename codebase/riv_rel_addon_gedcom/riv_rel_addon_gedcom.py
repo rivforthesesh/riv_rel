@@ -141,7 +141,8 @@ def write_gedcom(keyword: str, _connection=None):
                     '2 TIME ' + dt.strftime('%H:%M:%S') + '\n' \
                 '1 FILE ' + file_name + '\n' \
                 '1 LANG English\n' \
-            '0 SUBM\n' \
+                '1 SUBM @U@\n' \
+            '0 @U@ SUBM\n' \
                 '1 NAME ' + submitter + '\n'
     output('[3/10] constructed header')
 
@@ -220,14 +221,14 @@ def write_gedcom(keyword: str, _connection=None):
             else:
                 ged_parents = f'1 HUSB {fam.p.sim_id}\n'
             # add link to fam in sim record
-            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.p.sim_id}\n'
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.fam_id}\n'
         else:
             # add two parents to fam
             ged_parents = f'1 HUSB {fam.q.sim_id}\n' \
                           f'1 WIFE {fam.p.sim_id}\n'
             # add link to fam in sim records
-            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.p.sim_id}\n'
-            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS {fam.q.sim_id}\n'
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.fam_id}\n'
+            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS {fam.fam_id}\n'
 
         # kids
         ged_children = ''
