@@ -170,8 +170,16 @@ def write_gedcom(keyword='', _connection=None):
     # turn into fam units
     gedcom_fam_units = []
     for xy in parents:  # each xy has two parents (even if it's a repeat)
-        x = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == xy[0]][0]
-        y = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == xy[1]][0]
+        x_list = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == xy[0]]
+        y_list = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == xy[1]]
+        if x_list:
+            x = x_list[0]
+            if y_list:
+                y = y_list[0]
+        elif y_list:
+            x = y = y_list[0]
+        else:
+            continue  # neither parent found
         gedcom_fam_units.append(RivFamUnit(
             x,
             y,
