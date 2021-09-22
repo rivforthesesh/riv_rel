@@ -112,14 +112,14 @@ def write_gedcom(keyword='', _connection=None):
         gedcom_rel_dict = RivRelDict()
         with open(rel_file_path, 'r') as json_file:
             gedcom_rel_dict.rels = json.load(json_file)
-        output(f'[2/10] got rels')
+        output(f'[2/10] got {len(gedcom_rel_dict.rels.keys())} rels')
     else:
         # use current sims
         output(f'[0/10] no save specified, using current save file ({riv_rel.hex_slot_id})')
         gedcom_sim_list = riv_rel.riv_sim_list
         output(f'[1/10] got {len(gedcom_sim_list.sims)} sims')
         gedcom_rel_dict = riv_rel.riv_rel_dict
-        output(f'[2/10] got rels')
+        output(f'[2/10] got {len(gedcom_rel_dict.rels.keys())} rels')
         # set up keyword
         keyword = riv_rel.hex_slot_id
 
@@ -133,7 +133,7 @@ def write_gedcom(keyword='', _connection=None):
                     '2 VERS 5.5.5\n' \
                     '2 FORM LINEAGE-LINKED\n' \
                         '3 VERS 5.5.5\n' \
-                '1 CHAR ASCII\n' \
+                '1 CHAR UTF-8\n' \
                 '1 SOUR riv_rel\n' \
                     '2 NAME ' + keyword + '\n' \
                     '2 VERS ' + str(riv_rel.rr_gen) + '\n' \
@@ -148,20 +148,16 @@ def write_gedcom(keyword='', _connection=None):
 
     # get each fam unit
     # get all parent lists
-    parents_tmp = list(gedcom_rel_dict.rels.values())
+    parents_tmp = gedcom_rel_dict.rels.values()
     # get unique ones
     parents = []
     for p in parents_tmp:
         # ensure smallest first if there are two
-        if len(p) == 2:
-            if p[1] < p[0]:
-                p = [p[1], p[0]]
-        # ensure it's the same repeated if only one
-        elif len(p) == 1:
+        if len(p) == 1:
             p = p + p
-        else:
+        elif not p:
             continue  # next p
-
+        p.sort()
         # add to parents if not added
         if p not in parents:
             parents.append(p)
@@ -170,16 +166,23 @@ def write_gedcom(keyword='', _connection=None):
     # turn into fam units
     gedcom_fam_units = []
     for xy in parents:  # each xy has two parents (even if it's a repeat)
-        x_list = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == xy[0]]
-        y_list = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == xy[1]]
+        x_list = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == str(xy[0])]
+        y_list = [rivsim for rivsim in gedcom_sim_list.sims if rivsim.sim_id == str(xy[1])]
+
         if x_list:
             x = x_list[0]
-            if y_list:
-                y = y_list[0]
         elif y_list:
-            x = y = y_list[0]
+            x = y_list[0]  # parent x not found
         else:
             continue  # neither parent found
+
+        if y_list:
+            y = y_list[0]
+        elif x_list:
+            y = x_list[0]  # parent y not found, but there is a parent x
+        else:
+            continue  # to get the y bit below to fuck off
+
         gedcom_fam_units.append(RivFamUnit(
             x,
             y,
@@ -188,7 +191,7 @@ def write_gedcom(keyword='', _connection=None):
         ))
         # increment family ID
         fam_count += 1
-    output('[4/10] got family units (parents + children)')
+    output(f'[4/10] got {fam_count} family units (parents + children)')
 
     # maps sim ID to their gedcom entry
     gedcom_sim_dict = {}
@@ -204,7 +207,7 @@ def write_gedcom(keyword='', _connection=None):
         first_name = sim.first_name if sim.first_name else 'Nameless'
         last_name = sim.last_name if sim.first_name else f'Sim-{sim.sim_id}'
 
-        gedsim = f'0 {sim.sim_id} INDI\n' \
+        gedsim = f'0 @{sim.sim_id}@ INDI\n' \
                      f'1 NAME {first_name} /{last_name}/\n' \
                          f'2 GIVN {first_name}\n' \
                          f'2 SURN {last_name}\n' \
@@ -225,28 +228,28 @@ def write_gedcom(keyword='', _connection=None):
         if fam.q is None:
             # add parent to fam
             if fam.p.is_female:
-                ged_parents = f'1 WIFE {fam.p.sim_id}\n'
+                ged_parents = f'1 WIFE @{fam.p.sim_id}@\n'
             else:
-                ged_parents = f'1 HUSB {fam.p.sim_id}\n'
+                ged_parents = f'1 HUSB @{fam.p.sim_id}@\n'
             # add link to fam in sim record
-            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.fam_id}\n'
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS @{fam.fam_id}@\n'
         else:
             # add two parents to fam
-            ged_parents = f'1 HUSB {fam.q.sim_id}\n' \
-                          f'1 WIFE {fam.p.sim_id}\n'
+            ged_parents = f'1 HUSB @{fam.q.sim_id}@\n' \
+                          f'1 WIFE @{fam.p.sim_id}@\n'
             # add link to fam in sim records
-            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS {fam.fam_id}\n'
-            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS {fam.fam_id}\n'
+            gedcom_sim_dict[fam.p.sim_id] = gedcom_sim_dict[fam.p.sim_id] + f'1 FAMS @{fam.fam_id}@\n'
+            gedcom_sim_dict[fam.q.sim_id] = gedcom_sim_dict[fam.q.sim_id] + f'1 FAMS @{fam.fam_id}@\n'
 
         # kids
         ged_children = ''
         for child_id in fam.children:
             # add child to fam
-            ged_children = ged_children + f'1 CHIL {child_id}\n'
+            ged_children = ged_children + f'1 CHIL @{child_id}@\n'
             # add link to fam in sim record
-            gedcom_sim_dict[child_id] = gedcom_sim_dict[child_id] + f'1 FAMS {child_id}\n'
+            gedcom_sim_dict[child_id] = gedcom_sim_dict[child_id] + f'1 FAMS @{fam.fam_id}@\n'
 
-        gedfam = f'{fam.fam_id} FAM\n' \
+        gedfam = f'@{fam.fam_id}@ FAM\n' \
                     + ged_parents \
                     + ged_children
 
