@@ -83,7 +83,7 @@ class RivFamUnit:
 
 # write to gedcom file
 @sims4.commands.Command('riv_gedcom', command_type=sims4.commands.CommandType.Live)
-def write_gedcom(keyword: str, _connection=None):
+def write_gedcom(keyword='', _connection=None):
     output = sims4.commands.CheatOutput(_connection)
 
     global fam_count
@@ -170,11 +170,11 @@ def write_gedcom(keyword: str, _connection=None):
     # turn into fam units
     gedcom_fam_units = []
     for xy in parents:  # each xy has two parents (even if it's a repeat)
-        x = xy[0]
-        y = xy[1]
+        x = [rivsim for rivsim in gedcom_sim_list if rivsim.sim_id == xy[0]][0]
+        y = [rivsim for rivsim in gedcom_sim_list if rivsim.sim_id == xy[1]][0]
         gedcom_fam_units.append(RivFamUnit(
-            riv_rel.get_rivsim_from_id(x),
-            riv_rel.get_rivsim_from_id(y),
+            x,
+            y,
             gedcom_rel_dict,
             fam_count
         ))
